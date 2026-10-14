@@ -18,7 +18,8 @@
 | 表單 | — | React Hook Form + Zod |
 | API 類型 | — | openapi-typescript（從 `../docs/api/openapi.json` 生成） |
 | 即時連線 | — | @stomp/stompjs（開獎倒數、開獎結果） |
-| 動畫 | — | 待討論：開獎攪珠動畫方案 |
+| 動畫 | — | 開獎舞台：React Three Fiber + matter.js（見 [../docs/draw-animation.md](../docs/draw-animation.md)）；UI 動畫：Motion（只用這一個動畫庫） |
+| 國際化 | — | 繁體中文（預設）、英文；方案在 i18n 骨架步驟決定 |
 | 圖表 | — | Recharts（冷熱號碼、後台儀表板） |
 | 測試 | — | Vitest + Playwright |
 
@@ -51,6 +52,20 @@ src/
 - 響應式、手機優先。
 - 開獎結果在開獎時間就確定，動畫只是展示；切換分頁、重新整理後要能直接顯示結果。
 - 尊重 `prefers-reduced-motion`：用戶關閉動畫時直接顯示號碼。
+- 遊戲端所有文字都走 i18n（繁中、英文），不寫死在組件裡；管理後台之後再決定。
+- 同一頁只放一個 WebGL 場景（開獎頁已有 3D 舞台，不再加 WebGL 背景效果）。
+- 從 React Bits、Aceternity、Uiverse 借來的效果組件放 `src/components/fx/`，改用專案的 design token，並補上 reduced-motion 處理。
+
+## 遊戲端開發順序
+
+每一步完成後由用戶 review、commit、push，再進行下一步。
+
+0. ✅ 開獎動畫方案文件、原型
+1. i18n 骨架（繁中 / 英文、`[locale]` 路由）
+2. Design token + 號碼球組件
+3. 選號盤 + 待下注列表
+4. 大廳 / 開獎頁（3D 舞台搬進 Next.js）
+5. 中獎提示、積分滾動等效果
 
 ## 常用命令
 

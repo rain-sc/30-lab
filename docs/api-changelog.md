@@ -17,5 +17,12 @@
 ---
 
 ## 2026-10-14
+- 【待後端】開獎動畫方案已確定，設計期數相關 API 時請參考 [draw-animation.md](draw-animation.md) 的「後端需要配合」：
+  - `closeAt`、`drawAt` 時間點；`numbers` 保留開出順序（不排序）
+  - 期數回應帶 `serverTime`（毫秒精度），用來校正時鐘
+  - 「取得目前期數」接口；WebSocket 推送 `CLOSED`、`DRAWN`
+  - 前端要做什麼：後端 API 出來後，按契約接上開獎舞台
+
+## 2026-10-14
 - 專案建立，尚無業務 API。
 - 已有：`GET /actuator/health`（健康檢查）、`GET /v3/api-docs`（OpenAPI 契約）。

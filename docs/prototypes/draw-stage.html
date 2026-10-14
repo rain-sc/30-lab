@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<!-- 開獎動畫原型（單一 HTML，直接用瀏覽器打開）。說明見 ../draw-animation.md -->
+<title>六合彩攪珠舞台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* Layout: one-screen draw show — status bar on top, the 3D stage fills the middle, results + controls docked below.
+   Deliberately single dark theme: a TV draw-studio at night. */
+:root {
+  --bg: #0c1424;
+  --bg-glow: #1b2b4d;
+  --panel: #152038;
+  --line: #2a3a5f;
+  --fg: #eef1f8;
+  --muted: #9ba7c4;
+  --gold: #f2b84b;
+  --gold-ink: #2b1d04;
+  --ball-red: #d7263d;
+  --ball-blue: #2363d6;
+  --ball-green: #1f9d57;
+  --font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --font-num: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body {
+  margin: 0;
+  color: var(--fg);
+  font-family: var(--font-body);
+  background:
+    radial-gradient(120% 60% at 50% 0%, var(--bg-glow) 0%, transparent 70%),
+    var(--bg);
+}
+.app {
+  box-sizing: border-box;
+  height: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding-inline: 16px;
+  padding-block: 12px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  gap: 10px;
+}
+
+/* status bar */
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.bar-left { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.eyebrow { font-size: 12px; letter-spacing: .08em; color: var(--muted); }
+.chip {
+  align-self: flex-start;
+  font-size: 13px; font-weight: 500;
+  padding: 3px 10px; border-radius: 999px;
+  border: 1px solid var(--line); color: var(--fg); background: var(--panel);
+}
+.chip[data-kind="mixing"], .chip[data-kind="drawing"] { border-color: var(--gold); color: var(--gold); }
+.clock { text-align: right; }
+.clock-label { font-size: 12px; color: var(--muted); }
+.clock-value {
+  font-family: var(--font-num); font-weight: 700; font-size: 34px; line-height: 1;
+  font-variant-numeric: tabular-nums; color: var(--gold);
+}
+
+/* stage */
+.stage {
+  position: relative; min-height: 0;
+  border-radius: 18px;
+  background: radial-gradient(80% 70% at 50% 45%, #1d2f55 0%, #0f182c 75%);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.hint {
+  position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%);
+  font-size: 12px; color: var(--muted); white-space: nowrap;
+  background: rgba(12, 20, 36, .7); padding: 4px 10px; border-radius: 999px;
+  pointer-events: none;
+}
+
+/* results */
+.results { display: flex; align-items: center; gap: 6px; min-height: 34px; flex-wrap: wrap; }
+.results-label { font-size: 13px; color: var(--muted); margin-right: 4px; }
+.ball {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: var(--font-num); font-weight: 700; font-size: 17px; color: #fff;
+  font-variant-numeric: tabular-nums;
+  box-shadow: inset -3px -4px 6px rgba(0,0,0,.35), inset 2px 3px 4px rgba(255,255,255,.25);
+}
+.ball.red { background: var(--ball-red); }
+.ball.blue { background: var(--ball-blue); }
+.ball.green { background: var(--ball-green); }
+.plus { color: var(--muted); font-weight: 700; padding-inline: 2px; }
+.results-empty { font-size: 13px; color: var(--muted); }
+
+/* controls */
+.controls { display: flex; flex-wrap: wrap; gap: 8px; }
+button {
+  font: inherit; font-size: 14px; font-weight: 500;
+  padding: 9px 14px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--panel); color: var(--fg);
+  cursor: pointer;
+}
+button:hover:not(:disabled) { border-color: var(--muted); }
+button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+button:disabled { opacity: .4; cursor: not-allowed; }
+button.primary { background: var(--gold); border-color: var(--gold); color: var(--gold-ink); font-weight: 700; }
+.note { font-size: 12px; color: var(--muted); line-height: 1.6; margin: 0; }
+.note strong { color: var(--fg); font-weight: 500; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+</style>
+
+<div class="app">
+  <header class="bar">
+    <div class="bar-left">
+      <span class="eyebrow">模擬開獎・原型</span>
+      <span class="chip" id="chip" data-kind="idle">等待開獎・可以玩球</span>
+    </div>
+    <div class="clock">
+      <div class="clock-label" id="clock-label">開獎倒數</div>
+      <div class="clock-value" id="clock-value">--</div>
+    </div>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="canvas" aria-label="49 顆號碼球的攪珠舞台"></canvas>
+    <div class="hint" id="hint">點一下球會彈跳・按住放大看號碼・拖動可以甩</div>
+  </div>
+
+  <div class="results" id="results" aria-live="polite">
+    <span class="results-label">開獎結果</span>
+    <span class="results-empty">尚未開獎</span>
+  </div>
+
+  <div>
+    <div class="controls">
+      <button class="primary" id="btn-draw" type="button">開始開獎</button>
+      <button id="btn-refresh" type="button" disabled>模擬重新整理</button>
+      <button id="btn-reset" type="button" disabled>重置</button>
+    </div>
+    <p class="note" id="note" style="margin-top:8px">原型時間已縮短：攪珠 5 秒（正式是截止後的 15 秒），每顆球約 3.6 秒。開出的是<strong>球堆裡那顆真正的號碼球</strong>。</p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+<script>
+(() => {
+  const { Engine, Bodies, Body, Composite, Constraint } = Matter;
+
+  // ---------- constants ----------
+  const S = 20;              // physics px per scene unit
+  const R = 0.8;             // ball radius (scene units)
+  const STEP = 1000 / 60;    // fixed physics step
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const RED = [1,2,7,8,12,13,18,19,23,24,29,30,34,35,40,45,46];
+  const BLUE = [3,4,9,10,14,15,20,25,26,31,36,37,41,42,47,48];
+  const colorOf = n => RED.includes(n) ? 'red' : BLUE.includes(n) ? 'blue' : 'green';
+  const HEX = { red: ['#d7263d', '#7a0c1b'], blue: ['#2363d6', '#0c2c70'], green: ['#1f9d57', '#0a4d29'] };
+
+  // timeline (ms) — draw progress is a pure function of elapsed time
+  const T = { mix: 5000, interval: 3600, pop: 450, fly: 950, roll: 2000 };
+  const ANIM = T.pop + T.fly + T.roll;
+  const TOTAL = T.mix + 6 * T.interval + ANIM;
+
+  function getDrawPhase(elapsed) {
+    if (elapsed < T.mix) return { kind: 'mixing', revealed: 0, active: null, remain: T.mix - elapsed };
+    let revealed = 0, active = null;
+    for (let i = 0; i < 7; i++) {
+      const s = T.mix + i * T.interval;
+      if (elapsed >= s + ANIM) revealed++;
+      else if (elapsed >= s) active = { index: i, t: elapsed - s };
+    }
+    return { kind: revealed === 7 ? 'done' : 'drawing', revealed, active };
+  }
+
+  // globe: a round glass bowl on a stand (gumball-machine style)
+  const GLOBE = { cy: -1.2, r: 9.4, seg: 48 };
+  function globeOutline() {
+    const pts = [];
+    for (let k = 0; k < GLOBE.seg; k++) {
+      const a = (k / GLOBE.seg) * Math.PI * 2;
+      pts.push([GLOBE.r * Math.cos(a), GLOBE.cy + GLOBE.r * Math.sin(a)]);
+    }
+    return pts;
+  }
+  const halfWidthAt = y => Math.sqrt(Math.max(0, GLOBE.r * GLOBE.r - (y - GLOBE.cy) ** 2));
+
+  // result row
+  const ROW_Y = 11.6;
+  const SLOT_X = [-8.1, -5.85, -3.6, -1.35, 0.9, 3.15, 6.9];
+  const ENTRY_X = 8.9;
+
+  // ---------- three.js ----------
+  const canvas = document.getElementById('canvas');
+  const stage = document.getElementById('stage');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(28, 1, 1, 400);
+  const VIEW = { xMin: -10.2, xMax: 10.2, yMin: -13, yMax: 13.2 };
+  const camBase = new THREE.Vector3();
+  function fitCamera() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    const W = VIEW.xMax - VIEW.xMin, H = VIEW.yMax - VIEW.yMin;
+    const half = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    const d = Math.max(H, W / camera.aspect) / (2 * half) + 1.5;
+    const cy = (VIEW.yMax + VIEW.yMin) / 2;
+    camBase.set(0, cy + 2, d);
+    camera.position.copy(camBase);
+    camera.lookAt(0, cy, 0);
+    camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(fitCamera).observe(stage);
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+  scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x1a2238, 0.45));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.85);
+  sun.position.set(-7, 14, 16);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(1024, 1024);
+  Object.assign(sun.shadow.camera, { left: -15, right: 15, top: 16, bottom: -15, near: 1, far: 60 });
+  sun.shadow.bias = -0.0008;
+  scene.add(sun);
+  const warm = new THREE.PointLight(0xffc56b, 0.35, 60);
+  warm.position.set(9, 4, 12);
+  scene.add(warm);
+
+  // globe visuals
+  const outline = globeOutline();
+  const back = new THREE.Mesh(
+    new THREE.CircleGeometry(GLOBE.r, 64),
+    new THREE.MeshPhongMaterial({ color: 0x24365f, transparent: true, opacity: 0.6 })
+  );
+  back.position.set(0, GLOBE.cy, -1.04);
+  back.receiveShadow = true;
+  scene.add(back);
+
+  const front = new THREE.Mesh(
+    new THREE.CircleGeometry(GLOBE.r, 64),
+    new THREE.MeshPhongMaterial({ color: 0xffffff, transparent: true, opacity: 0.05, shininess: 150, specular: 0xffffff, depthWrite: false })
+  );
+  front.position.set(0, GLOBE.cy, 1.06);
+  scene.add(front);
+
+  // curved glass highlight, upper left
+  const arc = (r, a0, a1, z) => new THREE.CatmullRomCurve3(
+    Array.from({ length: 24 }, (_, i) => {
+      const a = a0 + (a1 - a0) * i / 23;
+      return new THREE.Vector3(r * Math.cos(a), GLOBE.cy + r * Math.sin(a), z);
+    })
+  );
+  const glint = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.22, depthWrite: false });
+  scene.add(new THREE.Mesh(new THREE.TubeGeometry(arc(GLOBE.r - 0.9, 1.95, 2.75, 1.1), 48, 0.16, 8, false), glint));
+  scene.add(new THREE.Mesh(new THREE.TubeGeometry(arc(GLOBE.r - 0.9, 2.9, 3.05, 1.1), 12, 0.16, 8, false), glint));
+
+  const rimMat = new THREE.MeshPhongMaterial({ color: 0xcfe0ff, transparent: true, opacity: 0.6, shininess: 120 });
+  for (const z of [-1.05, 1.05]) {
+    const curve = new THREE.CatmullRomCurve3(outline.map(([x, y]) => new THREE.Vector3(x, y, z)), true);
+    scene.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 240, 0.08, 8, true), rimMat));
+  }
+
+  // metal cap on top and a stand underneath
+  const metal = new THREE.MeshPhongMaterial({ color: 0xc9962f, shininess: 70, specular: 0x6a5530 });
+  const cap = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 2.2, 0.9, 40), metal);
+  cap.position.set(0, GLOBE.cy + GLOBE.r + 0.25, 0);
+  cap.castShadow = true;
+  scene.add(cap);
+  const collar = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 3.0, 0.7, 48), metal);
+  collar.position.set(0, GLOBE.cy - GLOBE.r - 0.1, 0);
+  scene.add(collar);
+  const stand = new THREE.Mesh(new THREE.CylinderGeometry(3.6, 5.6, 1.6, 48), metal);
+  stand.position.set(0, GLOBE.cy - GLOBE.r - 1.2, 0);
+  stand.receiveShadow = true;
+  scene.add(stand);
+
+  // result rail
+  const rail = new THREE.Mesh(
+    new THREE.BoxGeometry(19.8, 0.26, 2.4),
+    new THREE.MeshPhongMaterial({ color: 0x2b3c66, shininess: 40 })
+  );
+  rail.position.set(0, ROW_Y - R - 0.13, 0);
+  rail.receiveShadow = true;
+  scene.add(rail);
+
+  const plusTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const g = c.getContext('2d');
+    g.fillStyle = '#9ba7c4'; g.fillRect(28, 12, 8, 40); g.fillRect(12, 28, 40, 8);
+    const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; return t;
+  })();
+  const plus = new THREE.Mesh(new THREE.PlaneGeometry(0.9, 0.9), new THREE.MeshBasicMaterial({ map: plusTex, transparent: true }));
+  plus.position.set((SLOT_X[5] + SLOT_X[6]) / 2, ROW_Y, 0);
+  scene.add(plus);
+
+  // ball textures: colored body, white disc with number on front (+z) and back
+  function ballTexture(n) {
+    const c = document.createElement('canvas'); c.width = 512; c.height = 256;
+    const g = c.getContext('2d');
+    const [body, ink] = HEX[colorOf(n)];
+    g.fillStyle = body; g.fillRect(0, 0, 512, 256);
+    for (const u of [0.25, 0.75]) {
+      const cx = u * 512, cy = 128;
+      g.fillStyle = '#ffffff';
+      g.beginPath(); g.arc(cx, cy, 60, 0, Math.PI * 2); g.fill();
+      g.fillStyle = ink;
+      g.font = `700 ${n < 10 ? 74 : 64}px "Arial Black", "Helvetica Neue", Arial, sans-serif`;
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(String(n), cx, cy + 4);
+      if (n === 6 || n === 9) g.fillRect(cx - 14, cy + 34, 28, 6);
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.encoding = THREE.sRGBEncoding;
+    t.anisotropy = 4;
+    return t;
+  }
+
+  const ballGeo = new THREE.SphereGeometry(R, 40, 28);
+  const ID = new THREE.Quaternion();
+  const Z = new THREE.Vector3(0, 0, 1);
+  const balls = [];
+  for (let n = 1; n <= 49; n++) {
+    const mesh = new THREE.Mesh(ballGeo, new THREE.MeshPhongMaterial({ map: ballTexture(n), shininess: 90, specular: 0x555555 }));
+    mesh.castShadow = true;
+    scene.add(mesh);
+    const spinAxis = new THREE.Vector3(Math.random() - .5, Math.random() - .5, Math.random() - .5).normalize();
+    balls.push({ n, mesh, body: null, mode: 'physics', qT: new THREE.Quaternion(), mag: 0, start: null, spinAxis });
+  }
+
+  // ---------- physics ----------
+  const engine = Engine.create();
+  engine.gravity.y = 1;
+  engine.positionIterations = 10;
+  engine.velocityIterations = 8;
+  const world = engine.world;
+
+  function wall(a, b) {
+    const ax = a[0] * S, ay = -a[1] * S, bx = b[0] * S, by = -b[1] * S;
+    const dx = bx - ax, dy = by - ay, len = Math.hypot(dx, dy);
+    let nx = -dy / len, ny = dx / len;
+    const mx = (ax + bx) / 2, my = (ay + by) / 2;
+    const cx = 0, cy = -GLOBE.cy * S;
+    if (nx * (mx - cx) + ny * (my - cy) < 0) { nx = -nx; ny = -ny; }  // point away from globe center
+    const TH = 60;
+    return Bodies.rectangle(mx + nx * TH / 2, my + ny * TH / 2, len + TH * 0.3, TH,
+      { isStatic: true, angle: Math.atan2(dy, dx), friction: 0.05, restitution: 0.2 });
+  }
+  outline.forEach((p, i) => Composite.add(world, wall(p, outline[(i + 1) % outline.length])));
+
+  function addBody(ball, x, y, vx = 0, vy = 0) {
+    const body = Bodies.circle(x * S, -y * S, R * S, {
+      restitution: 0.35, friction: 0.02, frictionStatic: 0.2, frictionAir: 0.012, density: 0.002
+    });
+    Body.setAngle(body, Math.random() * Math.PI * 2);
+    Body.setVelocity(body, { x: vx, y: vy });
+    body.plugin.ball = ball;
+    ball.body = body;
+    Composite.add(world, body);
+  }
+  function removeBody(ball) {
+    if (!ball.body) return;
+    if (hold && hold.ball === ball) releaseHold();
+    Composite.remove(world, ball.body);
+    ball.body = null;
+  }
+
+  function pilePositions(count) {
+    const out = [], d = 2 * R + 0.12;
+    let y = GLOBE.cy - GLOBE.r + R + 0.6;
+    while (out.length < count) {
+      const hw = halfWidthAt(y) - R - 0.15;
+      const n = Math.max(1, Math.floor((2 * hw) / d) + 1);
+      const span = (n - 1) * d;
+      for (let i = 0; i < n && out.length < count; i++) out.push([-span / 2 + i * d + (Math.random() - .5) * .2, y]);
+      y += d;
+    }
+    for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [out[i], out[j]] = [out[j], out[i]]; }
+    return out;
+  }
+  function spawnPile() {
+    for (const b of balls) removeBody(b);
+    const pos = pilePositions(49);
+    balls.forEach((b, i) => {
+      b.mode = 'physics'; b.qT.identity(); b.mag = 0; b.start = null;
+      addBody(b, pos[i][0], pos[i][1]);
+    });
+  }
+
+  // air-mix machine: only balls near the bottom get blown up, gravity brings them back.
+  // gravity adds ~0.28 px/step per step, so rise height h ≈ v² / 0.56 px:
+  // v 8–13 px/step → 114–300 px (5.7–15 scene units, ~30–85% of the globe height,
+  // a bit less in practice because the pile absorbs some of it).
+  const BLOW_ZONE = GLOBE.cy - GLOBE.r + GLOBE.r * 2 * 0.45;
+  function stirStep() {
+    for (const b of balls) {
+      const body = b.body;
+      if (!body) continue;
+      const y = -body.position.y / S;
+      if (y > BLOW_ZONE || Math.random() > 0.045) continue;
+      const v = 8 + Math.pow(Math.random(), 1.2) * 5;
+      Body.setVelocity(body, { x: body.velocity.x * 0.5 + (Math.random() - .5) * 4, y: -v });
+      Body.setAngularVelocity(body, (Math.random() - .5) * 0.4);
+    }
+  }
+  function clampSpeeds() {
+    for (const b of balls) {
+      const body = b.body;
+      if (!body) continue;
+      const s = Math.hypot(body.velocity.x, body.velocity.y);
+      if (s > 18) Body.setVelocity(body, { x: body.velocity.x / s * 18, y: body.velocity.y / s * 18 });
+    }
+  }
+
+  // ---------- draw state ----------
+  let draw = null;   // { startedAt, numbers }
+  let phase = { kind: 'idle' };
+
+  function secureDraw() {
+    const pool = Array.from({ length: 49 }, (_, i) => i + 1);
+    const out = [];
+    const buf = new Uint32Array(1);
+    while (out.length < 7) {
+      crypto.getRandomValues(buf);
+      out.push(pool.splice(buf[0] % pool.length, 1)[0]);
+    }
+    return out;
+  }
+
+  const isStirring = () => !reduced && (phase.kind === 'mixing' || phase.kind === 'drawing');
+  const isInteractive = () => phase.kind === 'idle' || phase.kind === 'done';
+
+  // ---------- interaction ----------
+  const raycaster = new THREE.Raycaster();
+  const zPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+  const ndc = new THREE.Vector2();
+  function toScene(e) {
+    const r = canvas.getBoundingClientRect();
+    ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    raycaster.setFromCamera(ndc, camera);
+    const p = new THREE.Vector3();
+    raycaster.ray.intersectPlane(zPlane, p);
+    return p;
+  }
+  function hitBall(p) {
+    let best = null, bestD = R * 1.5;   // generous touch target for small balls
+    for (const b of balls) {
+      if (!b.body) continue;
+      const d = Math.hypot(b.body.position.x / S - p.x, -b.body.position.y / S - p.y);
+      if (d < bestD) { best = b; bestD = d; }
+    }
+    return best;
+  }
+  function clampToJar(p) {
+    const dx = p.x, dy = p.y - GLOBE.cy, d = Math.hypot(dx, dy), max = GLOBE.r - R;
+    return d <= max ? { x: p.x, y: p.y } : { x: dx / d * max, y: GLOBE.cy + dy / d * max };
+  }
+
+  let hold = null;
+  function releaseHold() {
+    if (!hold) return;
+    Composite.remove(world, hold.constraint);
+    hold = null;
+    canvas.style.cursor = '';
+  }
+
+  canvas.addEventListener('pointerdown', e => {
+    if (!isInteractive()) return;
+    const p = toScene(e);
+    const ball = hitBall(p);
+    if (!ball) return;
+    e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
+    const c = clampToJar(p);
+    const constraint = Constraint.create({
+      pointA: { x: c.x * S, y: -c.y * S }, bodyB: ball.body, pointB: { x: 0, y: 0 },
+      stiffness: 0.12, damping: 0.08, length: 0
+    });
+    Composite.add(world, constraint);
+    hold = { ball, id: e.pointerId, t0: performance.now(), x0: e.clientX, y0: e.clientY, moved: false, constraint };
+    canvas.style.cursor = 'grabbing';
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (hold && e.pointerId === hold.id) {
+      const c = clampToJar(toScene(e));
+      hold.constraint.pointA = { x: c.x * S, y: -c.y * S };
+      if (Math.hypot(e.clientX - hold.x0, e.clientY - hold.y0) > 6) hold.moved = true;
+    } else if (e.pointerType === 'mouse') {
+      canvas.style.cursor = isInteractive() && hitBall(toScene(e)) ? 'grab' : '';
+    }
+  });
+  function endPointer(e) {
+    if (!hold || e.pointerId !== hold.id) return;
+    const { ball, moved, t0 } = hold;
+    releaseHold();
+    if (!moved && performance.now() - t0 < 220 && ball.body) bounce(ball);
+  }
+  canvas.addEventListener('pointerup', endPointer);
+  canvas.addEventListener('pointercancel', endPointer);
+
+  function bounce(ball) {
+    const body = ball.body;
+    Body.setVelocity(body, { x: (Math.random() - .5) * 3, y: -13 });
+    Body.setAngularVelocity(body, (Math.random() - .5) * 0.4);
+    for (const o of balls) {
+      if (!o.body || o === ball) continue;
+      const dx = o.body.position.x - body.position.x, dy = o.body.position.y - body.position.y;
+      const d = Math.hypot(dx, dy);
+      if (d < R * S * 2.8) Body.setVelocity(o.body, { x: o.body.velocity.x + dx / d * 3.5, y: o.body.velocity.y + dy / d * 3.5 - 2 });
+    }
+  }
+
+  // ---------- UI ----------
+  const $ = id => document.getElementById(id);
+  const chip = $('chip'), clockLabel = $('clock-label'), clockValue = $('clock-value');
+  const hint = $('hint'), results = $('results');
+  const btnDraw = $('btn-draw'), btnRefresh = $('btn-refresh'), btnReset = $('btn-reset');
+
+  let shownRevealed = -1, lastChip = '';
+  function renderResults(revealed) {
+    if (revealed === shownRevealed) return;
+    shownRevealed = revealed;
+    results.innerHTML = '<span class="results-label">開獎結果</span>';
+    if (!draw || revealed === 0) {
+      results.insertAdjacentHTML('beforeend', `<span class="results-empty">${draw ? '開獎中…' : '尚未開獎'}</span>`);
+      return;
+    }
+    draw.numbers.slice(0, revealed).forEach((n, i) => {
+      if (i === 6) results.insertAdjacentHTML('beforeend', '<span class="plus" aria-label="特別號碼">+</span>');
+      results.insertAdjacentHTML('beforeend', `<span class="ball ${colorOf(n)}">${n}</span>`);
+    });
+  }
+  function renderStatus(now) {
+    let text, kind = phase.kind;
+    if (kind === 'idle') text = '等待開獎・可以玩球';
+    else if (kind === 'mixing') text = '已截止・攪珠中';
+    else if (kind === 'drawing') text = `開獎中・第 ${Math.min(7, phase.revealed + 1)} / 7 顆`;
+    else text = '已開獎';
+    if (text !== lastChip) { chip.textContent = text; chip.dataset.kind = kind; lastChip = text; }
+
+    if (kind === 'mixing') { clockLabel.textContent = '開獎倒數'; clockValue.textContent = (phase.remain / 1000).toFixed(1); }
+    else if (kind === 'drawing') { clockLabel.textContent = '已開出'; clockValue.textContent = `${phase.revealed}/7`; }
+    else if (kind === 'done') { clockLabel.textContent = '已開出'; clockValue.textContent = '7/7'; }
+    else { clockLabel.textContent = '開獎倒數'; clockValue.textContent = '--'; }
+
+    hint.hidden = !isInteractive();
+    btnDraw.disabled = !!draw;
+    btnRefresh.disabled = !draw;
+    btnReset.disabled = !draw;
+  }
+
+  btnDraw.addEventListener('click', () => {
+    releaseHold();
+    const now = performance.now();
+    draw = { numbers: secureDraw(), startedAt: reduced ? now - TOTAL : now };
+    shownRevealed = -1;
+  });
+  btnRefresh.addEventListener('click', () => {
+    // simulate a page reload: physics state is lost, the draw clock is not
+    releaseHold();
+    spawnPile();
+    shownRevealed = -1;
+  });
+  btnReset.addEventListener('click', () => {
+    draw = null;
+    phase = { kind: 'idle' };
+    for (const b of balls) {
+      if (b.mode === 'physics') continue;
+      b.mode = 'physics'; b.mag = 0; b.qT.identity();
+      b.mesh.scale.setScalar(1);
+      addBody(b, (Math.random() - .5) * 8, GLOBE.cy + 5 + Math.random() * 1.2, (Math.random() - .5) * 4, 2);
+    }
+    shownRevealed = -1;
+  });
+
+  // ---------- poses ----------
+  const qA = new THREE.Quaternion(), qB = new THREE.Quaternion(), axis = new THREE.Vector3();
+  const easeOut = u => 1 - Math.pow(1 - u, 3);
+  const easeInOut = u => u < .5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+
+  function startPose(ball) {
+    const b = ball.body;
+    return {
+      x: b.position.x / S, y: -b.position.y / S, z: 0,
+      q: new THREE.Quaternion().setFromAxisAngle(Z, -b.angle).multiply(ball.qT)
+    };
+  }
+
+  function drawPose(ball, t, slot) {
+    const st = ball.start, m = ball.mesh;
+    const slotX = SLOT_X[slot];
+    qA.setFromAxisAngle(ball.spinAxis, t * 0.016);   // fast tumble, 16 rad/s
+    if (t < T.pop) {
+      const e = easeOut(t / T.pop);
+      m.position.set(st.x, st.y + 0.8 * e, 3 * e);
+      m.scale.setScalar(1 + 0.35 * e);
+      m.quaternion.copy(qA).multiply(st.q);
+    } else if (t < T.pop + T.fly) {
+      const u = (t - T.pop) / T.fly, e = easeInOut(u);
+      const x0 = st.x, y0 = st.y + 0.8, z0 = 3;
+      m.position.set(x0 + (ENTRY_X - x0) * e, y0 + (ROW_Y - y0) * e + Math.sin(Math.PI * u) * 2.2, z0 * (1 - e));
+      m.scale.setScalar(1.35 - 0.35 * e);
+      qB.setFromAxisAngle(Z, (slotX - ENTRY_X) / R);   // orientation the roll starts from
+      m.quaternion.copy(qA).multiply(st.q).slerp(qB, u * u * u);
+    } else {
+      // roll along the rail without slipping: angle = distance / radius, ends upright at the slot
+      const u = Math.min(1, (t - T.pop - T.fly) / T.roll), e = easeOut(u);
+      const x = ENTRY_X + (slotX - ENTRY_X) * e;
+      const hop = 0.3 * Math.abs(Math.sin(u * Math.PI * 3)) * Math.pow(1 - u, 3);
+      m.position.set(x, ROW_Y + hop, 0);
+      m.scale.setScalar(1);
+      m.quaternion.setFromAxisAngle(Z, (slotX - x) / R);
+    }
+  }
+
+  // ---------- loop ----------
+  spawnPile();
+  let last = performance.now(), acc = 0;
+
+  function frame(now) {
+    const dt = Math.min(now - last, 50);
+    last = now;
+
+    // timeline first (decides which balls leave physics)
+    if (draw) {
+      phase = getDrawPhase(now - draw.startedAt);
+      for (let i = 0; i < 7; i++) {
+        const ball = balls[draw.numbers[i] - 1];
+        if (i < phase.revealed) {
+          if (ball.mode !== 'slot') { removeBody(ball); ball.mode = 'slot'; }
+        } else if (phase.active && phase.active.index === i && ball.mode === 'physics') {
+          ball.start = startPose(ball);
+          removeBody(ball);
+          ball.mode = 'draw';
+        }
+      }
+      renderResults(phase.revealed);
+    } else {
+      phase = { kind: 'idle' };
+      renderResults(0);
+    }
+
+    // physics, fixed step
+    const stirring = isStirring();
+    acc += dt;
+    let steps = 0;
+    while (acc >= STEP && steps < 4) {
+      if (stirring) stirStep();
+      Engine.update(engine, STEP);
+      clampSpeeds();
+      acc -= STEP; steps++;
+    }
+    if (steps === 4) acc = 0;
+
+    // poses
+    for (const ball of balls) {
+      const m = ball.mesh;
+      if (ball.mode === 'physics') {
+        const b = ball.body;
+        const held = hold && hold.ball === ball && now - hold.t0 > 180;
+        ball.mag += ((held ? 1 : 0) - ball.mag) * (1 - Math.exp(-dt / 90));
+        if (stirring) {
+          const vx = b.velocity.x / S * 60, vy = -b.velocity.y / S * 60;
+          const sp = Math.hypot(vx, vy);
+          if (sp > 0.01) {
+            axis.set(-vy, vx, 0).normalize();
+            qA.setFromAxisAngle(axis, sp * dt / 1000 / R);
+            ball.qT.premultiply(qA);
+          }
+        } else {
+          ball.qT.slerp(ID, 1 - Math.exp(-dt / 350));
+        }
+        m.quaternion.setFromAxisAngle(Z, -b.angle).multiply(ball.qT);
+        if (ball.mag > 0.001) m.quaternion.slerp(ID, ball.mag);
+        m.position.set(b.position.x / S, -b.position.y / S, ball.mag * 2.6);
+        m.scale.setScalar(1 + 0.9 * ball.mag);
+      } else if (ball.mode === 'draw') {
+        const i = draw.numbers.indexOf(ball.n);
+        drawPose(ball, phase.active ? phase.active.t : ANIM, i);
+      } else {
+        const i = draw.numbers.indexOf(ball.n);
+        m.position.set(SLOT_X[i], ROW_Y, 0);
+        m.quaternion.identity();
+        m.scale.setScalar(1);
+      }
+    }
+
+    renderStatus(now);
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+  fitCamera();
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>

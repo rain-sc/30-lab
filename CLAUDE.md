@@ -76,6 +76,7 @@ cd frontend; npm run dev                              # 啟動前端
 | [docs/game-rules.md](docs/game-rules.md) | 遊戲規則、獎級、彩池、時間軸 |
 | [docs/data-model.md](docs/data-model.md) | MongoDB 集合、字段、索引（草稿） |
 | [docs/state-machines.md](docs/state-machines.md) | 期數、注單的狀態流轉 |
+| [docs/draw-animation.md](docs/draw-animation.md) | 開獎動畫方案、後端需要配合的事項；原型在 `docs/prototypes/` |
 | [docs/api-changelog.md](docs/api-changelog.md) | 前後端交接記錄 |
 | [docs/api/](docs/api/) | OpenAPI 契約 |
 | [backend/CLAUDE.md](backend/CLAUDE.md) | 後端約定 |
@@ -84,4 +85,5 @@ cd frontend; npm run dev                              # 啟動前端
 ## 目前進度
 
 **階段 0：規劃**。專案骨架已建立；下一步是確定資料模型、狀態機、階段 1 的 API 設計。
-前端下一個要討論的題目：**開獎攪珠（球）動畫**的實現方案。
+開獎攪珠動畫方案已確定，見 [docs/draw-animation.md](docs/draw-animation.md)（含後端需要配合的事項）。
+前端按 [frontend/CLAUDE.md](frontend/CLAUDE.md) 的「遊戲端開發順序」進行，下一步：i18n 骨架。
