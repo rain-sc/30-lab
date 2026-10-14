@@ -21,7 +21,7 @@
 
 ```
 com.marksixlab
-├── common/        Result、PageResult、BusinessException、全局異常處理
+├── common/        Result、ErrorCode、BusinessException、全局異常處理、PageResult
 ├── config/        Mongo、Redis、WebSocket、Security、Swagger 等配置
 ├── account/       帳戶：註冊、登入、JWT
 ├── wallet/        錢包：餘額、積分流水
@@ -38,7 +38,7 @@ com.marksixlab
 
 - Controller 只處理 HTTP；業務規則在 Service；Repository 只管讀寫。
 - 每個 `@RequestBody` 前面都要有 `@Valid`。
-- 回傳 `Result<T>`；錯誤一律 `throw BusinessException`，由全局處理器轉成統一格式。
+- 回傳 `Result<T>`；錯誤一律 `throw new BusinessException(ErrorCode.XXX)`，由全局處理器轉成統一格式。新的錯誤加進 `common/ErrorCode`，並在 `api-changelog.md` 通知前端加翻譯。
 - 時間用 `Instant`，截斷到毫秒；積分用 `long`。
 - 比較物件用 `equals`，不用 `==`。
 - 敏感資料（密碼雜湊、token）不回傳、不打日誌。
