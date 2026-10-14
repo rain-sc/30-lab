@@ -24,7 +24,7 @@ export function LocaleSwitcher() {
           href={pathname}
           locale={l}
           aria-current={l === locale ? "true" : undefined}
-          className={l === locale ? "font-semibold" : "text-zinc-500 underline underline-offset-4"}
+          className={l === locale ? "font-semibold text-fg" : "text-muted underline underline-offset-4 hover:text-fg"}
         >
           {LOCALE_NAMES[l]}
         </Link>

@@ -6,7 +6,8 @@
   "Home": {
     "title": "Mark Six Lab",
     "tagline": "用虛擬積分遊玩的六合彩模擬遊戲",
-    "comingSoon": "大廳建置中"
+    "comingSoon": "大廳建置中",
+    "toLogin": "前往登入"
   },
   "LocaleSwitcher": {
     "label": "語言"
@@ -15,5 +16,58 @@
     "title": "找不到頁面",
     "description": "你要找的頁面不存在。",
     "backHome": "回到首頁"
+  },
+  "Live": {
+    "heading": "目前期數",
+    "drawNo": "第 {drawNo} 期",
+    "sample": "示例數據",
+    "nextDraw": "距離下一期開獎",
+    "closed": "已截止下注，即將開獎",
+    "countdownLabel": "還有 {minutes} 分 {seconds} 秒開獎",
+    "jackpot": "頭獎彩池",
+    "points": "積分",
+    "lastResult": "上期開獎結果",
+    "special": "特別號碼",
+    "rulePerBet": "每注 <b>{points}</b> 積分",
+    "ruleInterval": "每 <b>{minutes}</b> 分鐘開獎一次",
+    "ruleCutoff": "開獎前 <b>{seconds}</b> 秒截止下注"
+  },
+  "Auth": {
+    "pageTitle": "登入 / 註冊",
+    "cardLabel": "登入或註冊",
+    "tabsLabel": "帳號",
+    "footnote": "虛擬積分，不能儲值或兌換",
+    "rulesShort": "每注 {points} 積分 · 每 {minutes} 分鐘開獎",
+    "mockNotice": "後端 API 尚未完成，這是模擬結果。",
+    "login": {
+      "tab": "登入",
+      "submit": "登入",
+      "submitting": "登入中…"
+    },
+    "register": {
+      "tab": "註冊",
+      "submit": "建立帳號",
+      "submitting": "建立中…"
+    },
+    "fields": {
+      "username": "帳號",
+      "usernameHint": "4–20 個字元，只能用英文、數字或底線",
+      "nickname": "暱稱",
+      "nicknameHint": "{nicknameMin}–{nicknameMax} 個字，會顯示給其他玩家",
+      "password": "密碼",
+      "passwordHint": "至少 {passwordMin} 個字元",
+      "confirmPassword": "確認密碼",
+      "showPassword": "顯示密碼",
+      "hidePassword": "隱藏密碼"
+    },
+    "errors": {
+      "usernameRequired": "請輸入帳號",
+      "usernameFormat": "帳號需要 4–20 個字元，只能用英文、數字或底線",
+      "nicknameLength": "暱稱需要 {nicknameMin}–{nicknameMax} 個字",
+      "passwordRequired": "請輸入密碼",
+      "passwordLength": "密碼需要 {passwordMin}–{passwordMax} 個字元",
+      "confirmRequired": "請再輸入一次密碼",
+      "passwordMismatch": "兩次輸入的密碼不一樣"
+    }
   }
 }

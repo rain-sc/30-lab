@@ -1,26 +1,98 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Design token（遊戲端）
+ * 風格：A「開獎直播間」——深墨藍底、只有一個強調色（金色），號碼球的紅藍綠只出現在球上。
+ * 刻意只做深色主題。設計稿：https://claude.ai/artifact/YHfuLPTV2Q42BuurgpKw3A
+ * @theme 裡的每個變數都會生成對應的 class，例如 --color-gold → bg-gold / text-gold / border-gold。
+ * 組件一律用這些 token，不要寫死顏色值。
+ */
+@theme {
+  /* 底色與層次（由深到淺） */
+  --color-stage: #0b1020;        /* 頁面底色；也用在分頁切換的凹槽 */
+  --color-stage-glow: #18213c;   /* 頁面左上角的光暈 */
+  --color-sunken: #0e1428;       /* 輸入框底色 */
+  --color-panel: #141b30;        /* 卡片 */
+  --color-line: #26304d;         /* 卡片邊框、分隔線 */
+  --color-line-strong: #2f3a5c;  /* 輸入框邊框 */
+
+  /* 文字 */
+  --color-fg: #eef1f7;
+  --color-fg-soft: #c9d0e2;      /* 次要內文 */
+  --color-muted: #a3adc6;        /* 標籤、說明 */
+
+  /* 強調色：唯一的強調色，用在倒數冒號、彩池、主要按鈕、選中狀態 */
+  --color-gold: #f4b63f;
+  --color-gold-bright: #ffd27a;  /* hover */
+  --color-gold-ink: #2a1c03;     /* 金色底上的文字 */
+
+  /* 直播 */
+  --color-live: #ff4d5e;         /* LIVE 紅點 */
+  --color-live-text: #ff7d8a;    /* LIVE 文字（在深底上對比足夠） */
+
+  /* 狀態 */
+  --color-danger: #ff7a7a;
+  --color-success: #5fd39a;
+
+  /* 號碼球（香港六合彩波色） */
+  --color-ball-red: #d7263d;
+  --color-ball-blue: #2363d6;
+  --color-ball-green: #1f9d57;
+
+  /* 圓角 */
+  --radius-control: 10px;        /* 輸入框 */
+  --radius-button: 12px;         /* 按鈕、分頁切換 */
+  --radius-card: 20px;           /* 卡片 */
+
+  /* 動畫（純 CSS 的部分；數字、球的動畫用 Motion） */
+  --animate-fade-up: fade-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;  /* 頁面進場，搭配 animation-delay 依序出現 */
+  --animate-beat: beat 1s ease-in-out infinite;                          /* 截止後的倒數脈動 */
+  --animate-bokeh-float: bokeh-float 20s ease-in-out infinite alternate; /* 背景散景球漂浮（時間由各球覆寫） */
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* 背景散景球：在原點和 (--dx, --dy) 之間來回漂 */
+@keyframes bokeh-float {
+  to {
+    transform: translate(var(--dx), var(--dy));
   }
 }
 
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+@keyframes beat {
+  50% {
+    transform: scale(1.03);
+  }
+}
+
+/* 點擊火花（ClickSpark）：每道火花從中心往外射出並消失 */
+@keyframes spark {
+  from {
+    transform: rotate(var(--angle)) translateX(6px) scaleX(1);
+    opacity: 1;
+  }
+  to {
+    transform: rotate(var(--angle)) translateX(26px) scaleX(0.2);
+    opacity: 0;
+  }
+}
+
+/* 字體變數由 next/font 在 layout 注入，引用其他變數要用 @theme inline */
+@theme inline {
+  --font-sans: var(--font-noto-tc), "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --font-num: var(--font-barlow), "Arial Narrow", system-ui, sans-serif;  /* 倒數、積分、號碼、品牌字 */
+}
+
+:root {
+  color-scheme: dark;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-stage);
+  color: var(--color-fg);
 }

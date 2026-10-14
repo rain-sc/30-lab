@@ -1,18 +1,24 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Barlow_Condensed, Noto_Sans_TC } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
+import { MotionProvider } from "@/components/MotionProvider";
 import { routing } from "@/i18n/routing";
 import "../globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// 內文：繁中 + 英文。中文字型檔很大，Google 會切成很多小檔按需載入，所以不預載
+const notoSansTC = Noto_Sans_TC({
+  variable: "--font-noto-tc",
   subsets: ["latin"],
+  weight: ["400", "500", "700"],
+  preload: false,
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// 數字與品牌字：倒數、積分、號碼球、MARK SIX LAB（窄體，數字等寬）
+const barlow = Barlow_Condensed({
+  variable: "--font-barlow",
   subsets: ["latin"],
+  weight: ["500", "700", "800"],
 });
 
 // cacheComponents 要求根參數至少有一個值；每個語系都在 build 時預先渲染
@@ -23,7 +29,7 @@ export function generateStaticParams() {
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Metadata");
   return {
-    title: t("title"),
+    title: { default: t("title"), template: `%s | ${t("title")}` },
     description: t("description"),
   };
 }
@@ -34,11 +40,13 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
   return (
     <html
       lang={locale}
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${notoSansTC.variable} ${barlow.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="flex min-h-full flex-col font-sans">
         {/* 把目前語系的翻譯傳給 Client Component（useTranslations 在 client 也能用） */}
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          <MotionProvider>{children}</MotionProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -6,7 +6,8 @@
   "Home": {
     "title": "Mark Six Lab",
     "tagline": "A Mark Six lottery simulator played with virtual points",
-    "comingSoon": "The lobby is under construction"
+    "comingSoon": "The lobby is under construction",
+    "toLogin": "Go to sign in"
   },
   "LocaleSwitcher": {
     "label": "Language"
@@ -15,5 +16,58 @@
     "title": "Page not found",
     "description": "The page you are looking for does not exist.",
     "backHome": "Back to home"
+  },
+  "Live": {
+    "heading": "Current draw",
+    "drawNo": "Draw {drawNo}",
+    "sample": "Sample data",
+    "nextDraw": "Next draw in",
+    "closed": "Betting closed, drawing soon",
+    "countdownLabel": "{minutes} minutes {seconds} seconds until the draw",
+    "jackpot": "Jackpot",
+    "points": "points",
+    "lastResult": "Last draw",
+    "special": "Extra number",
+    "rulePerBet": "<b>{points}</b> points per bet",
+    "ruleInterval": "A draw every <b>{minutes}</b> minutes",
+    "ruleCutoff": "Betting closes <b>{seconds}</b> s before the draw"
+  },
+  "Auth": {
+    "pageTitle": "Sign in / Sign up",
+    "cardLabel": "Sign in or sign up",
+    "tabsLabel": "Account",
+    "footnote": "Virtual points only. They can't be bought or cashed out.",
+    "rulesShort": "{points} points per bet · A draw every {minutes} minutes",
+    "mockNotice": "The backend API isn't ready yet. This is a simulated result.",
+    "login": {
+      "tab": "Sign in",
+      "submit": "Sign in",
+      "submitting": "Signing in…"
+    },
+    "register": {
+      "tab": "Sign up",
+      "submit": "Create account",
+      "submitting": "Creating…"
+    },
+    "fields": {
+      "username": "Username",
+      "usernameHint": "4–20 characters: letters, numbers or underscores",
+      "nickname": "Nickname",
+      "nicknameHint": "{nicknameMin}–{nicknameMax} characters, shown to other players",
+      "password": "Password",
+      "passwordHint": "At least {passwordMin} characters",
+      "confirmPassword": "Confirm password",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password"
+    },
+    "errors": {
+      "usernameRequired": "Enter your username",
+      "usernameFormat": "Use 4–20 letters, numbers or underscores",
+      "nicknameLength": "Nickname must be {nicknameMin}–{nicknameMax} characters",
+      "passwordRequired": "Enter your password",
+      "passwordLength": "Password must be {passwordMin}–{passwordMax} characters",
+      "confirmRequired": "Enter your password again",
+      "passwordMismatch": "The passwords don't match"
+    }
   }
 }

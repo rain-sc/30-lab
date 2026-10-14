@@ -8,8 +8,8 @@ export default function NotFound() {
   return (
     <main className="flex flex-1 flex-col items-center justify-center gap-3 px-4 py-16 text-center">
       <h1 className="text-2xl font-semibold">{t("title")}</h1>
-      <p className="text-zinc-600 dark:text-zinc-400">{t("description")}</p>
-      <Link href="/" className="underline underline-offset-4">
+      <p className="text-muted">{t("description")}</p>
+      <Link href="/" className="text-gold underline underline-offset-4">
         {t("backHome")}
       </Link>
     </main>
