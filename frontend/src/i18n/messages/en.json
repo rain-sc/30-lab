@@ -1,0 +1,19 @@
+{
+  "Metadata": {
+    "title": "Mark Six Lab",
+    "description": "A Mark Six lottery simulator played with virtual points"
+  },
+  "Home": {
+    "title": "Mark Six Lab",
+    "tagline": "A Mark Six lottery simulator played with virtual points",
+    "comingSoon": "The lobby is under construction"
+  },
+  "LocaleSwitcher": {
+    "label": "Language"
+  },
+  "NotFound": {
+    "title": "Page not found",
+    "description": "The page you are looking for does not exist.",
+    "backHome": "Back to home"
+  }
+}

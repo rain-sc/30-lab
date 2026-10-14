@@ -20,7 +20,7 @@
 ```
 mark-six-lab/
 ├── backend/            Spring Boot API（埠 8088）
-├── frontend/           Next.js 網頁（埠 3000）
+├── frontend/           Next.js 網頁（埠 3100）
 ├── docs/               遊戲規則、資料模型、狀態機、API 契約
 └── docker-compose.yml  MongoDB + Redis
 ```
@@ -36,7 +36,7 @@ docker compose up -d
 # 2. 啟動後端 → http://localhost:8088/swagger-ui.html
 cd backend && ./mvnw spring-boot:run
 
-# 3. 啟動前端 → http://localhost:3000
+# 3. 啟動前端 → http://localhost:3100
 cd frontend && npm install && npm run dev
 ```
 

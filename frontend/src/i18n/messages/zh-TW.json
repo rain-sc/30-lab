@@ -1,0 +1,19 @@
+{
+  "Metadata": {
+    "title": "Mark Six Lab",
+    "description": "用虛擬積分遊玩的六合彩模擬遊戲"
+  },
+  "Home": {
+    "title": "Mark Six Lab",
+    "tagline": "用虛擬積分遊玩的六合彩模擬遊戲",
+    "comingSoon": "大廳建置中"
+  },
+  "LocaleSwitcher": {
+    "label": "語言"
+  },
+  "NotFound": {
+    "title": "找不到頁面",
+    "description": "你要找的頁面不存在。",
+    "backHome": "回到首頁"
+  }
+}

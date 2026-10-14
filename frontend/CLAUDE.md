@@ -19,7 +19,7 @@
 | API 類型 | — | openapi-typescript（從 `../docs/api/openapi.json` 生成） |
 | 即時連線 | — | @stomp/stompjs（開獎倒數、開獎結果） |
 | 動畫 | — | 開獎舞台：React Three Fiber + matter.js（見 [../docs/draw-animation.md](../docs/draw-animation.md)）；UI 動畫：Motion（只用這一個動畫庫） |
-| 國際化 | — | 繁體中文（預設）、英文；方案在 i18n 骨架步驟決定 |
+| 國際化 | next-intl 4（繁體中文 `zh-TW` 預設、英文 `en`） | |
 | 圖表 | — | Recharts（冷熱號碼、後台儀表板） |
 | 測試 | — | Vitest + Playwright |
 
@@ -28,16 +28,35 @@
 ```
 src/
 ├── app/
-│   ├── (game)/        玩家頁面：大廳、選號下注、開獎結果、我的注單
-│   ├── (auth)/        登入、註冊
-│   └── admin/         管理後台（階段 3）
+│   ├── [locale]/          根佈局在這裡（語系是根參數）
+│   │   ├── (game)/        玩家頁面：大廳、選號下注、開獎結果、我的注單
+│   │   ├── (auth)/        登入、註冊
+│   │   ├── not-found.tsx  語系內的 404（有翻譯）
+│   │   └── [...rest]/     接住不存在的路徑 → not-found
+│   ├── admin/             管理後台（階段 3，是否走 i18n 之後再定）
+│   └── global-not-found.tsx  完全對不上路由時的 404（中英並列）
 ├── components/        共用組件
 ├── features/          按功能分：betting/、draw/、wallet/ …
+├── i18n/
+│   ├── routing.ts     語系列表、預設語系、cookie
+│   ├── navigation.ts  Link / redirect / useRouter（自動帶語系前綴）
+│   ├── request.ts     每個請求載入對應的翻譯檔
+│   └── messages/      zh-TW.json、en.json
 ├── lib/
 │   ├── api/           API 請求封裝（統一處理 { code, msg, data }）
 │   └── ws/            WebSocket 連線
+├── proxy.ts           Next 16 的 proxy（舊名 middleware）：沒有語系前綴的網址導向 /zh-TW 或 /en
 └── types/api.d.ts     由 OpenAPI 生成，不要手改
 ```
+
+## i18n 規則
+
+- 網址一律帶語系前綴：`/zh-TW/...`、`/en/...`。進站時依 cookie → 瀏覽器語言 → 繁中決定語系；進過某個語系就用 cookie 記住一年。
+- 頁面跳轉用 `@/i18n/navigation` 的 `Link`、`useRouter`、`redirect`，**不要**直接用 `next/link`（會丟掉語系前綴）。
+- 文字用 `useTranslations("命名空間")`，Server / Client Component 都能用；async Server Component 和 `generateMetadata` 用 `getTranslations`。
+- 新增文字時，`zh-TW.json` 和 `en.json` **同時加**。型別以 `zh-TW.json` 為準（`src/global.d.ts`），key 打錯會編譯失敗。
+- 複數、數字、日期用 ICU 語法和 `useFormatter`，不要自己拼字串（例如 `{count, plural, one {# ticket} other {# tickets}}`）。
+- 語系是根參數，Server 端由 `next/root-params` 讀取，不用一層層傳 `locale`。
 
 ## 和後端對接
 
@@ -61,7 +80,7 @@ src/
 每一步完成後由用戶 review、commit、push，再進行下一步。
 
 0. ✅ 開獎動畫方案文件、原型
-1. i18n 骨架（繁中 / 英文、`[locale]` 路由）
+1. ✅ i18n 骨架（繁中 / 英文、`[locale]` 路由）
 2. Design token + 號碼球組件
 3. 選號盤 + 待下注列表
 4. 大廳 / 開獎頁（3D 舞台搬進 Next.js）
@@ -70,7 +89,7 @@ src/
 ## 常用命令
 
 ```powershell
-npm run dev       # http://localhost:3000
+npm run dev       # http://localhost:3100
 npm run build
 npm run lint
 ```

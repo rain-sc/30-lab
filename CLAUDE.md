@@ -54,7 +54,7 @@
 
 | 服務 | 位址 | 備註 |
 |---|---|---|
-| 前端 | http://localhost:3000 | `/api/*` 由 next.config.ts 轉發到後端 |
+| 前端 | http://localhost:3100 | `/api/*` 由 next.config.ts 轉發到後端 |
 | 後端 | http://localhost:8088 | 避開 8080（用戶的練習項目）和 8090（本機其他程式） |
 | Swagger | http://localhost:8088/swagger-ui.html | |
 | 健康檢查 | http://localhost:8088/actuator/health | |
