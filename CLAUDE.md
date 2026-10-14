@@ -25,6 +25,8 @@
 | 後端 | Java 21 + Spring Boot 4.1 + **MongoDB**（副本集）+ Redis |
 | 前端 | Next.js 16（App Router）+ React 19 + TypeScript + Tailwind 4 |
 | 架構 | 後端是**模組化單體**（按業務模組分包），不拆微服務 |
+| 登入 | JWT 放 **HttpOnly cookie**（`SameSite=Lax`）；註冊成功後直接登入 |
+| 同時登入 | 同一帳號只能一個 session，**後登入的踢掉前一個**（舊的下次請求收到 `401`）；session id 存 Redis |
 
 詳細規則見 [docs/game-rules.md](docs/game-rules.md)，規劃文件：https://claude.ai/code/artifact/8b6f7bc0-a7c1-4a3d-aa33-69ebb7988e50
 

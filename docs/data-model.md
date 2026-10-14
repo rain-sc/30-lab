@@ -13,7 +13,7 @@ MongoDB，資料庫名 `marksixlab`。**草稿**：階段 0 逐個集合討論�
 
 | 集合 | 用途 | 主要字段（暫定） | 唯一索引 |
 |---|---|---|---|
-| `users` | 帳戶 | `username`、`passwordHash`、`nickname`、`roles`、`enabled`、`tokenValidAfter` | `username` |
+| `users` | 帳戶 | `username`、`passwordHash`、`nickname`、`roles`、`enabled` | `username` |
 | `wallets` | 積分餘額（每人一個） | `userId`、`balance`、`version` | `userId` |
 | `wallet_transactions` | 積分流水 | `userId`、`type`、`amount`、`balanceAfter`、`refId` | `type + refId` |
 | `draws` | 期數 | `drawNo`、`status`、`openAt`、`closeAt`、`drawAt`、`numbers`、`specialNumber`、`poolAmount` | `drawNo` |
@@ -24,6 +24,7 @@ MongoDB，資料庫名 `marksixlab`。**草稿**：階段 0 逐個集合討論�
 - **注單預留複式、膽拖**：`betType`（`SINGLE` / `MULTIPLE` / `BANKER`）+ 玩家原始選號 `selections`，再展開成一注一注的 `lines`。單式時 `lines` 只有一注。
 - **扣積分防並發**：`updateOne({ userId, balance: { $gte: cost } }, { $inc: { balance: -cost } })`，餘額檢查和扣減是同一個原子操作。
 - **下注是一個事務**：扣餘額 + 寫流水 + 建立注單，三件事要麼都成功、要麼都失敗（需要副本集）。
+- **登入 session 不存 MongoDB**：Redis `session:{userId}` 存目前有效的 session id（TTL = JWT 有效期），JWT 帶同一個 id；不一致代表被新登入踢掉。登出就刪 key。
 - **期數號 `drawNo`**：格式待定（例如 `20261014-0001`，一天 288 期）。
 
 ## 待討論
