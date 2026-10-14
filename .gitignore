@@ -1,0 +1,21 @@
+# 根目錄共用的忽略規則（backend/、frontend/ 各自還有自己的 .gitignore）
+
+# 環境變量：真正的密鑰只放 .env，提交的是 .env.example
+.env
+.env.local
+.env.*.local
+
+# 日誌
+logs/
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+
+# 系統檔案
+.DS_Store
+Thumbs.db
+desktop.ini
