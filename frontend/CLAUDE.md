@@ -16,7 +16,7 @@
 | 伺服器數據 | — | TanStack Query |
 | 客戶端狀態 | — | Zustand（選號、待下注列表） |
 | 表單 | React Hook Form + Zod 4 | |
-| API 類型 | — | openapi-typescript（從 `../docs/api/openapi.json` 生成） |
+| API 類型 | openapi-typescript（`npm run gen:api`，從 `../docs/api/openapi.json` 生成 `src/types/api.d.ts`） | |
 | 即時連線 | — | @stomp/stompjs（開獎倒數、開獎結果） |
 | 動畫 | Motion 14（UI 動畫唯一的動畫庫；`MotionProvider` 設定 `reducedMotion="user"`） | 開獎舞台：React Three Fiber + matter.js（見 [../docs/draw-animation.md](../docs/draw-animation.md)） |
 | 國際化 | next-intl 4（繁體中文 `zh-TW` 預設、英文 `en`） | |
@@ -112,10 +112,15 @@ src/
 
 ## 和後端對接
 
-- 開始工作前先看 [../docs/api-changelog.md](../docs/api-changelog.md)。
-- HTTP 請求一律用相對路徑 `/api/...`：開發時由 `next.config.ts` 轉發到 `http://localhost:8088`，沒有 CORS 問題。
+- 開始工作前先看 [../docs/api-changelog.md](../docs/api-changelog.md)，契約有變就 `npm run gen:api`；型別一律從 `@/types/api` 的 `components["schemas"]` 取，不要自己手寫。
+- HTTP 請求一律用 `@/lib/api/client` 的 `apiRequest("/auth/login", { method, body })`，打相對路徑 `/api/...`：開發時由 `next.config.ts` 轉發到 `http://localhost:8088`，同源、沒有 CORS 問題。
+- 回應 `{ code, msg, data }`：`code = 0` 回傳 `data`；其他丟出 `ApiError`（帶 5 位數錯誤碼 `code`、`status`、`fieldViolations`）。
+- **錯誤訊息由前端翻譯**：`useApiErrorText()(error)` 依 `code` 查 `messages` 的 `ApiErrors`，找不到就用前 3 碼的通用碼（`40900` → `40000` / `50000`）。後端的 `msg` 不直接顯示給使用者。
+  新的錯誤碼出現時，`zh-TW.json`、`en.json` 的 `ApiErrors` 同時加。
+- 欄位錯誤（`40001`）：用 `applyFieldViolations` 把 `field` + `rule` 對應到表單的錯誤 key，顯示在欄位下；不屬於欄位的錯誤用 `<FormAlert>` 顯示在表單上方。
+- 登入狀態是後端的 HttpOnly cookie（`msl_token`），前端 JS 不碰 token。`apiRequest` 收到 `40100`（未登入 / 過期）或 `40102`（被別處登入踢掉）會**整頁導向** `/login?reason=expired|replaced`；只查狀態的請求（例如 `GET /me`）傳 `redirectOnUnauthorized: false` 自己處理。
+- Server Component 呼叫後端時，瀏覽器的 cookie 不會自動帶過去，要用 `cookies()` 取出 `msl_token` 放進 `Cookie` header（目前還沒有這種用法）。
 - WebSocket 直連 `NEXT_PUBLIC_WS_URL`（預設 `ws://localhost:8088/ws`）。
-- 回應格式 `{ code, msg, data }`，`code = 0` 成功；401 跳登入頁；其他錯誤顯示 `msg`。
 - 時間是 UTC ISO 字串，顯示時轉本地時區；倒數以**後端給的時間點**為準，不要只靠前端計時。
 
 ## 介面原則
@@ -133,7 +138,7 @@ src/
 
 0. ✅ 開獎動畫方案文件、原型
 1. ✅ i18n 骨架（繁中 / 英文、`[locale]` 路由）
-2. ✅ 登入 / 註冊頁（順帶完成 design token、號碼球、表單基礎元件；送出暫時是模擬）
+2. ✅ 登入 / 註冊頁（順帶完成 design token、號碼球、表單基礎元件）；已接上後端帳戶 API，成功後回首頁（大廳做好後改成導向大廳）
 3. 選號盤 + 待下注列表
 4. 大廳 / 開獎頁（3D 舞台搬進 Next.js）
 5. 中獎提示、積分滾動等效果

@@ -1,6 +1,6 @@
 import { useTranslations } from "next-intl";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
-import { Link } from "@/i18n/navigation";
+import { SessionStatus } from "@/features/auth/SessionStatus";
 
 // 暫時的首頁，之後換成大廳
 export default function Home() {
@@ -11,9 +11,7 @@ export default function Home() {
       <h1 className="text-3xl font-semibold">{t("title")}</h1>
       <p className="text-muted">{t("tagline")}</p>
       <p className="text-sm text-muted">{t("comingSoon")}</p>
-      <Link href="/login" className="font-medium text-gold underline-offset-4 hover:underline">
-        {t("toLogin")}
-      </Link>
+      <SessionStatus />
       <LocaleSwitcher />
     </main>
   );

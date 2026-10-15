@@ -6,8 +6,7 @@
   "Home": {
     "title": "Mark Six Lab",
     "tagline": "A Mark Six lottery simulator played with virtual points",
-    "comingSoon": "The lobby is under construction",
-    "toLogin": "Go to sign in"
+    "comingSoon": "The lobby is under construction"
   },
   "LocaleSwitcher": {
     "label": "Language"
@@ -35,10 +34,9 @@
   "Auth": {
     "pageTitle": "Sign in / Sign up",
     "cardLabel": "Sign in or sign up",
-    "tabsLabel": "Account",
+    "tabsLabel": "Choose sign in or sign up",
     "footnote": "Virtual points only. They can't be bought or cashed out.",
     "rulesShort": "{points} points per bet · A draw every {minutes} minutes",
-    "mockNotice": "The backend API isn't ready yet. This is a simulated result.",
     "login": {
       "tab": "Sign in",
       "submit": "Sign in",
@@ -67,7 +65,33 @@
       "passwordRequired": "Enter your password",
       "passwordLength": "Password must be {passwordMin}–{passwordMax} characters",
       "confirmRequired": "Enter your password again",
-      "passwordMismatch": "The passwords don't match"
+      "passwordMismatch": "The passwords don't match",
+      "usernameTaken": "This username is already taken. Try another one."
+    },
+    "reason": {
+      "expired": "Your session has expired. Please sign in again.",
+      "replaced": "Your account was signed in on another device, so you've been signed out here. If that wasn't you, change your password soon."
     }
+  },
+  "Session": {
+    "checking": "Checking your sign-in status…",
+    "signedInAs": "Signed in as <b>{nickname}</b>",
+    "logout": "Sign out",
+    "guest": "Not signed in",
+    "replaced": "Your account was signed in elsewhere",
+    "toLogin": "Go to sign in"
+  },
+  "ApiErrors": {
+    "40000": "Something went wrong with the request. Refresh and try again.",
+    "40001": "Some fields are invalid. Check them and try again.",
+    "40100": "Please sign in first",
+    "40101": "Incorrect username or password",
+    "40102": "Your account was signed in elsewhere. Please sign in again.",
+    "40300": "You don't have permission to do that",
+    "40400": "We couldn't find what you asked for",
+    "40900": "The data has changed. Refresh and try again.",
+    "40901": "This username is already taken",
+    "50000": "The server is busy. Please try again later.",
+    "network": "Can't reach the server. Check your connection and try again."
   }
 }

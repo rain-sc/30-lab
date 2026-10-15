@@ -7,22 +7,34 @@ import { useTranslations } from "next-intl";
 import { ClickSpark } from "@/components/fx/ClickSpark";
 import { Button } from "@/components/ui/Button";
 import { Field } from "@/components/ui/Field";
+import { FormAlert } from "@/components/ui/FormAlert";
 import { Input } from "@/components/ui/Input";
 import { PasswordInput } from "@/components/ui/PasswordInput";
+import { useRouter } from "@/i18n/navigation";
+import { ApiError } from "@/lib/api/client";
+import { useApiErrorText } from "@/lib/api/useApiErrorText";
 import { register as registerAccount } from "./api";
-import { RULE_PARAMS, registerSchema, type RegisterValues } from "./schemas";
+import { REGISTER_VIOLATIONS, RULE_PARAMS, registerSchema, type RegisterValues } from "./schemas";
+import { applyFieldViolations } from "./serverErrors";
 import { useErrorText } from "./useErrorText";
+
+const USERNAME_TAKEN = 40901;
 
 export function RegisterForm() {
   const t = useTranslations("Auth");
   const errorText = useErrorText();
-  const [done, setDone] = useState(false);
+  const apiErrorText = useApiErrorText();
+  const router = useRouter();
+  const [formError, setFormError] = useState<string | null>(null);
   // 送出失敗的次數；每次變化，有錯誤的欄位會輕晃一下
   const [shakeSignal, setShakeSignal] = useState(0);
+  const shake = () => setShakeSignal((n) => n + 1);
 
   const {
     register,
     handleSubmit,
+    setError,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
@@ -31,13 +43,28 @@ export function RegisterForm() {
 
   const onSubmit = async ({ confirmPassword, ...values }: RegisterValues) => {
     void confirmPassword; // 只在前端比對，不送給後端
-    await registerAccount(values);
-    setDone(true);
+    setFormError(null);
+    try {
+      // 註冊成功後端會直接登入（設好 cookie）
+      await registerAccount(values);
+      reset();
+      router.replace("/");
+    } catch (error) {
+      if (error instanceof ApiError && error.code === USERNAME_TAKEN) {
+        setError("username", { type: "server", message: "usernameTaken" }, { shouldFocus: true });
+        shake();
+        return;
+      }
+      if (error instanceof ApiError && applyFieldViolations(error, setError, REGISTER_VIOLATIONS)) {
+        shake();
+        return;
+      }
+      setFormError(apiErrorText(error));
+    }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit, () => setShakeSignal((n) => n + 1))} noValidate className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit(onSubmit, shake)} noValidate className="flex flex-col gap-4">
       <Field
         id="username"
         shakeSignal={shakeSignal}
@@ -72,17 +99,13 @@ export function RegisterForm() {
         {(aria) => <PasswordInput {...aria} autoComplete="new-password" {...register("confirmPassword")} />}
       </Field>
 
+      {formError && <FormAlert>{formError}</FormAlert>}
+
       <ClickSpark className="mt-1.5">
         <Button type="submit" loading={isSubmitting} className="w-full">
           {isSubmitting ? t("register.submitting") : t("register.submit")}
         </Button>
       </ClickSpark>
-
-      {done && (
-        <p role="status" className="m-0 rounded-control border border-line bg-sunken px-3 py-2 text-sm text-muted">
-          {t("mockNotice")}
-        </p>
-      )}
     </form>
   );
 }

@@ -6,8 +6,7 @@
   "Home": {
     "title": "Mark Six Lab",
     "tagline": "用虛擬積分遊玩的六合彩模擬遊戲",
-    "comingSoon": "大廳建置中",
-    "toLogin": "前往登入"
+    "comingSoon": "大廳建置中"
   },
   "LocaleSwitcher": {
     "label": "語言"
@@ -35,10 +34,9 @@
   "Auth": {
     "pageTitle": "登入 / 註冊",
     "cardLabel": "登入或註冊",
-    "tabsLabel": "帳號",
+    "tabsLabel": "選擇登入或註冊",
     "footnote": "虛擬積分，不能儲值或兌換",
     "rulesShort": "每注 {points} 積分 · 每 {minutes} 分鐘開獎",
-    "mockNotice": "後端 API 尚未完成，這是模擬結果。",
     "login": {
       "tab": "登入",
       "submit": "登入",
@@ -67,7 +65,33 @@
       "passwordRequired": "請輸入密碼",
       "passwordLength": "密碼需要 {passwordMin}–{passwordMax} 個字元",
       "confirmRequired": "請再輸入一次密碼",
-      "passwordMismatch": "兩次輸入的密碼不一樣"
+      "passwordMismatch": "兩次輸入的密碼不一樣",
+      "usernameTaken": "這個帳號已經有人使用，換一個試試"
+    },
+    "reason": {
+      "expired": "登入已過期，請重新登入",
+      "replaced": "你的帳號已在其他地方登入，這裡已經登出。如果不是你本人，請盡快修改密碼。"
     }
+  },
+  "Session": {
+    "checking": "確認登入狀態中…",
+    "signedInAs": "已登入：<b>{nickname}</b>",
+    "logout": "登出",
+    "guest": "尚未登入",
+    "replaced": "帳號已在其他地方登入",
+    "toLogin": "前往登入"
+  },
+  "ApiErrors": {
+    "40000": "請求有誤，請重新整理後再試",
+    "40001": "有欄位格式不符，請檢查後再送出",
+    "40100": "請先登入",
+    "40101": "帳號或密碼錯誤",
+    "40102": "帳號已在其他地方登入，請重新登入",
+    "40300": "你沒有權限進行這個操作",
+    "40400": "找不到要求的資料",
+    "40900": "資料已經被修改，請重新整理後再試",
+    "40901": "這個帳號已經有人使用",
+    "50000": "系統繁忙，請稍後再試",
+    "network": "連不到伺服器，請檢查網路後再試一次"
   }
 }

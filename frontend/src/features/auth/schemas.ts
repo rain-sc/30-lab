@@ -43,5 +43,20 @@ export const registerSchema = z
     path: ["confirmPassword"],
   });
 
+// 後端欄位錯誤（40001 的 field + rule）→ 表單的錯誤 key。
+// 前端驗證和後端規則一致，正常不會走到這裡；這是後端規則改了、或繞過前端時的保險。
+type ViolationMap = Record<string, Record<string, AuthErrorKey>>;
+
+export const LOGIN_VIOLATIONS: ViolationMap = {
+  username: { notBlank: "usernameRequired" },
+  password: { notEmpty: "passwordRequired" },
+};
+
+export const REGISTER_VIOLATIONS: ViolationMap = {
+  username: { notNull: "usernameFormat", pattern: "usernameFormat" },
+  nickname: { notNull: "nicknameLength", size: "nicknameLength" },
+  password: { notNull: "passwordLength", size: "passwordLength" },
+};
+
 export type LoginValues = z.infer<typeof loginSchema>;
 export type RegisterValues = z.infer<typeof registerSchema>;

@@ -1,7 +1,9 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { AuthCard } from "@/features/auth/AuthCard";
+import { SessionNotice } from "@/features/auth/SessionNotice";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Auth");
@@ -16,6 +18,10 @@ export default function LoginPage() {
     <>
       {/* 畫面上的標題由分頁表示，h1 給螢幕閱讀器 */}
       <h1 className="sr-only">{t("pageTitle")}</h1>
+      {/* 讀網址參數的組件要包在 Suspense 裡，頁面其他部分才能靜態預先渲染 */}
+      <Suspense fallback={null}>
+        <SessionNotice />
+      </Suspense>
       <AuthCard />
     </>
   );
