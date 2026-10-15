@@ -14,10 +14,12 @@ public class SessionService {
     private final StringRedisTemplate redis;
     private final AuthProperties authProperties;
 
-    public String create(String userId){
+    public record NewSession(String sessionId,String replacedSessionId){}
+
+    public NewSession create(String userId){
         String sessionId = UUID.randomUUID().toString();
-        redis.opsForValue().set(key(userId),sessionId,authProperties.tokenTtl());
-        return sessionId;
+        String previous = redis.opsForValue().setGet(key(userId),sessionId,authProperties.tokenTtl());
+        return new NewSession(sessionId,previous);
     }
 
     public String current(String userId){

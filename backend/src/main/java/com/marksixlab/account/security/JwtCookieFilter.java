@@ -21,6 +21,7 @@ import org.springframework.web.util.WebUtils;
 @RequiredArgsConstructor
 public class JwtCookieFilter extends OncePerRequestFilter {
     public static final String AUTH_ERROR_ATTR = "authError";
+    public static final String SESSION_ID_ATTR = "sessionId";
 
     private final JwtService jwtService;
     private final SessionService sessionService;
@@ -56,5 +57,6 @@ public class JwtCookieFilter extends OncePerRequestFilter {
 
          var auth = new UsernamePasswordAuthenticationToken(userId,null,List.of());
          SecurityContextHolder.getContext().setAuthentication(auth);
+         request.setAttribute(SESSION_ID_ATTR,current);
     }
 }

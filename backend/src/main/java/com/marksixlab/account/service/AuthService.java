@@ -2,6 +2,7 @@ package com.marksixlab.account.service;
 
 import com.marksixlab.account.dto.LoginRequest;
 import com.marksixlab.account.dto.RegisterRequest;
+import com.marksixlab.account.dto.SessionEvent;
 import com.marksixlab.account.dto.UserResponse;
 import com.marksixlab.account.model.User;
 import com.marksixlab.account.repository.UserRepository;
@@ -9,6 +10,7 @@ import com.marksixlab.common.BusinessException;
 import com.marksixlab.common.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +21,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final SessionService sessionService;
     private final JwtService jwtService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public record LoginResult(UserResponse user, String token) {
     }
@@ -59,8 +62,13 @@ public class AuthService {
     }
 
     private LoginResult startSession(User user){
-        String sessionId = sessionService.create(user.getId());
-        String token = jwtService.issue(user.getId(),sessionId);
+        SessionService.NewSession session = sessionService.create(user.getId());
+        if(session.replacedSessionId() != null){
+            messagingTemplate.convertAndSendToUser(
+                    session.replacedSessionId(),"/queue/session",new SessionEvent("SESSION_REPLACED")
+            );
+        }
+        String token = jwtService.issue(user.getId(),session.sessionId());
         return new LoginResult(UserResponse.from(user),token);
     }
 }

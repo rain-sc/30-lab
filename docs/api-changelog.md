@@ -16,8 +16,17 @@
 
 ---
 
+## 2026-10-15（後端，WebSocket）
+- 【新增】WebSocket `ws://localhost:8088/ws`，照下方前端的規格實作，規格沒有變動
+  - STOMP over 原生 WebSocket（沒有 SockJS）；只允許 `app.cors.allowed-origins` 的來源（目前 `http://localhost:3100`），其他來源握手會被拒絕
+  - 有效的 `msl_token` cookie → 連線身分是 session id；沒有 cookie、無效或已被取代 → 匿名連線（可以連，只是收不到 `/user/...`）
+  - Broker：`/topic`、`/queue`；user 前綴 `/user`；應用前綴 `/app`；伺服器心跳 10 秒（CONNECTED frame 回 `heart-beat: 10000,10000`）
+  - 登入或註冊時，如果同一帳號原本有 session，推 `{ "type": "SESSION_REPLACED" }` 到舊 session 的 `/user/queue/session`；新的 session 不會收到
+  - 後端已用 Node（`@stomp/stompjs`）驗證：舊連線收到、新連線和匿名連線收不到、連續登入時每個被取代的連線只收到一次、不允許的來源連不上
+  - 【待前端】用真的後端驗證 `SessionWatcher` 的三種情境（同瀏覽器同帳號、同瀏覽器換帳號、別台裝置）
+
 ## 2026-10-15（後端）
-- 回覆下方「WebSocket：被別處登入時即時通知」：方案確認可行，後端照這個規格實作（principal 用 session id、匿名可連、`/user/queue/session` 推 `SESSION_REPLACED`）。完成後會在這裡另記一筆
+- 回覆下方「WebSocket：被別處登入時即時通知」：方案確認可行，後端照這個規格實作（principal 用 session id、匿名可連、`/user/queue/session` 推 `SESSION_REPLACED`）。**已完成，見上方**
 - 【已完成】（前端 2026-10-15，`features/auth/SessionWatcher.tsx`）**同一個瀏覽器開多個分頁時，`SESSION_REPLACED` 會誤判**
   - 前端照建議實作：收到通知先打 `GET /api/auth/me`，`200` 靜默重連、`401` 才導向登入頁
   - 另外處理：`200` 但回來的使用者和這個分頁顯示的不同（另一個分頁換了**別的帳號**登入）→ 整頁重新整理，避免畫面顯示舊帳號的資料
@@ -29,7 +38,7 @@
     - `401` + `40102`：確實是別處登入 → 照原本的流程導向 `/login?reason=replaced`
 
 ## 2026-10-15（前端）
-- 【待後端】**WebSocket：被別處登入時即時通知舊的 session**（目前舊的 session 要等下一次請求收到 `40102` 才知道，停在畫面上的人看不到）
+- 【已完成】（後端 2026-10-15，見上方）**WebSocket：被別處登入時即時通知舊的 session**（目前舊的 session 要等下一次請求收到 `40102` 才知道，停在畫面上的人看不到）
   - 連線：STOMP over 原生 WebSocket（不用 SockJS），端點 `ws://localhost:8088/ws`；允許來源用 `app.cors.allowed-origins`；Security 放行 `/ws`
   - 握手時驗證身分：讀 cookie `msl_token`（瀏覽器會自動帶，`localhost:3100` 和 `:8088` 同 site，`SameSite=Lax` 不擋），驗證方式和 `JwtCookieFilter` 一樣（簽名 + Redis 目前的 session）
     - 驗證通過：STOMP 連線的 `Principal` 名稱 = **session id（JWT 的 `jti`）**，不是 userId。同一個帳號的新舊連線都是同一個 userId，用 userId 推播會連新登入的那邊也收到
