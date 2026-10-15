@@ -3,6 +3,8 @@ package com.marksixlab.common;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
+
+
 @Getter
 public enum ErrorCode {
 
@@ -16,6 +18,7 @@ public enum ErrorCode {
 
     // 帳戶
     BAD_CREDENTIALS(40101, "帳號或密碼錯誤"),
+    SESSION_REPLACED(40102, "帳號已在其他地方登入"),
     USERNAME_TAKEN(40901, "帳號已被使用");
 
     private final int code;
@@ -29,4 +32,5 @@ public enum ErrorCode {
     public HttpStatus getStatus() {
         return HttpStatus.valueOf(code / 100);
     }
+
 }

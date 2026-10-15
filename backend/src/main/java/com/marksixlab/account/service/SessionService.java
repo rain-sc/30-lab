@@ -20,7 +20,16 @@ public class SessionService {
         return sessionId;
     }
 
+    public String current(String userId){
+        return redis.opsForValue().get(key(userId));
+    }
+
+    public void remove(String userId){
+        redis.delete(key(userId));
+    }
+
     private  static String key(String userId){
         return "session:" + userId;
     }
+
 }

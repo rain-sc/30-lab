@@ -1,6 +1,7 @@
 package com.marksixlab.account.service;
 
 import com.marksixlab.config.AuthProperties;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import org.springframework.stereotype.Service;
 
@@ -32,5 +33,13 @@ public class JwtService {
                 .expiration(Date.from(now.plus(ttl)))
                 .signWith(key)
                 .compact();
+    }
+
+    public Claims parse(String token){
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 }

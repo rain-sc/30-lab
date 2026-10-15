@@ -104,8 +104,8 @@
 			<version>3.1.1</version>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-crypto</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 		<!-- JWT：api 編譯時用，impl / jackson 執行時才需要 -->
 		<dependency>

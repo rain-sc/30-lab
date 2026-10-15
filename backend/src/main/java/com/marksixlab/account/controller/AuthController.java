@@ -14,10 +14,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+import java.time.Duration;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -30,26 +30,40 @@ public class AuthController {
     @PostMapping("/register")
     @Operation(summary = "註冊 (成功後直接登入)")
     public ResponseEntity<Result<UserResponse>> register(@Valid @RequestBody RegisterRequest req){
-        return withSessionCookie(authService.register(req));
-
+        AuthService.LoginResult result = authService.register(req);
+        return withCookie(result.token(),authProperties.tokenTtl()).body(Result.ok(result.user()));
     }
 
     @PostMapping("/login")
     @Operation(summary = "登入 (同一帳號會踢掉之前的登入)")
     public ResponseEntity<Result<UserResponse>>login(@Valid @RequestBody LoginRequest req){
-        return withSessionCookie(authService.login(req));
+        AuthService.LoginResult result = authService.login(req);
+        return withCookie(result.token(),authProperties.tokenTtl()).body(Result.ok(result.user()));
     }
 
-    private ResponseEntity<Result<UserResponse>> withSessionCookie(AuthService.LoginResult result){
-        ResponseCookie cookie = ResponseCookie.from(authProperties.cookieName(),result.token())
+    @GetMapping("/me")
+    @Operation(summary = "目前登入的使用者")
+    public Result<UserResponse> me(@AuthenticationPrincipal String userId){
+        return Result.ok(authService.me(userId));
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "登出")
+    public ResponseEntity<Result<Void>> logout(@AuthenticationPrincipal String userId){
+        if(userId != null){
+            authService.logout(userId);
+        }
+        return withCookie("",Duration.ZERO).body(Result.ok());
+    }
+
+    private ResponseEntity.BodyBuilder withCookie(String value, Duration maxAge){
+        ResponseCookie cookie = ResponseCookie.from(authProperties.cookieName(),value)
                 .httpOnly(true)
                 .secure(authProperties.cookieSecure())
                 .sameSite("Lax")
                 .path("/")
-                .maxAge(authProperties.tokenTtl())
+                .maxAge(maxAge)
                 .build();
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE,cookie.toString())
-                .body(Result.ok(result.user()));
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 }

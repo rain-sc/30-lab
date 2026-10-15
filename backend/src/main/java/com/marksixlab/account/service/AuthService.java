@@ -7,7 +7,6 @@ import com.marksixlab.account.model.User;
 import com.marksixlab.account.repository.UserRepository;
 import com.marksixlab.common.BusinessException;
 import com.marksixlab.common.ErrorCode;
-import io.swagger.v3.oas.annotations.servers.Server;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -47,6 +46,16 @@ public class AuthService {
                 .filter(u -> passwordEncoder.matches(req.password(),u.getPasswordHash()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.BAD_CREDENTIALS));
         return startSession(user);
+    }
+
+    public UserResponse me(String userId){
+        return userRepository.findById(userId)
+                .map(UserResponse::from)
+                .orElseThrow(()-> new BusinessException(ErrorCode.UNAUTHORIZED));
+    }
+
+    public void logout(String userId){
+        sessionService.remove(userId);
     }
 
     private LoginResult startSession(User user){
