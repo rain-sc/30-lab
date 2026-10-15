@@ -16,8 +16,31 @@
 
 ---
 
+## 2026-10-15（後端）
+- 回覆下方「WebSocket：被別處登入時即時通知」：方案確認可行，後端照這個規格實作（principal 用 session id、匿名可連、`/user/queue/session` 推 `SESSION_REPLACED`）。完成後會在這裡另記一筆
+- 【已完成】（前端 2026-10-15，`features/auth/SessionWatcher.tsx`）**同一個瀏覽器開多個分頁時，`SESSION_REPLACED` 會誤判**
+  - 前端照建議實作：收到通知先打 `GET /api/auth/me`，`200` 靜默重連、`401` 才導向登入頁
+  - 另外處理：`200` 但回來的使用者和這個分頁顯示的不同（另一個分頁換了**別的帳號**登入）→ 整頁重新整理，避免畫面顯示舊帳號的資料
+  - 已用模擬的 STOMP 伺服器驗證三種情境（同瀏覽器同帳號、同瀏覽器換帳號、別台裝置）；後端 `/ws` 完成後再用真的後端驗證一次
+  - 情境：分頁 1 已登入（session A，WebSocket 身分是 A）；分頁 2 在同一個瀏覽器又登入一次 → cookie 換成 session B → 後端推 `SESSION_REPLACED` 給 A → 分頁 1 被導向 `/login?reason=replaced`，但其實是使用者自己，而且 cookie 仍然有效
+  - 原因：cookie 是同一個瀏覽器所有分頁共用的，後端無法分辨「別台裝置」和「同一個瀏覽器的另一個分頁」
+  - 建議：收到 `SESSION_REPLACED` 時先打 `GET /api/auth/me`
+    - `200`：同一個瀏覽器已經換成新的 session → 靜默重連 WebSocket（讓後端用新 cookie 重新識別），不跳轉
+    - `401` + `40102`：確實是別處登入 → 照原本的流程導向 `/login?reason=replaced`
+
 ## 2026-10-15（前端）
-- 【待後端】`openapi.json` 裡的回應欄位全部是**可選的**（例如 `UserResponse` 生成出來是 `id?: string`、`username?: string`），前端每次使用都要處理 `undefined`
+- 【待後端】**WebSocket：被別處登入時即時通知舊的 session**（目前舊的 session 要等下一次請求收到 `40102` 才知道，停在畫面上的人看不到）
+  - 連線：STOMP over 原生 WebSocket（不用 SockJS），端點 `ws://localhost:8088/ws`；允許來源用 `app.cors.allowed-origins`；Security 放行 `/ws`
+  - 握手時驗證身分：讀 cookie `msl_token`（瀏覽器會自動帶，`localhost:3100` 和 `:8088` 同 site，`SameSite=Lax` 不擋），驗證方式和 `JwtCookieFilter` 一樣（簽名 + Redis 目前的 session）
+    - 驗證通過：STOMP 連線的 `Principal` 名稱 = **session id（JWT 的 `jti`）**，不是 userId。同一個帳號的新舊連線都是同一個 userId，用 userId 推播會連新登入的那邊也收到
+    - 沒有 cookie 或無效：**照樣允許連線**（匿名）。之後開獎倒數、開獎結果是公開推播，未登入也要能收
+  - Broker：simple broker `/topic`、`/queue`；user 前綴 `/user`；應用前綴 `/app`；心跳 10 秒
+  - 推播時機：`AuthService` 登入成功、建立新 session **之前**先讀出舊的 session id（`sessionService.current(userId)`），建立新 session 後，若舊的存在且不同：
+    `messagingTemplate.convertAndSendToUser(舊 sessionId, "/queue/session", { "type": "SESSION_REPLACED" })`
+  - 訊息格式：`{ "type": "SESSION_REPLACED" }`（之後如果有其他帳號事件，例如被停權，再加 `type`）
+  - 前端已完成：全站共用一條 STOMP 連線，訂閱 `/user/queue/session`，收到 `SESSION_REPLACED` 就整頁導向 `/login?reason=replaced`；登入、註冊、登出後會斷線重連，讓後端用新的 cookie 重新識別身分
+  - 上線注意：前後端在不同網域時，要確定是同一個 site（例如 `example.com` 和 `api.example.com`），否則 `SameSite=Lax` 的 cookie 不會跟著 WebSocket 握手送出
+- 【已完成】（後端 2026-10-15，已重新匯出 `openapi.json`；`Result` 的 `data` 也標成必填，`ResultVoid` 的 `data` 會是 `unknown`）`openapi.json` 裡的回應欄位全部是**可選的**（例如 `UserResponse` 生成出來是 `id?: string`、`username?: string`），前端每次使用都要處理 `undefined`
   - 後端一定會回傳的欄位，請在 `@Schema` 加上 `requiredMode = Schema.RequiredMode.REQUIRED`（`UserResponse` 的四個欄位、`Result` 的 `code` / `msg`），重新匯出契約
   - 前端要做什麼：重新 `npm run gen:api` 即可，不用改程式
 
