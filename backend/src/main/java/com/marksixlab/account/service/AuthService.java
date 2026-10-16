@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final SessionService sessionService;
@@ -25,8 +26,9 @@ public class AuthService {
 
     public record LoginResult(UserResponse user, String token) {
     }
-    public LoginResult register(RegisterRequest req){
-        if(userRepository.existsUserByUsername(req.username())){
+
+    public LoginResult register(RegisterRequest req) {
+        if (userRepository.existsUserByUsername(req.username())) {
             throw new BusinessException(ErrorCode.USERNAME_TAKEN);
         }
 
@@ -34,41 +36,40 @@ public class AuthService {
         user.setUsername(req.username());
         user.setNickname(req.nickname());
         user.setPasswordHash(passwordEncoder.encode(req.password()));
-        User saved;
 
+        User saved;
         try {
             saved = userRepository.save(user);
-        }catch (DuplicateKeyException e){
+        } catch (DuplicateKeyException e) {
             throw new BusinessException(ErrorCode.USERNAME_TAKEN);
         }
         return startSession(saved);
     }
 
-    public LoginResult login(LoginRequest req){
-        User user = userRepository.findUserByUsername((req.username()))
-                .filter(u -> passwordEncoder.matches(req.password(),u.getPasswordHash()))
+    public LoginResult login(LoginRequest req) {
+        User user = userRepository.findUserByUsername(req.username())
+                .filter(u -> passwordEncoder.matches(req.password(), u.getPasswordHash()))
                 .orElseThrow(() -> new BusinessException(ErrorCode.BAD_CREDENTIALS));
         return startSession(user);
     }
 
-    public UserResponse me(String userId){
+    public UserResponse me(String userId) {
         return userRepository.findById(userId)
                 .map(UserResponse::from)
-                .orElseThrow(()-> new BusinessException(ErrorCode.UNAUTHORIZED));
+                .orElseThrow(() -> new BusinessException(ErrorCode.UNAUTHORIZED));
     }
 
-    public void logout(String userId){
+    public void logout(String userId) {
         sessionService.remove(userId);
     }
 
-    private LoginResult startSession(User user){
+    private LoginResult startSession(User user) {
         SessionService.NewSession session = sessionService.create(user.getId());
-        if(session.replacedSessionId() != null){
+        if (session.replacedSessionId() != null) {
             messagingTemplate.convertAndSendToUser(
-                    session.replacedSessionId(),"/queue/session",new SessionEvent("SESSION_REPLACED")
-            );
+                    session.replacedSessionId(), "/queue/session", new SessionEvent("SESSION_REPLACED"));
         }
-        String token = jwtService.issue(user.getId(),session.sessionId());
-        return new LoginResult(UserResponse.from(user),token);
+        String token = jwtService.issue(user.getId(), session.sessionId());
+        return new LoginResult(UserResponse.from(user), token);
     }
 }

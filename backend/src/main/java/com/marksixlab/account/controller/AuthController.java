@@ -28,14 +28,14 @@ public class AuthController {
     private final AuthProperties  authProperties;
 
     @PostMapping("/register")
-    @Operation(summary = "註冊 (成功後直接登入)")
+    @Operation(summary = "註冊（成功後直接登入；這個瀏覽器原本登入的其他帳號會被登出）")
     public ResponseEntity<Result<UserResponse>> register(@Valid @RequestBody RegisterRequest req){
         AuthService.LoginResult result = authService.register(req);
         return withCookie(result.token(),authProperties.tokenTtl()).body(Result.ok(result.user()));
     }
 
     @PostMapping("/login")
-    @Operation(summary = "登入 (同一帳號會踢掉之前的登入)")
+    @Operation(summary = "登入（同一帳號會踢掉之前的登入；這個瀏覽器原本登入的其他帳號會被登出）")
     public ResponseEntity<Result<UserResponse>>login(@Valid @RequestBody LoginRequest req){
         AuthService.LoginResult result = authService.login(req);
         return withCookie(result.token(),authProperties.tokenTtl()).body(Result.ok(result.user()));
