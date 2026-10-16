@@ -1,6 +1,23 @@
 @import "tailwindcss";
 
 /*
+ * 可以按的東西一律顯示手指游標
+ * Tailwind 4 的 preflight 把按鈕的游標改成 default（跟著瀏覽器預設），這裡加回來（官方文件建議的寫法）。
+ * 停用的按鈕不改，維持各組件的 cursor-not-allowed；連結本來就是手指。
+ */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="tab"]:not([aria-disabled="true"]),
+  summary,
+  select:not(:disabled),
+  input[type="checkbox"]:not(:disabled),
+  input[type="radio"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/*
  * Design token（遊戲端）
  * 風格：A「開獎直播間」——深墨藍底、只有一個強調色（金色），號碼球的紅藍綠只出現在球上。
  * 刻意只做深色主題。設計稿：https://claude.ai/artifact/YHfuLPTV2Q42BuurgpKw3A
