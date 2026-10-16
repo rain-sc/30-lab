@@ -169,5 +169,15 @@
     "drawing": "開獎中・第 {index} / 7 顆",
     "drawn": "已開獎",
     "hint": "點一下球會彈跳・按住放大・拖動可以甩"
+  },
+  "Notice": {
+    "drawNo": "第 {drawNo} 期開獎",
+    "win": "恭喜中獎！",
+    "bigWin": "{tier, select, 1 {頭獎} 2 {二獎} other {三獎}}！恭喜！",
+    "lose": "{count} 注未中獎，下一期再來",
+    "tierCount": "{tier, select, 1 {頭獎} 2 {二獎} 3 {三獎} 4 {四獎} 5 {五獎} 6 {六獎} other {七獎}} × {count}",
+    "points": "積分",
+    "viewBets": "查看注單",
+    "close": "關閉"
   }
 }

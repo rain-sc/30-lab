@@ -11,7 +11,7 @@ export function BrandLogo({ className }: { className?: string }) {
       >
         6
       </span>
-      <span className="font-num text-xl font-extrabold tracking-[0.12em] md:text-2xl">MARK SIX LAB</span>
+      <span className="font-num text-lg font-extrabold tracking-[0.1em] whitespace-nowrap sm:text-xl sm:tracking-[0.12em] md:text-2xl">MARK SIX LAB</span>
     </Link>
   );
 }

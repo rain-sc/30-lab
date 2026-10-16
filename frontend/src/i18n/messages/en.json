@@ -169,5 +169,15 @@
     "drawing": "Drawing · ball {index} of 7",
     "drawn": "Drawn",
     "hint": "Tap a ball to bounce · hold to zoom · drag to fling"
+  },
+  "Notice": {
+    "drawNo": "Draw {drawNo} results",
+    "win": "You won!",
+    "bigWin": "{tier, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} prize! Congratulations!",
+    "lose": "No win on {count, plural, one {# ticket} other {# tickets}}. Next draw soon",
+    "tierCount": "{tier, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} prize × {count}",
+    "points": "points",
+    "viewBets": "My tickets",
+    "close": "Close"
   }
 }

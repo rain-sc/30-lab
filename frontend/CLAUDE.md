@@ -80,7 +80,10 @@ src/
 | 組件 / 做法 | 參考來源 | 用在 |
 |---|---|---|
 | `fx/RollingDigits` | React Bits Counter（原版違反 hook 規則、秒數十位會倒滾，自己重寫） | 開獎倒數每秒滾動 |
-| `fx/CountUp` | React Bits Count Up（改用 next-intl 數字格式） | 頭獎彩池進場累加 |
+| `fx/CountUp` | React Bits Count Up（改用 next-intl 數字格式） | 頭獎彩池進場累加、中獎金額累加 |
+| `fx/RollingNumber` | — | 積分從舊值滾到新值（下注扣款、派彩）；直接改 DOM 文字，不重新渲染 |
+| `wallet/BalanceDelta` | — | 積分旁浮出「+40」「−20」往上飄 |
+| `game/DrawNotices` | — | 開獎結果通知：中獎金色卡片 + 火花（頭獎到三獎更大），沒中獎小卡片 |
 | `fx/SpotlightCard` | React Bits Spotlight Card（只保留核心，CSS 變數） | 表單卡片游標聚光燈 |
 | `fx/ClickSpark` | React Bits Click Spark（Canvas 改成 CSS） | 送出按鈕點擊火花 |
 | `Button` primary 的 `before:` 光澤 | Uiverse shine button | 按鈕 hover |
@@ -169,6 +172,8 @@ src/
   - **一頁只掛一個 WebGL**：桌面掛在大廳的舞台卡片；手機平常是靜態縮圖，點一下或截止到開完獎時自動放大成全畫面才掛（`MobileStage`，用 portal 放到 body，外層有 transform 時 fixed 會失效）。用 `useIsDesktop()` 決定掛哪一個，CSS 的 `hidden` 只是藏起來、元件還在
   - reduced-motion：不攪珠、不播開球、手機不自動放大，開獎一到直接擺好
 - **結果等動畫播完才公布**（開獎後 25 秒，`revealedAt`）：開獎紀錄、冷熱號碼用 `NextDraw.revealedDrawAt`，注單對獎、積分也等到這個時間，列表不會比舞台先劇透
+- **開獎結果通知**（`DrawNotices`，放在遊戲端版面，任何遊戲頁都會收到）：自己有下注的期數在 `revealedAt` 跳出；只通知打開頁面**之後**才公布的期數（重新整理不重複）。中獎卡片停 9 秒、沒中獎 5 秒，滑鼠移上去暫停
+- 頁首 `sticky`：捲動時也看得到積分的變化
 
 ## 遊戲端開發順序
 
@@ -179,7 +184,7 @@ src/
 2. ✅ 登入 / 註冊頁（順帶完成 design token、號碼球、表單基礎元件）；已接上後端帳戶 API，成功後進大廳
 3. ✅ 大廳（設計稿 D）+ 選號盤 + 待下注列表 + 冷熱 / 開獎紀錄 / 我的注單；期數、下注、積分是前端示例資料
 4. ✅ 3D 開獎舞台搬進大廳（npm 的 three.js + matter.js；手機開獎時舞台自動放大）
-5. 中獎提示、積分滾動等效果
+5. ✅ 中獎提示、積分滾動等效果
 
 ## 常用命令
 

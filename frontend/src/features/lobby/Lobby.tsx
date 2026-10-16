@@ -1,8 +1,9 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { CountUp } from "@/components/fx/CountUp";
+import { RollingNumber } from "@/components/fx/RollingNumber";
 import { useSession } from "@/features/auth/session";
 import { MobileBetBar } from "@/features/betting/MobileBetBar";
 import { useBalance, useUserBets } from "@/features/betting/mockBets";
@@ -18,6 +19,7 @@ import { DrawStage } from "@/features/draw/stage/DrawStage";
 import { MobileStage } from "@/features/draw/stage/MobileStage";
 import { useNextDraw, useNow, type NextDraw } from "@/features/draw/useNextDraw";
 import { Link } from "@/i18n/navigation";
+import { BalanceDelta } from "@/features/wallet/BalanceDelta";
 import { useIsDesktop } from "@/lib/useMediaQuery";
 import { cn } from "@/lib/utils";
 
@@ -142,7 +144,6 @@ function JackpotCard() {
 
 function BalanceCard({ next }: { next: NextDraw | null }) {
   const t = useTranslations("Wallet");
-  const format = useFormatter();
   const user = useSession((s) => s.user);
   const balance = useBalance(user?.username, useNow());
   const placed = useUserBets(user?.username).filter((b) => b.drawNo === next?.drawNo).length;
@@ -150,8 +151,9 @@ function BalanceCard({ next }: { next: NextDraw | null }) {
   return (
     <section className={cn(CARD, "flex flex-col gap-2.5 px-5.5 py-4.5")}>
       <StatLabel>{t("balance")}</StatLabel>
-      <span className="font-num text-[56px] leading-[0.95] font-bold tabular-nums">
-        {balance === null ? "—" : format.number(balance)}
+      <span className="relative self-start font-num text-[56px] leading-[0.95] font-bold tabular-nums">
+        {balance === null ? "—" : <RollingNumber value={balance} duration={1.2} />}
+        <BalanceDelta balance={balance} className="-right-2 top-0 translate-x-full [&>span]:text-xl" />
       </span>
       <span className="text-[13px] text-muted">
         {t("placedThisDraw", { count: placed })} · {t("sample")}

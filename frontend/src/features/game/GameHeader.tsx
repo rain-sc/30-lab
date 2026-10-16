@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useFormatter, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { BrandLogo } from "@/components/BrandLogo";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
+import { RollingNumber } from "@/components/fx/RollingNumber";
 import { logout } from "@/features/auth/api";
 import { useSession } from "@/features/auth/session";
 import { useBalance } from "@/features/betting/mockBets";
 import { useNow } from "@/features/draw/useNextDraw";
+import { BalanceDelta } from "@/features/wallet/BalanceDelta";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { GAME_NAV } from "./nav";
@@ -18,7 +20,8 @@ export function GameHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="flex items-center justify-between gap-4 border-b border-line px-4 py-3 md:px-10 md:py-4">
+    // sticky：捲動時也看得到積分（下注扣款、派彩的數字滾動）
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-line bg-stage/85 px-4 py-3 backdrop-blur-md md:px-10 md:py-4">
       <div className="flex items-center gap-9">
         <BrandLogo />
         <nav aria-label={t("label")} className="hidden gap-1 text-[15px] md:flex">
@@ -30,7 +33,7 @@ export function GameHeader() {
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "rounded-[10px] px-3.5 py-2 no-underline transition-colors",
+                  "rounded-control px-3.5 py-2 no-underline transition-colors",
                   active ? "bg-panel font-bold text-fg" : "text-muted hover:text-fg",
                 )}
               >
@@ -50,14 +53,13 @@ export function GameHeader() {
 
 function BalancePill() {
   const t = useTranslations("Wallet");
-  const format = useFormatter();
   const user = useSession((s) => s.user);
   const balance = useBalance(user?.username, useNow());
 
   return (
     <span
       title={t("sampleNote")}
-      className="inline-flex items-center gap-2 rounded-full border border-line bg-panel px-3 py-1 md:px-3.5 md:py-1.5"
+      className="relative inline-flex items-center gap-2 rounded-full border border-line bg-panel px-3 py-1 md:px-3.5 md:py-1.5"
     >
       <span
         aria-hidden="true"
@@ -65,9 +67,10 @@ function BalancePill() {
       />
       <span className="sr-only">{t("balance")}</span>
       <span className="min-w-8 font-num text-lg font-bold tabular-nums md:text-xl">
-        {balance === null ? "—" : format.number(balance)}
+        {balance === null ? "—" : <RollingNumber value={balance} />}
       </span>
       <span className="hidden text-[13px] text-muted md:inline">{t("points")}</span>
+      <BalanceDelta balance={balance} className="right-3 -bottom-1" />
     </span>
   );
 }
@@ -120,7 +123,7 @@ function UserMenu() {
           {(user?.nickname || user?.username || "?").slice(0, 1)}
         </span>
         <span className="hidden max-w-32 truncate md:inline">{user?.nickname || user?.username}</span>
-        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg aria-hidden="true" className="hidden md:block" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M6 9l6 6 6-6" />
         </svg>
         <span className="sr-only">{t("menu")}</span>

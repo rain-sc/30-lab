@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { GameSessionGate } from "@/features/auth/GameSessionGate";
+import { DrawNotices } from "@/features/game/DrawNotices";
 import { GameHeader } from "@/features/game/GameHeader";
 import { TabBar } from "@/features/game/TabBar";
 
@@ -10,7 +11,11 @@ export default function GameLayout({ children }: { children: ReactNode }) {
     <div className="flex flex-1 flex-col bg-stage">
       <GameHeader />
       <main className="flex flex-1 flex-col pb-20 md:pb-0">
-        <GameSessionGate>{children}</GameSessionGate>
+        <GameSessionGate>
+          {children}
+          {/* 開獎結果通知（中獎提示）：任何遊戲頁面都會收到 */}
+          <DrawNotices />
+        </GameSessionGate>
       </main>
       <TabBar />
     </div>
