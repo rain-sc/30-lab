@@ -23,7 +23,6 @@ const resultFor = (drawAt: number) => {
  * - reduced-motion：不攪珠、不播開球動畫，開獎一到直接擺好
  */
 export function DrawStage({ className, hint = true }: { className?: string; hint?: boolean }) {
-  const containerRef = useRef<HTMLDivElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -38,11 +37,12 @@ export function DrawStage({ className, hint = true }: { className?: string; hint
     canvas.className = "absolute inset-0 size-full touch-none";
     import("./engine")
       .then(({ createStage }) => {
-        if (disposed || !hostRef.current || !containerRef.current) return;
+        if (disposed || !hostRef.current) return;
         hostRef.current.appendChild(canvas);
         stage = createStage({
           canvas,
-          container: containerRef.current,
+          // 依畫布區域（狀態標籤下方）的大小對焦，不是整個卡片
+          container: hostRef.current,
           resultFor,
           reducedMotion: reduced,
           onReady: () => setReady(true),
@@ -58,17 +58,17 @@ export function DrawStage({ className, hint = true }: { className?: string; hint
   }, [reduced]);
 
   return (
-    <div ref={containerRef} className={cn("relative overflow-hidden", className)}>
+    <div className={cn("relative overflow-hidden", className)}>
       {!ready && (
         <div className="absolute inset-0 grid place-items-center p-[12%]">
           <StagePreview className="w-full" numbers={!failed} />
         </div>
       )}
-      {/* canvas 由 effect 建立、放進這裡（React 不管理它的內容） */}
+      {/* canvas 由 effect 建立、放進這裡（React 不管理它的內容）；上方留給狀態標籤，結果列的球不會被蓋到 */}
       <div
         ref={hostRef}
         data-ready={ready || undefined}
-        className={cn("absolute inset-0 transition-opacity duration-500", ready ? "opacity-100" : "opacity-0")}
+        className={cn("absolute inset-x-0 top-10 bottom-0 transition-opacity duration-500", ready ? "opacity-100" : "opacity-0")}
       />
       <StageStatus reduced={reduced} hint={hint && ready} />
     </div>

@@ -65,7 +65,7 @@ export function NumberPad({ hot = [] }: { hot?: number[] }) {
               aria-label={isHot ? t("hotNumber", { number: n }) : String(n)}
               onClick={() => toggle(n)}
               className={cn(
-                "relative mx-auto aspect-square w-full max-w-13 min-w-11 rounded-full border-2 p-0 font-num text-lg font-bold text-fg md:text-[19px]",
+                "relative mx-auto aspect-square w-full max-w-12 min-w-11 xl:max-w-13 rounded-full border-2 p-0 font-num text-lg font-bold text-fg md:text-[19px]",
                 "transition-[transform,background-color,opacity] duration-150 active:scale-90 motion-reduce:transition-none",
                 "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold",
                 on

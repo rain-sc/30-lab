@@ -36,7 +36,16 @@ export function CountdownDigits({ next, className }: { next: NextDraw | null; cl
 }
 
 /** 這一期的進度條：金色是已經過的時間，紅色刻度是截止下注 */
-export function DrawProgress({ next, showLabels = true }: { next: NextDraw | null; showLabels?: boolean }) {
+export function DrawProgress({
+  next,
+  showLabels = true,
+  labelsClassName,
+}: {
+  next: NextDraw | null;
+  showLabels?: boolean;
+  /** 說明文字（接受下注中 / 截止時間）的 class，例如只在寬螢幕顯示 */
+  labelsClassName?: string;
+}) {
   const t = useTranslations("Live");
 
   return (
@@ -49,7 +58,7 @@ export function DrawProgress({ next, showLabels = true }: { next: NextDraw | nul
         <span className="absolute -top-1 h-3.5 w-0.5 bg-live-text" style={{ left: `${CUTOFF_AT * 100}%` }} />
       </div>
       {showLabels && (
-        <div className="flex justify-between text-xs text-muted">
+        <div className={cn("flex justify-between text-xs text-muted", labelsClassName)}>
           <span>{t("open")}</span>
           <span>{t("cutoffAt", { seconds: BETTING_CUTOFF_SECONDS })}</span>
         </div>

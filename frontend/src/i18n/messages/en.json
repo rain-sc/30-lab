@@ -101,9 +101,7 @@
   "Wallet": {
     "balance": "My points",
     "points": "points",
-    "sample": "Sample data",
-    "sampleNote": "Sample points: simulated until the wallet API is ready",
-    "placedThisDraw": "{count, plural, one {# ticket} other {# tickets}} this draw"
+    "sampleNote": "Sample points: simulated until the wallet API is ready"
   },
   "Lobby": {
     "stage": "Draw stage",

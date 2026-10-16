@@ -65,7 +65,7 @@ src/
 
 - 遊戲端風格是設計稿 **A「開獎直播間」**：https://claude.ai/artifact/YHfuLPTV2Q42BuurgpKw3A
   新頁面先在設計稿畫布上畫好、確認，再實作；不要直接在程式碼裡堆效果。
-- 大廳是設計稿 **D「看板 + 邊看邊玩」**：https://claude.ai/artifact/MBxLH6FWkuW8KrSsAsKmsb
+- 大廳是設計稿 **D「看板 + 邊看邊玩」**：https://claude.ai/artifact/MBxLH6FWkuW8KrSsAsKmsb，桌面排版是同一份畫布的 **E2**：舞台和選號盤在第一屏並排（xl 三欄、md 兩欄，用 `grid-template-areas` 切換），積分只放在頁首
 - 原則：深墨藍底、**只有一個強調色（金色）**；號碼球的紅藍綠只出現在球上；資訊本身就是視覺主角（大字倒數、彩池）。
 - **背景、氛圍類效果最多一個**（粒子、極光、球池這類）；上一版堆了六個裝飾效果，結果又雜又醜。
   但**回應操作、傳遞資訊的動畫**可以多用：數字變化、元素進場、hover、分頁切換、錯誤回饋。

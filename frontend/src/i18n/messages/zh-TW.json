@@ -101,9 +101,7 @@
   "Wallet": {
     "balance": "我的積分",
     "points": "積分",
-    "sample": "示例數據",
-    "sampleNote": "示例積分：後端錢包完成前由前端模擬",
-    "placedThisDraw": "本期已下 {count} 注"
+    "sampleNote": "示例積分：後端錢包完成前由前端模擬"
   },
   "Lobby": {
     "stage": "開獎舞台",

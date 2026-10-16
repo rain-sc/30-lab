@@ -3,10 +3,7 @@
 import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { CountUp } from "@/components/fx/CountUp";
-import { RollingNumber } from "@/components/fx/RollingNumber";
-import { useSession } from "@/features/auth/session";
 import { MobileBetBar } from "@/features/betting/MobileBetBar";
-import { useBalance, useUserBets } from "@/features/betting/mockBets";
 import { NumberPad } from "@/features/betting/NumberPad";
 import { PendingTickets } from "@/features/betting/PendingTickets";
 import { PlacedBets } from "@/features/betting/PlacedBets";
@@ -17,9 +14,8 @@ import { SAMPLE_JACKPOT } from "@/features/draw/mock";
 import { RecentDraws } from "@/features/draw/RecentDraws";
 import { DrawStage } from "@/features/draw/stage/DrawStage";
 import { MobileStage } from "@/features/draw/stage/MobileStage";
-import { useNextDraw, useNow, type NextDraw } from "@/features/draw/useNextDraw";
+import { useNextDraw, type NextDraw } from "@/features/draw/useNextDraw";
 import { Link } from "@/i18n/navigation";
-import { BalanceDelta } from "@/features/wallet/BalanceDelta";
 import { useIsDesktop } from "@/lib/useMediaQuery";
 import { cn } from "@/lib/utils";
 
@@ -28,8 +24,14 @@ const CARD = "rounded-card border border-line bg-panel";
 const FADE_UP = "animate-fade-up motion-reduce:animate-none";
 
 /**
- * 大廳（設計稿 D「看板 + 邊看邊玩」）
- * 桌面：狀態列 → 三張數字卡（倒數、彩池、積分）→ 3D 舞台 | 選號盤 | 待下注 → 近期開獎 | 本期已下注 → 冷熱號碼
+ * 大廳（設計稿 D「看板 + 邊看邊玩」，桌面排版是 E2）
+ * 寬螢幕（xl，1280px 以上）三欄：
+ *   倒數   | 3D 舞台 | 選號盤
+ *   彩池   | 3D 舞台 | 選號盤
+ *   近期開獎 | 待下注  | 本期已下注
+ *   冷熱號碼（整排）
+ *   舞台和選號盤在第一屏並排：一邊看攪珠一邊選號（積分在頁首，不另外放卡片）
+ * 中等寬度（md）兩欄：倒數 | 彩池 → 舞台 | 選號盤 → 待下注 | 本期已下注 → 近期開獎 → 冷熱號碼
  * 手機：頂部卡片（倒數、彩池、舞台縮圖：點一下或開獎時放大成 3D 舞台）→ 選號盤 → 待下注 → 固定在底部的下注列；冷熱、紀錄、注單在底部分頁
  */
 export function Lobby() {
@@ -45,50 +47,70 @@ export function Lobby() {
           <DrawStatus next={next} />
         </div>
 
-        <div className={cn("hidden gap-5 md:grid md:grid-cols-3", FADE_UP, "[animation-delay:80ms]")}>
-          <CountdownCard next={next} />
-          <JackpotCard />
-          <BalanceCard next={next} />
-        </div>
+        {/* 各區塊用 grid-area 放位置，不同寬度只換 grid-template-areas */}
+        <div
+          className={cn(
+            "grid gap-3 [grid-template-areas:'mobile'_'pad'_'pending']",
+            "md:grid-cols-2 md:gap-5 md:[grid-template-areas:'count_pool'_'stage_pad'_'pending_placed'_'recent_recent'_'hot_hot']",
+            "xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)_minmax(0,1.15fr)] xl:[grid-template-areas:'count_stage_pad'_'pool_stage_pad'_'recent_pending_placed'_'hot_hot_hot']",
+          )}
+        >
+          <MobileDrawCard next={next} stage={isDesktop === false} className={cn("[grid-area:mobile] md:hidden", FADE_UP)} />
 
-        <MobileDrawCard next={next} stage={isDesktop === false} className={cn("md:hidden", FADE_UP)} />
+          <CountdownCard next={next} className={cn("hidden [grid-area:count] md:flex", FADE_UP, "[animation-delay:60ms]")} />
+          <JackpotCard className={cn("hidden [grid-area:pool] md:flex", FADE_UP, "[animation-delay:120ms]")} />
 
-        <div className={cn("flex flex-wrap items-stretch gap-3 md:gap-5", FADE_UP, "[animation-delay:160ms]")}>
           <section
             aria-label={t("stage")}
             className={cn(
               CARD,
-              "hidden min-h-110 flex-[1_1_340px] flex-col overflow-hidden bg-[radial-gradient(70%_60%_at_50%_55%,var(--color-stage-glow)_0%,var(--color-sunken)_75%)] md:flex",
+              "hidden min-h-110 flex-col overflow-hidden bg-[radial-gradient(70%_60%_at_50%_55%,var(--color-stage-glow)_0%,var(--color-sunken)_75%)] [grid-area:stage] md:flex",
+              FADE_UP,
+              "[animation-delay:120ms]",
             )}
           >
             {/* 一頁只掛一個 WebGL：桌面掛在這裡，手機由 MobileStage 放大時才掛 */}
             {isDesktop && <DrawStage className="flex-1" />}
           </section>
 
-          <section aria-label={t("pad")} className={cn(CARD, "min-w-0 flex-[999_1_420px] p-4 md:p-5.5")}>
+          <section
+            aria-label={t("pad")}
+            className={cn(CARD, "min-w-0 p-4 [grid-area:pad] md:p-5.5", FADE_UP, "[animation-delay:180ms]")}
+          >
             <NumberPad hot={hot} />
           </section>
 
-          <aside aria-label={t("pending")} className={cn(CARD, "flex-[1_1_260px] p-4 md:p-5")}>
+          <aside
+            aria-label={t("pending")}
+            className={cn(CARD, "p-4 [grid-area:pending] md:p-5", FADE_UP, "[animation-delay:240ms]")}
+          >
             <PendingTickets />
           </aside>
-        </div>
 
-        <div className={cn("hidden flex-wrap gap-5 md:flex", FADE_UP, "[animation-delay:240ms]")}>
-          <section className={cn(CARD, "min-w-0 flex-[999_1_560px] px-5.5 py-4.5")}>
-            <CardHeading title={t("recent")} href="/history" link={t("allHistory")} />
-            <RecentDraws next={next} count={4} />
-          </section>
-          <section className={cn(CARD, "flex flex-[1_1_320px] flex-col gap-2.5 px-5.5 py-4.5")}>
+          <section
+            className={cn(
+              CARD,
+              "hidden flex-col gap-2.5 px-5.5 py-4.5 [grid-area:placed] md:flex",
+              FADE_UP,
+              "[animation-delay:300ms]",
+            )}
+          >
             <CardHeading title={t("placed")} href="/bets" link={t("myBets")} />
             <PlacedBets next={next} />
           </section>
-        </div>
 
-        <section className={cn(CARD, "hidden px-5.5 py-4.5 md:block", FADE_UP, "[animation-delay:320ms]")}>
-          <CardHeading title={t("hotCold")} note={t("hotColdNote")} />
-          <HotCold next={next} />
-        </section>
+          <section
+            className={cn(CARD, "hidden min-w-0 px-5.5 py-4.5 [grid-area:recent] md:block", FADE_UP, "[animation-delay:300ms]")}
+          >
+            <CardHeading title={t("recent")} href="/history" link={t("allHistory")} />
+            <RecentDraws next={next} count={4} />
+          </section>
+
+          <section className={cn(CARD, "hidden px-5.5 py-4.5 [grid-area:hot] md:block", FADE_UP, "[animation-delay:360ms]")}>
+            <CardHeading title={t("hotCold")} note={t("hotColdNote")} />
+            <HotCold next={next} />
+          </section>
+        </div>
       </div>
 
       <MobileBetBar />
@@ -114,49 +136,29 @@ function StatLabel({ children }: { children: ReactNode }) {
   return <span className="text-sm text-muted">{children}</span>;
 }
 
-function CountdownCard({ next }: { next: NextDraw | null }) {
+function CountdownCard({ next, className }: { next: NextDraw | null; className?: string }) {
   const t = useTranslations("Live");
   return (
-    <section className={cn(CARD, "flex flex-col gap-2.5 px-5.5 py-4.5")}>
+    <section className={cn(CARD, "flex-col justify-center gap-2 px-5.5 py-3.5 xl:gap-2.5 xl:py-4.5", className)}>
       <StatLabel>{next?.closed ? t("closed") : t("nextDraw")}</StatLabel>
-      <CountdownDigits next={next} className="text-[64px]" />
-      <DrawProgress next={next} />
+      <CountdownDigits next={next} className="text-[44px] xl:text-[64px]" />
+      <DrawProgress next={next} labelsClassName="hidden xl:flex" />
     </section>
   );
 }
 
-function JackpotCard() {
+function JackpotCard({ className }: { className?: string }) {
   const t = useTranslations("Live");
   return (
-    <section className={cn(CARD, "flex flex-col gap-2.5 px-5.5 py-4.5")}>
+    <section className={cn(CARD, "flex-col justify-center gap-2 px-5.5 py-3.5 xl:gap-2.5 xl:py-4.5", className)}>
       <StatLabel>{t("jackpot")}</StatLabel>
       <CountUp
         to={SAMPLE_JACKPOT}
         delay={0.2}
-        className="font-num text-[56px] leading-[0.95] font-bold text-gold tabular-nums"
+        className="font-num text-[44px] leading-[0.95] font-bold text-gold tabular-nums xl:text-[56px]"
       />
       <span className="text-[13px] text-muted">
         {t("points")} · {t("sample")}
-      </span>
-    </section>
-  );
-}
-
-function BalanceCard({ next }: { next: NextDraw | null }) {
-  const t = useTranslations("Wallet");
-  const user = useSession((s) => s.user);
-  const balance = useBalance(user?.username, useNow());
-  const placed = useUserBets(user?.username).filter((b) => b.drawNo === next?.drawNo).length;
-
-  return (
-    <section className={cn(CARD, "flex flex-col gap-2.5 px-5.5 py-4.5")}>
-      <StatLabel>{t("balance")}</StatLabel>
-      <span className="relative self-start font-num text-[56px] leading-[0.95] font-bold tabular-nums">
-        {balance === null ? "—" : <RollingNumber value={balance} duration={1.2} />}
-        <BalanceDelta balance={balance} className="-right-2 top-0 translate-x-full [&>span]:text-xl" />
-      </span>
-      <span className="text-[13px] text-muted">
-        {t("placedThisDraw", { count: placed })} · {t("sample")}
       </span>
     </section>
   );
