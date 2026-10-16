@@ -11,7 +11,8 @@
 - **截止後**：停止互動，球被「吹氣」攪動。
 - **開獎時**：開出的號碼對應的**那顆球**從球堆彈出，飛到上方結果列，沿軌道滾到自己的位置，停下時號碼朝前。依序開出 6 個正碼 + 1 個特別號碼。
 
-技術：React Three Fiber（3D 渲染）+ matter.js（2D 物理）；開獎過程由自訂的時間軸函數控制，一般 UI 動畫用 Motion。
+技術：three.js（3D 渲染）+ matter.js（2D 物理）；開獎過程由自訂的時間軸函數控制，一般 UI 動畫用 Motion。
+實作在 `frontend/src/features/draw/stage/`（原型改寫成 TypeScript；用純 three.js，沒有用 React Three Fiber）。目前期數、號碼是前端示例資料，接上後端後換成 API 和 WebSocket 推送。
 
 ## 時間軸
 

@@ -19,7 +19,7 @@
 | 表單 | React Hook Form + Zod 4 | |
 | API 類型 | openapi-typescript（`npm run gen:api`，從 `../docs/api/openapi.json` 生成 `src/types/api.d.ts`） | |
 | 即時連線 | @stomp/stompjs 7（`src/lib/ws/client.ts`；目前用於「別台裝置登入」通知） | 開獎倒數、開獎結果 |
-| 動畫 | Motion 14（UI 動畫唯一的動畫庫；`MotionProvider` 設定 `reducedMotion="user"`） | 開獎舞台：React Three Fiber + matter.js（見 [../docs/draw-animation.md](../docs/draw-animation.md)） |
+| 動畫 | Motion 14（UI 動畫唯一的動畫庫；`MotionProvider` 設定 `reducedMotion="user"`）；開獎舞台 three.js + matter.js（`features/draw/stage/`） | |
 | 國際化 | next-intl 4（繁體中文 `zh-TW` 預設、英文 `en`） | |
 | 圖表 | — | Recharts（冷熱號碼、後台儀表板） |
 | 測試 | — | Vitest + Playwright |
@@ -160,7 +160,15 @@ src/
 - **【示例】下注和積分**：後端還沒有下注、錢包 API，注單存在 localStorage（`betting/mockBets.ts`，依帳號分開）。
   積分餘額不另外存，**由注單算出來**：起始 1000 − 每注 10 + 已開獎注單的獎金；開獎號碼用 `sampleResultFor(期數號)` 固定產生，所以重新整理結果不變。接上 API 後刪掉 `mockBets.ts`，改用 TanStack Query。
 - 開獎時間以「每 5 分鐘整點」在前端推算（`draw/schedule.ts`、`useNextDraw`）；截止下注後「確認下注」停用，下一期開始自動恢復。
-- 開獎舞台目前是靜態示意（`draw/StagePreview`），下一步換成 3D 舞台。
+- **開獎舞台**（`features/draw/stage/`）：
+  - `timeline.ts`：純函數 `stagePhaseAt(現在時間)` → 可下注 / 攪珠（截止後）/ 開獎中（第幾顆、播了多久）。動畫進度完全由時間算出，重新整理、切回分頁都接著播
+  - `engine.ts`：three.js + matter.js（原型 `docs/prototypes/draw-stage.html` 改寫成 TS），**用純 three.js，不用 React Three Fiber**（原型的邏輯幾乎原封不動）。
+    three r186 的差異：光照強度乘 π、`SRGBColorSpace`、`PCFSoftShadowMap` 已移除
+  - `DrawStage.tsx`：動態 `import("./engine")`（three + matter 不進初始 JS），載入前顯示 `StagePreview`；effect 清除時 `dispose()` 釋放 WebGL（Activity 隱藏頁面也會執行），**每次重建都用新的 canvas**（`forceContextLoss` 後同一個 canvas 不能再用）
+  - 捲出畫面、切到別的分頁時暫停渲染和物理
+  - **一頁只掛一個 WebGL**：桌面掛在大廳的舞台卡片；手機平常是靜態縮圖，點一下或截止到開完獎時自動放大成全畫面才掛（`MobileStage`，用 portal 放到 body，外層有 transform 時 fixed 會失效）。用 `useIsDesktop()` 決定掛哪一個，CSS 的 `hidden` 只是藏起來、元件還在
+  - reduced-motion：不攪珠、不播開球、手機不自動放大，開獎一到直接擺好
+- **結果等動畫播完才公布**（開獎後 25 秒，`revealedAt`）：開獎紀錄、冷熱號碼用 `NextDraw.revealedDrawAt`，注單對獎、積分也等到這個時間，列表不會比舞台先劇透
 
 ## 遊戲端開發順序
 
@@ -170,7 +178,7 @@ src/
 1. ✅ i18n 骨架（繁中 / 英文、`[locale]` 路由）
 2. ✅ 登入 / 註冊頁（順帶完成 design token、號碼球、表單基礎元件）；已接上後端帳戶 API，成功後進大廳
 3. ✅ 大廳（設計稿 D）+ 選號盤 + 待下注列表 + 冷熱 / 開獎紀錄 / 我的注單；期數、下注、積分是前端示例資料
-4. 3D 開獎舞台搬進大廳（`docs/prototypes/draw-stage.html` → npm 的 three.js + matter.js；手機開獎時舞台自動放大）
+4. ✅ 3D 開獎舞台搬進大廳（npm 的 three.js + matter.js；手機開獎時舞台自動放大）
 5. 中獎提示、積分滾動等效果
 
 ## 常用命令

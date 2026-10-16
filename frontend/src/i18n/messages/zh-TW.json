@@ -159,5 +159,15 @@
     "won": "中獎 +{points} 積分",
     "hits": "中 {count} 個",
     "tierPrize": "{tier, select, 1 {頭獎} 2 {二獎} 3 {三獎} 4 {四獎} 5 {五獎} 6 {六獎} other {七獎}} +{points}"
+  },
+  "Stage": {
+    "title": "開獎舞台",
+    "open": "放大開獎舞台",
+    "tapToPlay": "點我玩球",
+    "close": "收起",
+    "mixing": "已截止・攪珠中",
+    "drawing": "開獎中・第 {index} / 7 顆",
+    "drawn": "已開獎",
+    "hint": "點一下球會彈跳・按住放大・拖動可以甩"
   }
 }

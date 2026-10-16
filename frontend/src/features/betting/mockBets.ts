@@ -8,12 +8,13 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { SAMPLE_INITIAL_POINTS, sampleResultFor } from "@/features/draw/mock";
 import { POINTS_PER_BET } from "@/features/draw/rules";
+import { revealedAt } from "@/features/draw/stage/timeline";
 import { checkTicket, type TicketResult } from "./prizes";
 
 export type PlacedBet = {
   id: string;
   drawNo: string;
-  /** 開獎時間（毫秒），過了就能對獎 */
+  /** 開獎時間（毫秒）；開獎動畫播完（revealedAt）才對獎 */
   drawAt: number;
   numbers: number[];
   placedAt: number;
@@ -51,11 +52,11 @@ export function useUserBets(username: string | undefined): PlacedBet[] {
 
 export type SettledBet = PlacedBet & { result: TicketResult | null };
 
-/** 注單加上對獎結果：開獎時間還沒到的 result 是 null（待開獎） */
+/** 注單加上對獎結果：開獎動畫還沒播完的 result 是 null（待開獎），中獎和積分等動畫結束才出現 */
 export function settle(bets: PlacedBet[], now: number): SettledBet[] {
   return bets.map((bet) => ({
     ...bet,
-    result: bet.drawAt <= now ? checkTicket(bet.numbers, sampleResultFor(bet.drawNo)) : null,
+    result: revealedAt(bet.drawAt) <= now ? checkTicket(bet.numbers, sampleResultFor(bet.drawNo)) : null,
   }));
 }
 

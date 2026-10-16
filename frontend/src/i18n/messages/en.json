@@ -159,5 +159,15 @@
     "won": "Won +{points} points",
     "hits": "{count} matched",
     "tierPrize": "{tier, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} prize +{points}"
+  },
+  "Stage": {
+    "title": "Draw stage",
+    "open": "Open the draw stage",
+    "tapToPlay": "Tap to play",
+    "close": "Close",
+    "mixing": "Closed · mixing",
+    "drawing": "Drawing · ball {index} of 7",
+    "drawn": "Drawn",
+    "hint": "Tap a ball to bounce · hold to zoom · drag to fling"
   }
 }

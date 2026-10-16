@@ -9,8 +9,12 @@ import type { NextDraw } from "./useNextDraw";
 /** 近期開獎：期數、時間、號碼，新的在上 */
 export function RecentDraws({ next, count }: { next: NextDraw | null; count: number }) {
   const format = useFormatter();
-  const lastDrawAt = next?.lastDrawAt;
-  const draws = useMemo(() => (lastDrawAt ? sampleRecentDraws(lastDrawAt, count) : []), [lastDrawAt, count]);
+  // 開獎動畫播完才列出（見 NextDraw.revealedDrawAt）
+  const revealedDrawAt = next?.revealedDrawAt;
+  const draws = useMemo(
+    () => (revealedDrawAt ? sampleRecentDraws(revealedDrawAt, count) : []),
+    [revealedDrawAt, count],
+  );
 
   if (!next) {
     return <div aria-hidden="true" className="h-40" />;

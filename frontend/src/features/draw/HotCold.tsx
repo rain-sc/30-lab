@@ -11,8 +11,8 @@ const WINDOW = 100;
 
 /** 冷熱號碼的計算結果（選號盤也用來標示熱門號碼） */
 export function useHotCold(next: NextDraw | null) {
-  const lastDrawAt = next?.lastDrawAt;
-  return useMemo(() => (lastDrawAt ? sampleHotCold(lastDrawAt, WINDOW) : null), [lastDrawAt]);
+  const revealedDrawAt = next?.revealedDrawAt;
+  return useMemo(() => (revealedDrawAt ? sampleHotCold(revealedDrawAt, WINDOW) : null), [revealedDrawAt]);
 }
 
 /** 冷熱號碼：最近 100 期最常開出、最久沒開的號碼；點號碼加入選號盤 */

@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { BETTING_CUTOFF_SECONDS } from "./rules";
 import { formatDrawNo, INTERVAL_MS, nextDrawAt } from "./schedule";
+import { revealedAt } from "./stage/timeline";
 
 // 每秒通知一次；snapshot 取到「秒」，同一秒內回傳相同的值，React 不會重複渲染
 const subscribe = (onTick: () => void) => {
@@ -28,6 +29,11 @@ export type NextDraw = {
   lastDrawNo: string;
   /** 上一期的開獎時間 */
   lastDrawAt: number;
+  /**
+   * 最近一期「已公布」的開獎時間：開獎動畫播完（開獎後 25 秒）才算公布。
+   * 開獎紀錄、冷熱號碼用這個，避免列表比舞台先劇透號碼
+   */
+  revealedDrawAt: number;
   /** 距離開獎還有幾秒 */
   remainingSeconds: number;
   /** 這一期已經過了多少（0–1），進度條用 */
@@ -53,6 +59,7 @@ export function useNextDraw(): NextDraw | null {
     drawAt,
     lastDrawNo: formatDrawNo(drawAt - INTERVAL_MS),
     lastDrawAt: drawAt - INTERVAL_MS,
+    revealedDrawAt: now >= revealedAt(drawAt - INTERVAL_MS) ? drawAt - INTERVAL_MS : drawAt - 2 * INTERVAL_MS,
     remainingSeconds,
     progress: 1 - (drawAt - now) / INTERVAL_MS,
     closed: remainingSeconds <= BETTING_CUTOFF_SECONDS,

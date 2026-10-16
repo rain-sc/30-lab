@@ -1,8 +1,8 @@
 import { ballColor } from "@/lib/ball";
 import { cn } from "@/lib/utils";
 
-// 【暫時】開獎舞台的靜態示意：玻璃球裡堆著 49 顆號碼球。
-// 下一步換成 3D 舞台（docs/prototypes/draw-stage.html 搬進來），這個組件會被取代。
+// 開獎舞台的靜態示意：玻璃球裡堆著 49 顆號碼球（純 CSS，不跑 WebGL）
+// 用在：3D 舞台載入完成前的佔位圖、手機版卡片上的縮圖、不支援 WebGL 時的替代畫面
 
 const BG: Record<ReturnType<typeof ballColor>, string> = {
   red: "bg-ball-red",

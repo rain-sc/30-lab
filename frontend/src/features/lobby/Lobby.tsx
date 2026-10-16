@@ -12,12 +12,13 @@ import { PlacedBets } from "@/features/betting/PlacedBets";
 import { CountdownDigits, DrawProgress } from "@/features/draw/Countdown";
 import { DrawStatus } from "@/features/draw/DrawStatus";
 import { HotCold, useHotCold } from "@/features/draw/HotCold";
-import { SAMPLE_JACKPOT, sampleResultFor } from "@/features/draw/mock";
+import { SAMPLE_JACKPOT } from "@/features/draw/mock";
 import { RecentDraws } from "@/features/draw/RecentDraws";
-import { ResultBalls } from "@/features/draw/ResultBalls";
-import { StagePreview } from "@/features/draw/StagePreview";
+import { DrawStage } from "@/features/draw/stage/DrawStage";
+import { MobileStage } from "@/features/draw/stage/MobileStage";
 import { useNextDraw, useNow, type NextDraw } from "@/features/draw/useNextDraw";
 import { Link } from "@/i18n/navigation";
+import { useIsDesktop } from "@/lib/useMediaQuery";
 import { cn } from "@/lib/utils";
 
 const CARD = "rounded-card border border-line bg-panel";
@@ -26,13 +27,14 @@ const FADE_UP = "animate-fade-up motion-reduce:animate-none";
 
 /**
  * 大廳（設計稿 D「看板 + 邊看邊玩」）
- * 桌面：狀態列 → 三張數字卡（倒數、彩池、積分）→ 舞台 | 選號盤 | 待下注 → 近期開獎 | 本期已下注 → 冷熱號碼
- * 手機：頂部卡片（倒數、彩池、舞台縮圖）→ 選號盤 → 待下注 → 固定在底部的下注列；冷熱、紀錄、注單在底部分頁
+ * 桌面：狀態列 → 三張數字卡（倒數、彩池、積分）→ 3D 舞台 | 選號盤 | 待下注 → 近期開獎 | 本期已下注 → 冷熱號碼
+ * 手機：頂部卡片（倒數、彩池、舞台縮圖：點一下或開獎時放大成 3D 舞台）→ 選號盤 → 待下注 → 固定在底部的下注列；冷熱、紀錄、注單在底部分頁
  */
 export function Lobby() {
   const t = useTranslations("Lobby");
   const next = useNextDraw();
   const hot = useHotCold(next)?.hot.map((h) => h.number);
+  const isDesktop = useIsDesktop();
 
   return (
     <>
@@ -47,18 +49,18 @@ export function Lobby() {
           <BalanceCard next={next} />
         </div>
 
-        <MobileDrawCard next={next} className={cn("md:hidden", FADE_UP)} />
+        <MobileDrawCard next={next} stage={isDesktop === false} className={cn("md:hidden", FADE_UP)} />
 
         <div className={cn("flex flex-wrap items-stretch gap-3 md:gap-5", FADE_UP, "[animation-delay:160ms]")}>
           <section
             aria-label={t("stage")}
             className={cn(
               CARD,
-              "hidden flex-[1_1_340px] flex-col items-center gap-4 bg-[radial-gradient(70%_60%_at_50%_55%,var(--color-stage-glow)_0%,var(--color-sunken)_75%)] p-5 md:flex",
+              "hidden min-h-110 flex-[1_1_340px] flex-col overflow-hidden bg-[radial-gradient(70%_60%_at_50%_55%,var(--color-stage-glow)_0%,var(--color-sunken)_75%)] md:flex",
             )}
           >
-            <StagePreview className="my-auto w-full max-w-90" />
-            <LastResult next={next} />
+            {/* 一頁只掛一個 WebGL：桌面掛在這裡，手機由 MobileStage 放大時才掛 */}
+            {isDesktop && <DrawStage className="flex-1" />}
           </section>
 
           <section aria-label={t("pad")} className={cn(CARD, "min-w-0 flex-[999_1_420px] p-4 md:p-5.5")}>
@@ -158,21 +160,9 @@ function BalanceCard({ next }: { next: NextDraw | null }) {
   );
 }
 
-function LastResult({ next }: { next: NextDraw | null }) {
-  const t = useTranslations("Live");
-  return (
-    <div className="flex w-full flex-wrap items-center justify-between gap-2.5 border-t border-line pt-3">
-      <span className="text-xs text-muted">{t("lastResult")}</span>
-      {next ? (
-        <ResultBalls result={sampleResultFor(next.lastDrawNo)} />
-      ) : (
-        <span aria-hidden="true" className="h-8" />
-      )}
-    </div>
-  );
-}
 
-function MobileDrawCard({ next, className }: { next: NextDraw | null; className?: string }) {
+/** stage：手機才掛 MobileStage（桌面版這張卡被 CSS 藏起來，但元件還在，不能讓它的舞台自動打開） */
+function MobileDrawCard({ next, stage, className }: { next: NextDraw | null; stage: boolean; className?: string }) {
   const t = useTranslations("Live");
   return (
     <section
@@ -192,7 +182,7 @@ function MobileDrawCard({ next, className }: { next: NextDraw | null; className?
           <CountUp to={SAMPLE_JACKPOT} delay={0.2} className="font-num text-lg font-bold text-gold tabular-nums" />
         </span>
       </div>
-      <StagePreview numbers={false} className="w-33 shrink-0" />
+      {stage && <MobileStage className="w-33" />}
     </section>
   );
 }
