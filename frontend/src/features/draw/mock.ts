@@ -1,12 +1,20 @@
-// 【示例資料】後端還沒有期數 API（見 docs/api-changelog.md）。
+// 【示例資料】後端還沒有期數、下注、錢包 API（見 docs/api-changelog.md），由前端模擬。
 // 畫面上用到這裡的資料時，要同時顯示「示例數據」標籤。接口出來後刪掉這個檔案。
+import { formatDrawNo, INTERVAL_MS } from "./schedule";
+
 export const SAMPLE_JACKPOT = 128460;
+
+/** 示例錢包的起始積分（註冊贈送的數字還沒定，見 docs/game-rules.md） */
+export const SAMPLE_INITIAL_POINTS = 1000;
+
+/** 頭獎到三獎的示例獎金（正式規則是彩池分配，比例還沒定） */
+export const SAMPLE_POOL_PRIZES = { 1: SAMPLE_JACKPOT, 2: 20000, 3: 3000 } as const;
 
 export type DrawResult = { numbers: number[]; special: number };
 
 /**
  * 依期數號產生固定的示例開獎結果：同一期每次算出來都一樣（重新整理不會變），
- * 換到下一期就換一組號碼，讓「倒數歸零換球」的動畫看得到效果。
+ * 換到下一期就換一組號碼。numbers 保留「開出的順序」（和後端約定一致，顯示時再排序）。
  */
 export function sampleResultFor(drawNo: string): DrawResult {
   // 字串 → 種子（FNV-1a），再用 mulberry32 產生偽隨機數
@@ -22,4 +30,45 @@ export function sampleResultFor(drawNo: string): DrawResult {
   const pool = Array.from({ length: 49 }, (_, i) => i + 1);
   const picked = Array.from({ length: 7 }, () => pool.splice(Math.floor(random() * pool.length), 1)[0]);
   return { numbers: picked.slice(0, 6), special: picked[6] };
+}
+
+export type PastDraw = DrawResult & { drawNo: string; drawAt: number };
+
+/** 最近 count 期的開獎結果，新的在前；lastDrawAt 是最近一期（已開獎）的開獎時間 */
+export function sampleRecentDraws(lastDrawAt: number, count: number): PastDraw[] {
+  return Array.from({ length: count }, (_, i) => {
+    const drawAt = lastDrawAt - i * INTERVAL_MS;
+    const drawNo = formatDrawNo(drawAt);
+    return { drawNo, drawAt, ...sampleResultFor(drawNo) };
+  });
+}
+
+export type HotNumber = { number: number; count: number };
+export type ColdNumber = { number: number; missed: number };
+
+/**
+ * 冷熱號碼（含特別號碼）：最近 window 期裡
+ * - 熱門：開出次數最多的前 top 個
+ * - 冷門：最久沒開出的前 top 個（missed = 已經連續幾期沒開；整段都沒開過就是 window）
+ */
+export function sampleHotCold(lastDrawAt: number, window = 100, top = 6) {
+  const draws = sampleRecentDraws(lastDrawAt, window);
+  const count = new Array<number>(50).fill(0);
+  const missed = new Array<number>(50).fill(window);
+  draws.forEach((d, i) => {
+    for (const n of [...d.numbers, d.special]) {
+      count[n]++;
+      if (missed[n] === window) missed[n] = i;
+    }
+  });
+  const all = Array.from({ length: 49 }, (_, i) => i + 1);
+  const hot: HotNumber[] = all
+    .map((n) => ({ number: n, count: count[n] }))
+    .sort((a, b) => b.count - a.count || a.number - b.number)
+    .slice(0, top);
+  const cold: ColdNumber[] = all
+    .map((n) => ({ number: n, missed: missed[n] }))
+    .sort((a, b) => b.missed - a.missed || a.number - b.number)
+    .slice(0, top);
+  return { hot, cold };
 }

@@ -15,7 +15,7 @@
 | 樣式 | Tailwind CSS 4（design token 在 `src/app/globals.css`）、clsx + tailwind-merge（`cn()`） | shadcn/ui |
 | HTTP 請求 | axios（`src/lib/api/client.ts` 的 `api`，所有 API 都用它） | |
 | 伺服器數據 | — | TanStack Query |
-| 客戶端狀態 | — | Zustand（選號、待下注列表） |
+| 客戶端狀態 | Zustand（選號、待下注、登入的使用者；【示例】注單） | |
 | 表單 | React Hook Form + Zod 4 | |
 | API 類型 | openapi-typescript（`npm run gen:api`，從 `../docs/api/openapi.json` 生成 `src/types/api.d.ts`） | |
 | 即時連線 | @stomp/stompjs 7（`src/lib/ws/client.ts`；目前用於「別台裝置登入」通知） | 開獎倒數、開獎結果 |
@@ -39,7 +39,7 @@ src/
 ├── components/        共用組件（Ball 號碼球、BrandLogo、LocaleSwitcher）
 │   ├── ui/            基礎元件：Button、Input、PasswordInput、Field
 │   └── fx/            動畫效果組件（參考 React Bits / Aceternity / Uiverse，檔頭註明來源）
-├── features/          按功能分：auth/、draw/（直播面板、倒數、規則常數）、betting/、wallet/ …
+├── features/          按功能分：auth/、draw/（倒數、期數時間表、開獎號碼、冷熱）、betting/（選號盤、待下注、注單）、lobby/（大廳）、game/（頁首、底部分頁）…
 ├── i18n/
 │   ├── routing.ts     語系列表、預設語系、cookie
 │   ├── navigation.ts  Link / redirect / useRouter（自動帶語系前綴）
@@ -65,6 +65,7 @@ src/
 
 - 遊戲端風格是設計稿 **A「開獎直播間」**：https://claude.ai/artifact/YHfuLPTV2Q42BuurgpKw3A
   新頁面先在設計稿畫布上畫好、確認，再實作；不要直接在程式碼裡堆效果。
+- 大廳是設計稿 **D「看板 + 邊看邊玩」**：https://claude.ai/artifact/MBxLH6FWkuW8KrSsAsKmsb
 - 原則：深墨藍底、**只有一個強調色（金色）**；號碼球的紅藍綠只出現在球上；資訊本身就是視覺主角（大字倒數、彩池）。
 - **背景、氛圍類效果最多一個**（粒子、極光、球池這類）；上一版堆了六個裝飾效果，結果又雜又醜。
   但**回應操作、傳遞資訊的動畫**可以多用：數字變化、元素進場、hover、分頁切換、錯誤回饋。
@@ -147,15 +148,29 @@ src/
 - 同一頁只放一個 WebGL 場景（開獎頁已有 3D 舞台，不再加 WebGL 背景效果）。
 - 期數、彩池等資料在後端 API 完成前用 `src/features/draw/mock.ts` 的示例資料，畫面上必須標示「示例數據」。
 
+## 遊戲端頁面
+
+- 路由群組 `[locale]/(game)/`：`/` 大廳、`/trends` 冷熱號碼、`/history` 開獎紀錄、`/bets` 我的注單。
+  桌面用頁首導覽（冷熱號碼放在大廳最下方，不在導覽裡）；手機用底部分頁（四個都有，內容區要留出分頁和下注列的高度）。
+- **要登入**：版面裡的 `GameSessionGate` 打 `GET /me`，未登入導向 `/login`（不帶原因），被踢掉帶 `replaced`，連不上顯示重試。
+  確認前頁面內容**照樣渲染、只是用 `hidden` 藏起來**：不渲染的話 Next 16.4 的 instant navigation 驗證會報「segment was dropped」。所以頁面內容在確認前不能打需要登入的 API。
+- 登入的使用者放在 `useSession`（`features/auth/session.ts`），頁首、注單依 `username` 讀取。
+- Zustand 的 `persist` store 一律 `skipHydration: true`，由 `GameSessionGate` 掛載後 `rehydrate()`：伺服器端沒有 storage，直接讀會 hydration 不一致。
+  選號、待下注存 **sessionStorage**（每個分頁各自一份，和登入規則一致）。
+- **【示例】下注和積分**：後端還沒有下注、錢包 API，注單存在 localStorage（`betting/mockBets.ts`，依帳號分開）。
+  積分餘額不另外存，**由注單算出來**：起始 1000 − 每注 10 + 已開獎注單的獎金；開獎號碼用 `sampleResultFor(期數號)` 固定產生，所以重新整理結果不變。接上 API 後刪掉 `mockBets.ts`，改用 TanStack Query。
+- 開獎時間以「每 5 分鐘整點」在前端推算（`draw/schedule.ts`、`useNextDraw`）；截止下注後「確認下注」停用，下一期開始自動恢復。
+- 開獎舞台目前是靜態示意（`draw/StagePreview`），下一步換成 3D 舞台。
+
 ## 遊戲端開發順序
 
 每一步完成後由用戶 review、commit、push，再進行下一步。
 
 0. ✅ 開獎動畫方案文件、原型
 1. ✅ i18n 骨架（繁中 / 英文、`[locale]` 路由）
-2. ✅ 登入 / 註冊頁（順帶完成 design token、號碼球、表單基礎元件）；已接上後端帳戶 API，成功後回首頁（大廳做好後改成導向大廳）
-3. 選號盤 + 待下注列表
-4. 大廳 / 開獎頁（3D 舞台搬進 Next.js）
+2. ✅ 登入 / 註冊頁（順帶完成 design token、號碼球、表單基礎元件）；已接上後端帳戶 API，成功後進大廳
+3. ✅ 大廳（設計稿 D）+ 選號盤 + 待下注列表 + 冷熱 / 開獎紀錄 / 我的注單；期數、下注、積分是前端示例資料
+4. 3D 開獎舞台搬進大廳（`docs/prototypes/draw-stage.html` → npm 的 three.js + matter.js；手機開獎時舞台自動放大）
 5. 中獎提示、積分滾動等效果
 
 ## 常用命令

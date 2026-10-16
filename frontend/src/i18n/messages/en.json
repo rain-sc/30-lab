@@ -3,11 +3,6 @@
     "title": "Mark Six Lab",
     "description": "A Mark Six lottery simulator played with virtual points"
   },
-  "Home": {
-    "title": "Mark Six Lab",
-    "tagline": "A Mark Six lottery simulator played with virtual points",
-    "comingSoon": "The lobby is under construction"
-  },
   "LocaleSwitcher": {
     "label": "Language"
   },
@@ -29,7 +24,10 @@
     "special": "Extra number",
     "rulePerBet": "<b>{points}</b> points per bet",
     "ruleInterval": "A draw every <b>{minutes}</b> minutes",
-    "ruleCutoff": "Betting closes <b>{seconds}</b> s before the draw"
+    "ruleCutoff": "Betting closes <b>{seconds}</b> s before the draw",
+    "open": "Betting open",
+    "closedShort": "Betting closed",
+    "cutoffAt": "Closes {seconds}s before draw"
   },
   "Auth": {
     "pageTitle": "Sign in / Sign up",
@@ -74,14 +72,6 @@
       "other-tab": "You signed in from another tab of this browser, so this tab has been signed out. Only one tab per browser can use an account at a time."
     }
   },
-  "Session": {
-    "checking": "Checking your sign-in status…",
-    "signedInAs": "Signed in as <b>{nickname}</b>",
-    "logout": "Sign out",
-    "guest": "Not signed in",
-    "replaced": "Your account was signed in elsewhere",
-    "toLogin": "Go to sign in"
-  },
   "ApiErrors": {
     "40000": "Something went wrong with the request. Refresh and try again.",
     "40001": "Some fields are invalid. Check them and try again.",
@@ -94,5 +84,80 @@
     "40901": "This username is already taken",
     "50000": "The server is busy. Please try again later.",
     "network": "Can't reach the server. Check your connection and try again."
+  },
+  "Nav": {
+    "label": "Main menu",
+    "lobby": "Lobby",
+    "trends": "Hot & cold",
+    "history": "Results",
+    "bets": "My tickets",
+    "menu": "Account menu",
+    "logout": "Sign out"
+  },
+  "Game": {
+    "checking": "Checking sign-in…",
+    "retry": "Retry"
+  },
+  "Wallet": {
+    "balance": "My points",
+    "points": "points",
+    "sample": "Sample data",
+    "sampleNote": "Sample points: simulated until the wallet API is ready",
+    "placedThisDraw": "{count, plural, one {# ticket} other {# tickets}} this draw"
+  },
+  "Lobby": {
+    "stage": "Draw stage",
+    "pad": "Pick numbers",
+    "pending": "Ticket slip",
+    "recent": "Recent results",
+    "allHistory": "All results",
+    "placed": "This draw",
+    "myBets": "My tickets",
+    "hotCold": "Hot & cold numbers",
+    "hotColdNote": "Last 100 draws · tap a number to pick it"
+  },
+  "Betting": {
+    "title": "Pick {count} numbers",
+    "padLabel": "Numbers 1 to 49",
+    "pickedCount": "<b>{count}</b> / {total} picked",
+    "hotLegend": "Hot (last 100)",
+    "hotNumber": "{number} (hot)",
+    "quickPick": "Quick pick",
+    "clear": "Clear",
+    "addToPending": "Add to slip",
+    "pending": "Ticket slip",
+    "pendingEmpty": "Pick 6 numbers, then tap “Add to slip”",
+    "remove": "Remove ticket {numbers}",
+    "ticketCount": "{count, plural, one {# ticket} other {# tickets}}",
+    "cost": "<b>{points}</b> points",
+    "barSummary": "<b>{count}</b> {count, plural, one {ticket} other {tickets}} · <b>{points}</b> pts",
+    "submit": "Place bets",
+    "closedButton": "Closed",
+    "closed": "Betting is closed for this draw. Please wait for the next one.",
+    "insufficient": "Not enough points",
+    "placed": "Placed {count, plural, one {# ticket} other {# tickets}} (draw {drawNo})",
+    "placedEmpty": "No tickets for this draw yet",
+    "placedMore": "{count} more {count, plural, one {ticket} other {tickets}} →"
+  },
+  "HotCold": {
+    "hot": "Most drawn",
+    "cold": "Longest absent",
+    "times": "{count}×",
+    "missed": "{count} draws",
+    "hotAria": "{number}, drawn {count} times, pick it",
+    "coldAria": "{number}, absent for {count} draws, pick it",
+    "added": "Added {number} ({count} / {total})",
+    "already": "{number} is already picked",
+    "full": "You already picked 6 numbers"
+  },
+  "MyBets": {
+    "empty": "No tickets yet",
+    "toLobby": "Go to the lobby",
+    "drawNo": "Draw {drawNo}",
+    "waiting": "Awaiting draw",
+    "lost": "No win",
+    "won": "Won +{points} points",
+    "hits": "{count} matched",
+    "tierPrize": "{tier, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} prize +{points}"
   }
 }
