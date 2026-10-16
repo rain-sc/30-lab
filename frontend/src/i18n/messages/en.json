@@ -70,7 +70,8 @@
     },
     "reason": {
       "expired": "Your session has expired. Please sign in again.",
-      "replaced": "Your account was signed in on another device, so you've been signed out here. If that wasn't you, change your password soon."
+      "replaced": "Your account was signed in on another device, so you've been signed out here. If that wasn't you, change your password soon.",
+      "other-tab": "You signed in from another tab of this browser, so this tab has been signed out. Only one tab per browser can use an account at a time."
     }
   },
   "Session": {

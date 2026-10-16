@@ -58,7 +58,9 @@ export function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit, shake)} noValidate className="flex flex-col gap-4">
+    // method="post"：JS 還沒載入或載入失敗時，表單會由瀏覽器原生送出；預設的 GET 會把帳號密碼放進網址
+    // （會留在瀏覽記錄、伺服器 log），POST 不會。正常情況下 handleSubmit 會攔下送出，這只是保險
+    <form method="post" onSubmit={handleSubmit(onSubmit, shake)} noValidate className="flex flex-col gap-4">
       <Field id="username" shakeSignal={shakeSignal} label={t("fields.username")} error={errorText(errors.username)}>
         {(aria) => <Input {...aria} autoComplete="username" autoCapitalize="none" spellCheck={false} {...register("username")} />}
       </Field>

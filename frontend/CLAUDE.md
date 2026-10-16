@@ -13,11 +13,12 @@
 |---|---|---|
 | 框架 | Next.js 16.4（App Router）、React 19.3、TypeScript | |
 | 樣式 | Tailwind CSS 4（design token 在 `src/app/globals.css`）、clsx + tailwind-merge（`cn()`） | shadcn/ui |
+| HTTP 請求 | axios（`src/lib/api/client.ts` 的 `api`，所有 API 都用它） | |
 | 伺服器數據 | — | TanStack Query |
 | 客戶端狀態 | — | Zustand（選號、待下注列表） |
 | 表單 | React Hook Form + Zod 4 | |
 | API 類型 | openapi-typescript（`npm run gen:api`，從 `../docs/api/openapi.json` 生成 `src/types/api.d.ts`） | |
-| 即時連線 | — | @stomp/stompjs（開獎倒數、開獎結果） |
+| 即時連線 | @stomp/stompjs 7（`src/lib/ws/client.ts`；目前用於「別台裝置登入」通知） | 開獎倒數、開獎結果 |
 | 動畫 | Motion 14（UI 動畫唯一的動畫庫；`MotionProvider` 設定 `reducedMotion="user"`） | 開獎舞台：React Three Fiber + matter.js（見 [../docs/draw-animation.md](../docs/draw-animation.md)） |
 | 國際化 | next-intl 4（繁體中文 `zh-TW` 預設、英文 `en`） | |
 | 圖表 | — | Recharts（冷熱號碼、後台儀表板） |
@@ -109,16 +110,30 @@ src/
 - React Hook Form + Zod，`mode: "onTouched"`（離開欄位才檢查）。
 - Zod 4 的錯誤參數用 `error`（`message` 已 deprecated）。schema 裡存**翻譯 key**，由組件翻譯，schema 不依賴語系。
 - 欄位用 `<Field>` 包起來，它會把 label、說明、錯誤和輸入框用 `aria-describedby` 關聯好。
+- `<form>` 一律加 `method="post"`：JS 還沒載入或載入失敗時，表單會由瀏覽器原生送出，預設的 GET 會把欄位（包括密碼）放進網址。
 
 ## 和後端對接
 
 - 開始工作前先看 [../docs/api-changelog.md](../docs/api-changelog.md)，契約有變就 `npm run gen:api`；型別一律從 `@/types/api` 的 `components["schemas"]` 取，不要自己手寫。
-- HTTP 請求一律用 `@/lib/api/client` 的 `apiRequest("/auth/login", { method, body })`，打相對路徑 `/api/...`：開發時由 `next.config.ts` 轉發到 `http://localhost:8088`，同源、沒有 CORS 問題。
-- 回應 `{ code, msg, data }`：`code = 0` 回傳 `data`；其他丟出 `ApiError`（帶 5 位數錯誤碼 `code`、`status`、`fieldViolations`）。
+- HTTP 請求**一律用 `@/lib/api/client` 的 `api`**（axios 封裝），不要直接用 `fetch` 或另外建 axios 實例：
+  `api.get<User>("/auth/me")`、`api.post<User>("/auth/login", body)`、`put` / `patch` / `delete` 同理；回傳值已經是後端的 `data`，型別從 `@/types/api` 取。
+  `baseURL` 是 `/api`：開發時由 `next.config.ts` 轉發到 `http://localhost:8088`，同源、沒有 CORS 問題，cookie 自動帶上。
+- 回應 `{ code, msg, data }` 由 axios 攔截器統一處理：`code = 0` 回傳 `data`；其他丟出 `ApiError`（帶 5 位數錯誤碼 `code`、`status`、`fieldViolations`）。
+  **逾時 10 秒**、連不到伺服器 → `NETWORK_ERROR`；回應不是後端格式（例如後端掛了，轉發回傳 HTML）→ HTTP 狀態碼的通用碼（`502` → `50200`，翻譯時退回 `50000`）。畫面只需要處理 `ApiError` 一種錯誤。
+  所有「載入中」的畫面都要有錯誤狀態和下一步（重試、前往登入…）：沒有逾時的話，後端卡住時畫面會永遠停在載入中。
 - **錯誤訊息由前端翻譯**：`useApiErrorText()(error)` 依 `code` 查 `messages` 的 `ApiErrors`，找不到就用前 3 碼的通用碼（`40900` → `40000` / `50000`）。後端的 `msg` 不直接顯示給使用者。
   新的錯誤碼出現時，`zh-TW.json`、`en.json` 的 `ApiErrors` 同時加。
 - 欄位錯誤（`40001`）：用 `applyFieldViolations` 把 `field` + `rule` 對應到表單的錯誤 key，顯示在欄位下；不屬於欄位的錯誤用 `<FormAlert>` 顯示在表單上方。
-- 登入狀態是後端的 HttpOnly cookie（`msl_token`），前端 JS 不碰 token。`apiRequest` 收到 `40100`（未登入 / 過期）或 `40102`（被別處登入踢掉）會**整頁導向** `/login?reason=expired|replaced`；只查狀態的請求（例如 `GET /me`）傳 `redirectOnUnauthorized: false` 自己處理。
+- 登入狀態是後端的 HttpOnly cookie（`msl_token`），前端 JS 不碰 token。`api` 收到 `40100`（未登入 / 過期）或 `40102`（被別處登入踢掉）會**整頁導向** `/login?reason=expired|replaced`；只查狀態的請求（例如 `GET /me`）傳 `{ redirectOnUnauthorized: false }` 自己處理（這個選項已擴充進 axios 的 config 型別）。
+- **登出的規則**（分頁與裝置）：
+  - 同一個瀏覽器的分頁共用 cookie，後端分不出是哪個分頁，所以由前端處理：**同一個瀏覽器裡最後登入的分頁才能使用帳號，其他分頁變成登出**
+    - 通知：登入成功時用 `BroadcastChannel` 廣播（`lib/api/tabSession.ts`），其他分頁導向 `/login?reason=other-tab`
+    - 記住：`sessionStorage`（每個分頁各自一份）記「此分頁已登出」；標記還在時，axios 請求攔截器擋下登入、註冊以外的請求（當成 `40100`），重新整理、點 logo 回首頁也不會變回已登入。重新登入時清掉
+  - 別台裝置登入同一個帳號：後端透過 WebSocket 推 `SESSION_REPLACED` → 導向 `/login?reason=replaced`（等 0.5 秒，讓同瀏覽器的分頁廣播先處理，提示才不會誤報成「其他地方登入」）
+  - 被登出時**不呼叫 logout API**（cookie 屬於新登入的那一邊）；`redirectToLogin` 只跳轉一次，已在登入頁就不跳
+  - **正在登入 / 註冊的分頁忽略 `SESSION_REPLACED`**：推播比登入回應（新 cookie）早到，不忽略的話自己登入完會被踢回登入頁
+  - 處理這些通知的是 `[locale]/layout` 的 `SessionGuard`
+- WebSocket（`@/lib/ws/client`）：全站一條 STOMP 連線，**已登出的分頁不連線**；登入、註冊、登出後 `restartWs()`（`force` 立刻重連，後端才會用新 cookie 識別身分）；斷線自動重連、每次連上自動重新訂閱。訂閱用 `subscribeWs(destination, handler)`，回傳取消訂閱的函式
 - Server Component 呼叫後端時，瀏覽器的 cookie 不會自動帶過去，要用 `cookies()` 取出 `msl_token` 放進 `Cookie` header（目前還沒有這種用法）。
 - WebSocket 直連 `NEXT_PUBLIC_WS_URL`（預設 `ws://localhost:8088/ws`）。
 - 時間是 UTC ISO 字串，顯示時轉本地時區；倒數以**後端給的時間點**為準，不要只靠前端計時。
@@ -146,7 +161,9 @@ src/
 ## 常用命令
 
 ```powershell
-npm run dev       # http://localhost:3100
+npm run dev       # http://localhost:3100；手機等其他裝置用區網 IP（例如 http://192.168.0.171:3100）
 npm run build
 npm run lint
 ```
+
+- 用區網 IP 開 dev server 時，`next.config.ts` 的 `allowedDevOrigins` 要允許那個主機名稱（目前允許 `192.168.*.*`），不然開發用的 JS 會被擋掉，頁面無法互動。

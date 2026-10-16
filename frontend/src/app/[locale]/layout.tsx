@@ -3,6 +3,7 @@ import { Barlow_Condensed, Noto_Sans_TC } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import { MotionProvider } from "@/components/MotionProvider";
+import { SessionGuard } from "@/features/auth/SessionGuard";
 import { routing } from "@/i18n/routing";
 import "../globals.css";
 
@@ -46,6 +47,8 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
         {/* 把目前語系的翻譯傳給 Client Component（useTranslations 在 client 也能用） */}
         <NextIntlClientProvider>
           <MotionProvider>{children}</MotionProvider>
+          {/* 同一個瀏覽器的其他分頁登入時，這個分頁變成登出 */}
+          <SessionGuard />
         </NextIntlClientProvider>
       </body>
     </html>

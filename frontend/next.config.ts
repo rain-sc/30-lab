@@ -8,6 +8,9 @@ const withNextIntl = createNextIntlPlugin();
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8088";
 
 const nextConfig: NextConfig = {
+  // dev server 預設只允許 localhost 載入開發用的 JS 和 HMR；用區網 IP（例如手機測試 http://192.168.0.171:3100）開時，
+  // JS 會被擋掉、頁面無法互動（表單會變成瀏覽器原生送出）。允許整個 192.168.x.x 網段，路由器換 IP 也不用改
+  // 只影響 next dev，正式環境沒有這個限制
   // 開發時把 /api/* 轉發到後端：瀏覽器只跟 localhost:3100 說話，不會有 CORS 問題
   // （WebSocket 不經過這裡，直接連後端，見根目錄 CLAUDE.md）
   rewrites() {

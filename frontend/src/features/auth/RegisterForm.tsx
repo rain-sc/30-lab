@@ -64,7 +64,8 @@ export function RegisterForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit, shake)} noValidate className="flex flex-col gap-4">
+    // method="post"：JS 沒載入時原生送出不會把密碼放進網址（見 LoginForm）
+    <form method="post" onSubmit={handleSubmit(onSubmit, shake)} noValidate className="flex flex-col gap-4">
       <Field
         id="username"
         shakeSignal={shakeSignal}

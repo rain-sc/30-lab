@@ -3,15 +3,12 @@
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { FormAlert } from "@/components/ui/FormAlert";
+import { LOGIN_REASONS, type LoginReason } from "@/lib/api/client";
 
-// 被導回登入頁的原因（lib/api/client.ts 的 redirectToLogin 帶上的 ?reason=）
-const REASONS = ["expired", "replaced"] as const;
-type Reason = (typeof REASONS)[number];
-
-/** 登入頁上方的提示：登入過期，或帳號在其他地方登入 */
+/** 登入頁上方的提示：登入過期、被別的裝置登入踢掉、或這個瀏覽器的另一個分頁登入了 */
 export function SessionNotice() {
   const t = useTranslations("Auth.reason");
   const reason = useSearchParams().get("reason");
-  if (!REASONS.includes(reason as Reason)) return null;
-  return <FormAlert tone="info">{t(reason as Reason)}</FormAlert>;
+  if (!LOGIN_REASONS.includes(reason as LoginReason)) return null;
+  return <FormAlert tone="info">{t(reason as LoginReason)}</FormAlert>;
 }
