@@ -10,20 +10,38 @@
 // - 這個分頁自己重新登入時清掉標記，換別的分頁被登出（規則對稱）
 // - 只在畫面上登出，**不呼叫 logout API**：cookie 屬於最後登入的分頁，呼叫會把它也登出
 
-const SIGNED_OUT_KEY = "msl:signed-out-here";
+/**
+ * 登出的原因，登入頁會顯示對應的提示（SessionNotice）：
+ * - expired：未登入或登入過期（40100）
+ * - replaced：同一個帳號在別的裝置登入，這裡被踢掉（40102、WebSocket 的 SESSION_REPLACED）
+ * - other-tab：這個瀏覽器的另一個分頁登入了，這個分頁變成登出
+ * 原因存在 sessionStorage，不放在網址上（網址保持乾淨的 /login）
+ */
+export const SIGN_OUT_REASONS = ["expired", "replaced", "other-tab"] as const;
+export type SignOutReason = (typeof SIGN_OUT_REASONS)[number];
 
-/** 這個分頁是否已登出（被其他分頁的登入取代、或被踢下線） */
-export function isSignedOutHere(): boolean {
+// 值就是登出的原因；有值 = 這個分頁已登出
+const SIGNED_OUT_KEY = "msl:signed-out-here";
+// 標記改變時通知同一個分頁裡的畫面（sessionStorage 的 storage 事件只會發給其他分頁）
+const CHANGE_EVENT = "msl:signed-out-change";
+
+/** 這個分頁登出的原因；沒有登出回傳 null */
+export function getSignOutReason(): SignOutReason | null {
   try {
-    return sessionStorage.getItem(SIGNED_OUT_KEY) === "1";
+    const value = sessionStorage.getItem(SIGNED_OUT_KEY);
+    return SIGN_OUT_REASONS.includes(value as SignOutReason) ? (value as SignOutReason) : null;
   } catch {
-    return false; // 無痕模式等情況存取 sessionStorage 可能丟錯：當成沒有標記
+    return null; // 無痕模式等情況存取 sessionStorage 可能丟錯：當成沒有標記
   }
 }
 
-export function markSignedOutHere() {
+/** 這個分頁是否已登出（被其他分頁的登入取代、或被踢下線） */
+export const isSignedOutHere = () => getSignOutReason() !== null;
+
+export function markSignedOutHere(reason: SignOutReason) {
   try {
-    sessionStorage.setItem(SIGNED_OUT_KEY, "1");
+    sessionStorage.setItem(SIGNED_OUT_KEY, reason);
+    window.dispatchEvent(new Event(CHANGE_EVENT));
   } catch {
     // 寫不進去就算了，至少這次已經導向登入頁
   }
@@ -32,9 +50,16 @@ export function markSignedOutHere() {
 export function clearSignedOutHere() {
   try {
     sessionStorage.removeItem(SIGNED_OUT_KEY);
+    window.dispatchEvent(new Event(CHANGE_EVENT));
   } catch {
     // 同上
   }
+}
+
+/** 給 useSyncExternalStore 用：標記改變時通知 */
+export function subscribeSignOut(onChange: () => void) {
+  window.addEventListener(CHANGE_EVENT, onChange);
+  return () => window.removeEventListener(CHANGE_EVENT, onChange);
 }
 
 /** 分頁之間的訊息 */

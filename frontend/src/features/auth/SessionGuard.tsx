@@ -21,7 +21,7 @@ const isLoginPage = () => /^\/[^/]+\/login$/.test(window.location.pathname);
 /** 這個分頁登出：停在登入頁的只記下、斷開 WebSocket；其他頁面導向登入頁（整頁跳轉，WebSocket 隨頁面關閉） */
 function signOutHere(reason: "other-tab" | "replaced") {
   if (isLoginPage()) {
-    markSignedOutHere();
+    markSignedOutHere(reason);
     stopWs();
   } else {
     redirectToLogin(reason);
@@ -30,8 +30,8 @@ function signOutHere(reason: "other-tab" | "replaced") {
 
 /**
  * 全站常駐，處理「這個分頁被登出」的兩種通知（規則見 lib/api/tabSession.ts）：
- * 一、同一個瀏覽器的其他分頁登入了（BroadcastChannel）→ 這個分頁登出，/login?reason=other-tab
- * 二、同一個帳號在別處登入、這個 session 被取代（WebSocket /user/queue/session）→ 這個分頁登出，/login?reason=replaced
+ * 一、同一個瀏覽器的其他分頁登入了（BroadcastChannel）→ 這個分頁登出，原因 other-tab
+ * 二、同一個帳號在別處登入、這個 session 被取代（WebSocket /user/queue/session）→ 這個分頁登出，原因 replaced
  *     （這個分頁自己正在登入時收到的忽略：推播比登入回應早到，它自己就是新的登入者）
  * 第三種是 API 回傳 40100 / 40102，由 client.ts 的攔截器處理。
  * 已登出的分頁不連 WebSocket、不處理通知；重新登入後 api.ts 會 restartWs 開始連線。

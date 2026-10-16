@@ -4,7 +4,7 @@
 // - 40100 / 40102 統一導向登入頁
 // 瀏覽器端一律打相對路徑 /api/...，由 next.config.ts 轉發到後端（同源，HttpOnly cookie 自動帶上）
 import axios, { AxiosError, type AxiosRequestConfig, type AxiosResponse } from "axios";
-import { isSignedOutHere, markSignedOutHere } from "./tabSession";
+import { isSignedOutHere, markSignedOutHere, type SignOutReason } from "./tabSession";
 
 /** 欄位驗證失敗（40001）時 data 的每一項 */
 export type FieldViolation = { field: string; rule: string };
@@ -123,30 +123,22 @@ export const api = {
   patch: <T>(url: string, body?: unknown, config?: AxiosRequestConfig) => http.patch<T>(url, body, config).then((r) => r.data),
 };
 
-/**
- * 被導回登入頁的原因，登入頁會顯示對應的提示（SessionNotice）：
- * - expired：未登入或登入過期（40100）
- * - replaced：同一個帳號在別的裝置登入，這裡被踢掉（40102、WebSocket 的 SESSION_REPLACED）
- * - other-tab：這個瀏覽器的另一個分頁登入了，這個分頁變成登出
- */
-export const LOGIN_REASONS = ["expired", "replaced", "other-tab"] as const;
-export type LoginReason = (typeof LOGIN_REASONS)[number];
-
 let redirecting = false;
 
 /**
- * 在這個分頁登出：記住「此分頁已登出」，導向登入頁並帶上原因。
+ * 在這個分頁登出：記住「此分頁已登出」和原因（sessionStorage，見 tabSession.ts），導向登入頁。
+ * 原因不放在網址上，登入頁的 SessionNotice 從 sessionStorage 讀
  * - 用整頁跳轉：不保留任何畫面狀態（Next 的 Activity 會保留舊頁面），WebSocket 也會隨頁面關閉
  * - **不呼叫 logout API**：cookie 是共用的，可能屬於別的分頁或新的登入，呼叫會把它也登出
  * - 只導向一次：同一件事可能同時從 API、WebSocket、其他分頁的廣播觸發
  */
-export function redirectToLogin(reason: LoginReason) {
-  markSignedOutHere();
+export function redirectToLogin(reason: SignOutReason) {
+  markSignedOutHere(reason);
   const locale = document.documentElement.lang || "zh-TW";
   // 已經在登入頁就不再跳轉（避免重新整理迴圈）
   if (redirecting || window.location.pathname === `/${locale}/login`) return;
   redirecting = true;
   // 刻意整頁跳轉而不是 router.push：要清掉所有用戶端狀態（包括被 Activity 隱藏保留的頁面）
   // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-  window.location.assign(`/${locale}/login?reason=${reason}`);
+  window.location.assign(`/${locale}/login`);
 }

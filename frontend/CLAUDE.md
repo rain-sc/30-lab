@@ -124,12 +124,12 @@ src/
 - **錯誤訊息由前端翻譯**：`useApiErrorText()(error)` 依 `code` 查 `messages` 的 `ApiErrors`，找不到就用前 3 碼的通用碼（`40900` → `40000` / `50000`）。後端的 `msg` 不直接顯示給使用者。
   新的錯誤碼出現時，`zh-TW.json`、`en.json` 的 `ApiErrors` 同時加。
 - 欄位錯誤（`40001`）：用 `applyFieldViolations` 把 `field` + `rule` 對應到表單的錯誤 key，顯示在欄位下；不屬於欄位的錯誤用 `<FormAlert>` 顯示在表單上方。
-- 登入狀態是後端的 HttpOnly cookie（`msl_token`），前端 JS 不碰 token。`api` 收到 `40100`（未登入 / 過期）或 `40102`（被別處登入踢掉）會**整頁導向** `/login?reason=expired|replaced`；只查狀態的請求（例如 `GET /me`）傳 `{ redirectOnUnauthorized: false }` 自己處理（這個選項已擴充進 axios 的 config 型別）。
+- 登入狀態是後端的 HttpOnly cookie（`msl_token`），前端 JS 不碰 token。`api` 收到 `40100`（未登入 / 過期）或 `40102`（被別處登入踢掉）會**整頁導向** `/login`（原因 `expired` / `replaced` 存在 sessionStorage，不放網址上，登入頁的 `SessionNotice` 讀取顯示）；只查狀態的請求（例如 `GET /me`）傳 `{ redirectOnUnauthorized: false }` 自己處理（這個選項已擴充進 axios 的 config 型別）。
 - **登出的規則**（分頁與裝置）：
   - 同一個瀏覽器的分頁共用 cookie，後端分不出是哪個分頁，所以由前端處理：**同一個瀏覽器裡最後登入的分頁才能使用帳號，其他分頁變成登出**
-    - 通知：登入成功時用 `BroadcastChannel` 廣播（`lib/api/tabSession.ts`），其他分頁導向 `/login?reason=other-tab`
+    - 通知：登入成功時用 `BroadcastChannel` 廣播（`lib/api/tabSession.ts`），其他分頁導向 `/login`（原因 `other-tab`）
     - 記住：`sessionStorage`（每個分頁各自一份）記「此分頁已登出」；標記還在時，axios 請求攔截器擋下登入、註冊以外的請求（當成 `40100`），重新整理、點 logo 回首頁也不會變回已登入。重新登入時清掉
-  - 別台裝置登入同一個帳號：後端透過 WebSocket 推 `SESSION_REPLACED` → 導向 `/login?reason=replaced`（等 0.5 秒，讓同瀏覽器的分頁廣播先處理，提示才不會誤報成「其他地方登入」）
+  - 別台裝置登入同一個帳號：後端透過 WebSocket 推 `SESSION_REPLACED` → 導向 `/login`（原因 `replaced`）（等 0.5 秒，讓同瀏覽器的分頁廣播先處理，提示才不會誤報成「其他地方登入」）
   - 被登出時**不呼叫 logout API**（cookie 屬於新登入的那一邊）；`redirectToLogin` 只跳轉一次，已在登入頁就不跳
   - **正在登入 / 註冊的分頁忽略 `SESSION_REPLACED`**：推播比登入回應（新 cookie）早到，不忽略的話自己登入完會被踢回登入頁
   - 處理這些通知的是 `[locale]/layout` 的 `SessionGuard`
