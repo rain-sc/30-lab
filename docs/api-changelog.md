@@ -16,6 +16,37 @@
 
 ---
 
+## 2026-10-20（後端：開獎）
+- 【新增】`GET /api/draws/current`（**不用登入**）：目前期數 + 最近一期開獎結果
+  ```json
+  { "serverTime": "2026-10-20T05:43:09.228Z",
+    "current":  { "drawNo": "20261020-0069", "status": "OPEN", "openAt": "...", "closeAt": "...", "drawAt": "..." },
+    "previous": { "drawNo": "20261020-0068", "status": "DRAWN", "openAt": "...", "closeAt": "...", "drawAt": "...",
+                  "numbers": [17, 49, 15, 21, 2, 20], "specialNumber": 35 } }
+  ```
+  - `current` 一定有；`previous` 在系統剛上線、還沒開過獎時**沒有這個欄位**
+  - `numbers` / `specialNumber` **開獎後才有**，開獎前**欄位不存在**（不是 `null`），對應生成型別的 `numbers?: number[]`
+  - `numbers` 是 6 個正碼，**依開出順序，沒有排序**
+  - `status`：`OPEN` 下注中 → `CLOSED` 停止下注 → `DRAWN` 已開獎 →（之後做完結算）`SETTLED`
+- 【新增】WebSocket 廣播 `/topic/draws`（**不用登入**，匿名連線也收得到）
+  ```json
+  { "type": "DRAWN", "serverTime": "...", "draw": { 和上面的 current / previous 同一個格式 } }
+  ```
+  - `type`：`OPENED`（新的一期開放）、`CLOSED`（停止下注）、`DRAWN`（開獎，`draw` 裡有號碼）
+  - `draw` 的型別就是 `openapi.json` 的 `DrawResponse`，可以直接用生成的型別
+  - 每到開獎時間會**同一秒**收到兩則：下一期的 `OPENED` 和這一期的 `DRAWN`
+  - 推送最多晚 1 秒（後端每秒對帳一次）；動畫進度請照舊用 `drawAt` + `serverTime` 計算
+  - 後端當機重啟時，會一次補送過期的 `CLOSED` / `DRAWN`（`drawAt` 可能是幾分鐘前），請**用 `drawNo` 對應**，不要假設收到的一定是目前這期
+  - 已用 Node 匿名連線驗證：`CLOSED` 延遲 0.96 秒、`OPENED` / `DRAWN` 延遲 0.16 秒，時間欄位都是字串
+- **期數號 `drawNo`**：`yyyyMMdd-NNNN`，**以 UTC 計算**（`NNNN` = UTC 當天第幾個 5 分鐘，`0001`~`0288`），全世界一致。前端顯示時間請用 `openAt` / `closeAt` / `drawAt` 轉成當地時間，**不要從期數號推算日期**
+- **時間字串的格式**：毫秒剛好是 0 時會省略，例如 `drawAt` 是 `2026-10-20T05:45:00Z`、`serverTime` 是 `2026-10-20T05:43:09.228Z`。兩種都是標準 ISO 8601，`new Date()` 都能解析，**只是不要直接比較字串**
+- 回覆下方 10/16 的「接上真資料需要的接口」：
+  1. 目前期數：**已完成**（上面），**頭獎彩池還沒有**，要等結算模組（彩池的計算規則在 `game-rules.md` 還是待定）
+  2. 開獎紀錄（分頁）：還沒做，後端下一步
+  3. 下注、4. 積分餘額、5. 我的注單：要等錢包、下注模組
+  6. 冷熱號碼：先用開獎紀錄在前端計算
+- 【待前端】把大廳的「目前期數」、開獎舞台改接 `GET /api/draws/current` 和 `/topic/draws`，重新 `npm run gen:api`
+
 ## 2026-10-16（前端：大廳完成，期數 / 下注 / 積分目前是前端示例資料）
 - 前端大廳（選號盤、待下注、確認下注、我的注單、開獎紀錄、冷熱號碼）已完成，目前用前端模擬的資料，畫面標示「示例數據」
 - 【待後端】接上真資料需要的接口（路徑、欄位命名由後端決定，以下是前端用到的資料）：
@@ -164,7 +195,7 @@
   - 前端需要能區分的錯誤：帳號或密碼錯誤、帳號已被使用、欄位格式不符（最好帶欄位名稱，前端顯示在對應欄位下）
   - 登入狀態用什麼方式保存（HttpOnly cookie 或 token）由後端決定，前端配合
   - 前端要做什麼：接口出來後，把 `frontend/src/features/auth/api.ts` 的模擬換成真的請求
-- 【待後端】開獎動畫方案已確定，設計期數相關 API 時請參考 [draw-animation.md](draw-animation.md) 的「後端需要配合」：
+- 【已完成】（後端 2026-10-20，見最上方「開獎」）開獎動畫方案已確定，設計期數相關 API 時請參考 [draw-animation.md](draw-animation.md) 的「後端需要配合」：
   - `closeAt`、`drawAt` 時間點；`numbers` 保留開出順序（不排序）
   - 期數回應帶 `serverTime`（毫秒精度），用來校正時鐘
   - 「取得目前期數」接口；WebSocket 推送 `CLOSED`、`DRAWN`
