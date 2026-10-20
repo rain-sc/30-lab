@@ -28,7 +28,7 @@ public class Draw {
 
     private Instant openAt;
 
-    private Instant drawAt;      // ← 要補上
+    private Instant drawAt;
 
     private Instant closeAt;
 
