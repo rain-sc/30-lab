@@ -8,6 +8,7 @@ import com.marksixlab.account.model.User;
 import com.marksixlab.account.repository.UserRepository;
 import com.marksixlab.common.BusinessException;
 import com.marksixlab.common.ErrorCode;
+import com.marksixlab.wallet.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.messaging.simp.SimpMessagingTemplate;

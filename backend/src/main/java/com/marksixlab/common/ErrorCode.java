@@ -19,7 +19,10 @@ public enum ErrorCode {
     // 帳戶
     BAD_CREDENTIALS(40101, "帳號或密碼錯誤"),
     SESSION_REPLACED(40102, "帳號已在其他地方登入"),
-    USERNAME_TAKEN(40901, "帳號已被使用");
+    USERNAME_TAKEN(40901, "帳號已被使用"),
+
+    // 錢包
+    INSUFFICIENT_POINTS(40902,"積分不足");
 
     private final int code;
     private final String message;
