@@ -8,6 +8,7 @@ import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -32,6 +33,15 @@ public class GlobalExceptionHandler {
         ErrorCode ec = ErrorCode.VALIDATION_FAILED;
         return ResponseEntity.status(ec.getStatus())
                 .body(Result.fail(ec.getCode(), ec.getMessage(), violations));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<Result<List<FieldViolation>>> handleTypeMismatch(MethodArgumentTypeMismatchException ex){
+        List<FieldViolation> violations = List.of(new FieldViolation(ex.getName(),"typeMismatch"));
+        log.warn("參數型別錯誤: {}", violations);
+        ErrorCode ec = ErrorCode.VALIDATION_FAILED;
+        return ResponseEntity.status(ec.getStatus())
+                .body(Result.fail(ec.getCode(),ec.getMessage(),violations));
     }
 
     @ExceptionHandler(Exception.class)

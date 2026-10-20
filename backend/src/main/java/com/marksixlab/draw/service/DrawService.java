@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.marksixlab.common.PageResult;
 import com.marksixlab.draw.dto.CurrentDrawResponse;
 import com.marksixlab.draw.dto.DrawResponse;
 import com.marksixlab.draw.model.Draw;
@@ -11,6 +12,9 @@ import com.marksixlab.draw.model.DrawStatus;
 import com.marksixlab.draw.repository.DrawRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -104,5 +108,16 @@ public class DrawService {
                 .map(DrawResponse::from)
                 .orElse(null);
         return new CurrentDrawResponse(now,current,previous);
+    }
+
+    public PageResult<DrawResponse> history(int page, int size){
+        int safePage = Math.max(page,1);
+        int safeSize = Math.min(Math.max(size,1),100);
+        Pageable pageable = PageRequest.of(safePage - 1, safeSize, Sort.by(Sort.Direction.DESC,"drawAt"));
+
+        Page<DrawResponse> result = drawRepository
+                .findByStatusIn(List.of(DrawStatus.DRAWN, DrawStatus.SETTLED), pageable)
+                .map(DrawResponse::from);
+        return PageResult.of(result);
     }
 }
