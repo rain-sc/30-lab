@@ -28,7 +28,6 @@
     "open": "Betting open",
     "closedShort": "Betting closed",
     "cutoffAt": "Closes {seconds}s before draw",
-    "sampleShort": "Sample",
     "feedError": "Can’t load the current draw. Retrying automatically…"
   },
   "Auth": {
@@ -114,7 +113,7 @@
     "placed": "This draw",
     "myBets": "My tickets",
     "hotCold": "Hot & cold numbers",
-    "hotColdNote": "Last 100 draws · tap a number to pick it"
+    "hotColdNote": "Last {count} draws · tap a number to pick it"
   },
   "Betting": {
     "title": "Pick {count} numbers",
@@ -159,7 +158,8 @@
     "won": "Won +{points} points",
     "hits": "{count} matched",
     "tierPrize": "{tier, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} prize +{points}",
-    "unconfirmed": "Pending confirmation (you were offline at draw time)"
+    "unconfirmed": "Checking result…",
+    "notFound": "Result not found for this draw"
   },
   "Stage": {
     "title": "Draw stage",
@@ -180,5 +180,14 @@
     "points": "points",
     "viewBets": "My tickets",
     "close": "Close"
+  },
+  "Draws": {
+    "pagination": "Results pages",
+    "prev": "Previous",
+    "next": "Next",
+    "page": "Page {page} of {pages}",
+    "error": "Couldn’t load results: {reason}",
+    "retry": "Retry",
+    "empty": "No draws yet"
   }
 }

@@ -4,20 +4,15 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Ball } from "@/components/Ball";
 import { PICK_COUNT, useBetting } from "@/features/betting/store";
-import { useDrawFeed } from "./feed";
-import { sampleHotCold } from "./mock";
+import { MAX_PAGE_SIZE } from "./api";
+import { computeHotCold } from "./hotColdStats";
+import { useDrawHistory } from "./useDrawHistory";
 import type { NextDraw } from "./useNextDraw";
 
-const WINDOW = 100;
-
-/** 冷熱號碼的計算結果（選號盤也用來標示熱門號碼） */
+/** 冷熱號碼：用最近 100 期的開獎紀錄計算（選號盤也用來標示熱門號碼）；window 是實際算了幾期 */
 export function useHotCold(next: NextDraw | null) {
-  const revealedDrawAt = next?.revealedDrawAt;
-  const results = useDrawFeed((s) => s.results);
-  return useMemo(
-    () => (revealedDrawAt ? sampleHotCold(revealedDrawAt, results, WINDOW) : null),
-    [revealedDrawAt, results],
-  );
+  const { list } = useDrawHistory(1, MAX_PAGE_SIZE, next);
+  return useMemo(() => computeHotCold(list), [list]);
 }
 
 /** 冷熱號碼：最近 100 期最常開出、最久沒開的號碼；點號碼加入選號盤 */

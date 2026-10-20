@@ -28,7 +28,6 @@
     "open": "接受下注中",
     "closedShort": "已截止下注",
     "cutoffAt": "開獎前 {seconds} 秒截止",
-    "sampleShort": "示例",
     "feedError": "暫時無法取得期數資料，正在自動重試…"
   },
   "Auth": {
@@ -114,7 +113,7 @@
     "placed": "本期已下注",
     "myBets": "我的注單",
     "hotCold": "冷熱號碼",
-    "hotColdNote": "最近 100 期 · 點號碼可加入選號"
+    "hotColdNote": "最近 {count} 期 · 點號碼可加入選號"
   },
   "Betting": {
     "title": "選 {count} 個號碼",
@@ -159,7 +158,8 @@
     "won": "中獎 +{points} 積分",
     "hits": "中 {count} 個",
     "tierPrize": "{tier, select, 1 {頭獎} 2 {二獎} 3 {三獎} 4 {四獎} 5 {五獎} 6 {六獎} other {七獎}} +{points}",
-    "unconfirmed": "待確認（開獎時不在線上，等開獎紀錄上線後補上）"
+    "unconfirmed": "結果確認中…",
+    "notFound": "查不到這期的開獎結果"
   },
   "Stage": {
     "title": "開獎舞台",
@@ -180,5 +180,14 @@
     "points": "積分",
     "viewBets": "查看注單",
     "close": "關閉"
+  },
+  "Draws": {
+    "pagination": "開獎紀錄分頁",
+    "prev": "上一頁",
+    "next": "下一頁",
+    "page": "第 {page} / {pages} 頁",
+    "error": "無法載入開獎紀錄：{reason}",
+    "retry": "重試",
+    "empty": "還沒有開獎紀錄"
   }
 }

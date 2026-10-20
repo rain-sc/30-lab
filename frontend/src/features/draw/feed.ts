@@ -35,6 +35,11 @@ type FeedState = {
   setError: () => void;
   applyCurrent: (res: CurrentDrawResponse) => void;
   applyEvent: (event: DrawEvent) => void;
+  /** 從開獎紀錄記下號碼（不影響目前 / 上一期） */
+  addResults: (draws: Draw[]) => void;
+  /** 已經用開獎紀錄查過、還是查不到號碼的期數（我的注單顯示「查不到」） */
+  missing: Record<string, true>;
+  setMissing: (drawNos: string[]) => void;
 };
 
 const at = (iso: string) => Date.parse(iso);
@@ -81,6 +86,18 @@ export const useDrawFeed = create<FeedState>()(
       applyCurrent: (res) =>
         set((s) => merge(s, res.previous ? [res.current, res.previous] : [res.current], res.serverTime)),
       applyEvent: (event) => set((s) => merge(s, [event.draw], event.serverTime)),
+      addResults: (list) =>
+        set((s) => {
+          const fresh = list.filter((d) => hasResult(d) && !s.results[d.drawNo]);
+          if (fresh.length === 0) return {};
+          const results = { ...s.results };
+          for (const d of fresh) {
+            if (hasResult(d)) results[d.drawNo] = { numbers: d.numbers, special: d.specialNumber, drawAt: at(d.drawAt) };
+          }
+          return { results };
+        }),
+      missing: {},
+      setMissing: (drawNos) => set((s) => ({ missing: { ...s.missing, ...Object.fromEntries(drawNos.map((n) => [n, true as const])) } })),
     }),
     {
       name: "msl:draw-results",

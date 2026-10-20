@@ -6,6 +6,7 @@ import { MotionProvider } from "@/components/MotionProvider";
 import { SessionGuard } from "@/features/auth/SessionGuard";
 import { DrawFeed } from "@/features/draw/DrawFeed";
 import { routing } from "@/i18n/routing";
+import { QueryProvider } from "@/lib/query/QueryProvider";
 import "../globals.css";
 
 // 內文：繁中 + 英文。中文字型檔很大，Google 會切成很多小檔按需載入，所以不預載
@@ -47,11 +48,14 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
       <body className="flex min-h-full flex-col font-sans">
         {/* 把目前語系的翻譯傳給 Client Component（useTranslations 在 client 也能用） */}
         <NextIntlClientProvider>
-          <MotionProvider>{children}</MotionProvider>
-          {/* 同一個瀏覽器的其他分頁登入時，這個分頁變成登出 */}
-          <SessionGuard />
-          {/* 期數資料（後端 API + 推播）：大廳、開獎舞台、登入頁的直播面板共用 */}
-          <DrawFeed />
+          {/* 後端資料的快取（TanStack Query） */}
+          <QueryProvider>
+            <MotionProvider>{children}</MotionProvider>
+            {/* 同一個瀏覽器的其他分頁登入時，這個分頁變成登出 */}
+            <SessionGuard />
+            {/* 期數資料（後端 API + 推播）：大廳、開獎舞台、登入頁的直播面板共用 */}
+            <DrawFeed />
+          </QueryProvider>
         </NextIntlClientProvider>
       </body>
     </html>

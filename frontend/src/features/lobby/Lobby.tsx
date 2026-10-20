@@ -38,7 +38,8 @@ const FADE_UP = "animate-fade-up motion-reduce:animate-none";
 export function Lobby() {
   const t = useTranslations("Lobby");
   const next = useNextDraw();
-  const hot = useHotCold(next)?.hot.map((h) => h.number);
+  const hotCold = useHotCold(next);
+  const hot = hotCold?.hot.map((h) => h.number);
   const isDesktop = useIsDesktop();
 
   return (
@@ -109,7 +110,7 @@ export function Lobby() {
           </section>
 
           <section className={cn(CARD, "hidden px-5.5 py-4.5 [grid-area:hot] md:block", FADE_UP, "[animation-delay:360ms]")}>
-            <CardHeading title={t("hotCold")} note={t("hotColdNote")} />
+            <CardHeading title={t("hotCold")} note={hotCold ? t("hotColdNote", { count: hotCold.window }) : undefined} />
             <HotCold next={next} />
           </section>
         </div>

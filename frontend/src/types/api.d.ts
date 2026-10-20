@@ -55,6 +55,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/draws": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 開獎紀錄, 由新到舊 (不用登入) */
+        get: operations["history"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/draws/current": {
         parameters: {
             query?: never;
@@ -160,17 +177,6 @@ export interface components {
              */
             password: string;
         };
-        CurrentDrawResponse: {
-            /**
-             * Format: date-time
-             * @description 伺服器時間 (毫秒精度), 前端用來校正時鐘
-             */
-            serverTime: string;
-            /** @description 目前這一期 */
-            current: components["schemas"]["DrawResponse"];
-            /** @description 最近一期已開獎的 系統剛上線、還沒開過獎時沒有 */
-            previous?: components["schemas"]["DrawResponse"];
-        };
         DrawResponse: {
             /**
              * @description 期數號 (UTC 日期 + 當天第幾期)
@@ -201,6 +207,46 @@ export interface components {
              * @description 特別號碼;開獎後才有
              */
             specialNumber?: number;
+        };
+        PageResultDrawResponse: {
+            list: components["schemas"]["DrawResponse"][];
+            /**
+             * Format: int64
+             * @description 總筆數
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 第幾頁,從 1 開始
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 每頁筆數
+             */
+            size: number;
+        };
+        ResultPageResultDrawResponse: {
+            /**
+             * Format: int32
+             * @description 0 表示成功，失敗時是 5 位數錯誤碼
+             */
+            code: number;
+            /** @description 給開發看的說明，不直接顯示給使用者 */
+            msg: string;
+            /** @description 回應資料；沒有資料時是 null */
+            data: components["schemas"]["PageResultDrawResponse"];
+        };
+        CurrentDrawResponse: {
+            /**
+             * Format: date-time
+             * @description 伺服器時間 (毫秒精度), 前端用來校正時鐘
+             */
+            serverTime: string;
+            /** @description 目前這一期 */
+            current: components["schemas"]["DrawResponse"];
+            /** @description 最近一期已開獎的 系統剛上線、還沒開過獎時沒有 */
+            previous?: components["schemas"]["DrawResponse"];
         };
         ResultCurrentDrawResponse: {
             /**
@@ -286,6 +332,29 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ResultUserResponse"];
+                };
+            };
+        };
+    };
+    history: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultPageResultDrawResponse"];
                 };
             };
         };

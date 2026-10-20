@@ -19,6 +19,7 @@ export function MyBets() {
   const bets = useUserBets(user?.username);
   const now = useNow();
   const results = useDrawFeed((s) => s.results);
+  const missing = useDrawFeed((s) => s.missing);
 
   const groups = useMemo(() => {
     if (now === null) return [];
@@ -55,7 +56,9 @@ export function MyBets() {
                   {status === "waiting"
                     ? t("waiting")
                     : status === "unconfirmed"
-                      ? t("unconfirmed")
+                      ? missing[drawNo]
+                        ? t("notFound")
+                        : t("unconfirmed")
                       : won > 0
                         ? t("won", { points: format.number(won) })
                         : t("lost")}

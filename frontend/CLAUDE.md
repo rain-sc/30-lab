@@ -14,7 +14,7 @@
 | 框架 | Next.js 16.4（App Router）、React 19.3、TypeScript | |
 | 樣式 | Tailwind CSS 4（design token 在 `src/app/globals.css`）、clsx + tailwind-merge（`cn()`） | shadcn/ui |
 | HTTP 請求 | axios（`src/lib/api/client.ts` 的 `api`，所有 API 都用它） | |
-| 伺服器數據 | — | TanStack Query |
+| 伺服器數據 | TanStack Query 5（`src/lib/query/QueryProvider.tsx`；開獎紀錄、補查） | |
 | 客戶端狀態 | Zustand（選號、待下注、登入的使用者；【示例】注單） | |
 | 表單 | React Hook Form + Zod 4 | |
 | API 類型 | openapi-typescript（`npm run gen:api`，從 `../docs/api/openapi.json` 生成 `src/types/api.d.ts`） | |
@@ -149,7 +149,7 @@ src/
 - 尊重 `prefers-reduced-motion`：用戶關閉動畫時直接顯示號碼。
 - 遊戲端所有文字都走 i18n（繁中、英文），不寫死在組件裡；管理後台之後再決定。
 - 同一頁只放一個 WebGL 場景（開獎頁已有 3D 舞台，不再加 WebGL 背景效果）。
-- 後端還沒有的資料（彩池、開獎紀錄、下注、積分）用 `src/features/draw/mock.ts` 的示例資料，畫面上必須標示「示例數據」。
+- 後端還沒有的資料（彩池、下注、積分）用 `src/features/draw/mock.ts` 的示例資料，畫面上必須標示「示例數據」。
 
 ## 遊戲端頁面
 
@@ -161,15 +161,20 @@ src/
 - Zustand 的 `persist` store 一律 `skipHydration: true`，由 `GameSessionGate` 掛載後 `rehydrate()`：伺服器端沒有 storage，直接讀會 hydration 不一致。
   選號、待下注存 **sessionStorage**（每個分頁各自一份，和登入規則一致）。
 - **【示例】下注和積分**：後端還沒有下注、錢包 API，注單存在 localStorage（`betting/mockBets.ts`，依帳號分開）。
-  積分餘額不另外存，**由注單算出來**：起始 1000 − 每注 10 + 已開獎注單的獎金。對獎用**真實開獎號碼**；開獎時不在線上（前端沒收到號碼）的顯示「待確認」，獎金先不算。接上 API 後刪掉 `mockBets.ts`，改用 TanStack Query。
+  積分餘額不另外存，**由注單算出來**：起始 1000 − 每注 10 + 已開獎注單的獎金。對獎用**真實開獎號碼**；還沒拿到號碼的顯示「結果確認中」，獎金先不算。接上 API 後刪掉 `mockBets.ts`，改用 TanStack Query。
 - **期數資料**（`features/draw/feed.ts`，[locale]/layout 的 `DrawFeed` 啟動，登入頁也用）：`GET /api/draws/current` + `/topic/draws` 推播
   - 時鐘用 `serverTime` 校正：時間一律用 `feedNow()` / `useNow()`，不要直接 `Date.now()`
   - 期數依 `drawNo` 存：「目前這期」= 開獎時間最晚的、「上一期」= 有號碼的期數裡最晚的（後端重啟會補送過期事件，不能假設收到的就是目前這期）
   - 號碼開獎前**欄位不存在**（不是 null），用 `hasResult()` 判斷；`numbers` 是開出順序，顯示時自己排序
   - 收到的開獎號碼存在 localStorage（`useDrawFeed` 的 `results`），對獎、開獎紀錄用
   - 重抓時機：WebSocket 重連（`onWsConnect`）、分頁切回來、看門狗（過了開獎時間 5 秒還沒收到推播）；抓不到時 `status === "error"`，大廳顯示 `DrawFeedError`
-  - 期數號由後端決定（UTC）；`schedule.ts` 的 `formatDrawNo` 只用來補齊示例的開獎紀錄
-- **開獎紀錄、冷熱號碼**（開獎紀錄 API 完成前）：收到過的真實結果優先，更早的期數用示例補齊，示例那幾期標「示例」
+  - 期數號由後端決定（UTC），前端不推算
+- **開獎紀錄**（`GET /api/draws`，`useDrawHistory`）：大廳近期開獎、開獎紀錄頁（分頁）、冷熱號碼（`size=100`）
+  - queryKey 帶 `revealedDrawAt`：新的一期公布時自動重抓；列表濾掉還沒公布的期數（不劇透）
+  - 期數號可能不連續（後端停機期間沒有期數），不要用期數號推算前後期
+  - 拿到的號碼也記進 `useDrawFeed` 的 `results`
+- **補查「待確認」的注單**（`betting/ResultBackfill`，放在遊戲端版面）：開獎時不在線上的期數，用開獎紀錄往回查；查不到的標成 `missing`，我的注單顯示「查不到」
+- **TanStack Query 和 Zustand 的分工**：後端來、要快取 / 分頁 / 重抓的資料用 Query；只存在前端的狀態（選號、待下注）和推播即時更新的期數用 Zustand
 - 截止下注後「確認下注」停用，下一期開始自動恢復
 - **開獎舞台**（`features/draw/stage/`）：
   - `timeline.ts`：純函數 `stagePhaseAt(現在時間, { current, previous })` → 可下注 / 攪珠（截止後，或推播晚到還沒收到號碼）/ 開獎中（第幾顆、播了多久），號碼帶在階段資料裡。動畫進度完全由時間算出，重新整理、切回分頁都接著播；引擎每一幀呼叫 `getPhase()`
