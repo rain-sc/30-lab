@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.marksixlab.common.PageResult;
+import com.marksixlab.common.Pagination;
 import com.marksixlab.draw.dto.CurrentDrawResponse;
 import com.marksixlab.draw.dto.DrawResponse;
 import com.marksixlab.draw.model.Draw;
@@ -111,10 +112,7 @@ public class DrawService {
     }
 
     public PageResult<DrawResponse> history(int page, int size){
-        int safePage = Math.max(page,1);
-        int safeSize = Math.min(Math.max(size,1),100);
-        Pageable pageable = PageRequest.of(safePage - 1, safeSize, Sort.by(Sort.Direction.DESC,"drawAt"));
-
+        Pageable pageable = Pagination.of(page, size, Sort.by(Sort.Direction.DESC, "drawAt"));
         Page<DrawResponse> result = drawRepository
                 .findByStatusIn(List.of(DrawStatus.DRAWN, DrawStatus.SETTLED), pageable)
                 .map(DrawResponse::from);

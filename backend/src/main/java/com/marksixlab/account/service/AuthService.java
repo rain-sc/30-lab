@@ -24,7 +24,7 @@ public class AuthService {
     private final SessionService sessionService;
     private final JwtService jwtService;
     private final SimpMessagingTemplate messagingTemplate;
-
+    private final WalletService walletService;
     public record LoginResult(UserResponse user, String token) {
     }
 
@@ -44,6 +44,7 @@ public class AuthService {
         } catch (DuplicateKeyException e) {
             throw new BusinessException(ErrorCode.USERNAME_TAKEN);
         }
+        walletService.getOrOpen(saved.getId());
         return startSession(saved);
     }
 

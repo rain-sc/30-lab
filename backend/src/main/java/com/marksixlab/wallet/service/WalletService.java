@@ -5,7 +5,11 @@ import java.time.temporal.ChronoUnit;
 
 import com.marksixlab.common.BusinessException;
 import com.marksixlab.common.ErrorCode;
+import com.marksixlab.common.PageResult;
+import com.marksixlab.common.Pagination;
 import com.marksixlab.config.WalletProperties;
+import com.marksixlab.wallet.dto.WalletResponse;
+import com.marksixlab.wallet.dto.WalletTransactionResponse;
 import com.marksixlab.wallet.model.Wallet;
 import com.marksixlab.wallet.model.WalletTransaction;
 import com.marksixlab.wallet.model.WalletTransactionType;
@@ -13,6 +17,8 @@ import com.marksixlab.wallet.repository.WalletRepository;
 import com.marksixlab.wallet.repository.WalletTransactionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -31,6 +37,16 @@ public class WalletService {
 
     public Wallet getOrOpen(String userId){
         return walletRepository.findByUserId(userId).orElseGet(() -> open(userId));
+    }
+
+    public WalletResponse balance(String userId){
+        return new WalletResponse(getOrOpen(userId).getBalance());
+    }
+
+    public PageResult<WalletTransactionResponse> transactions(String userId, int page, int size){
+        getOrOpen(userId);
+        Pageable pageable = Pagination.of(page, size, Sort.by(Sort.Direction.DESC,"createdAt"));
+        return PageResult.of(transactionRepository.findByUserId(userId, pageable).map(WalletTransactionResponse::from));
     }
 
     // 扣款
