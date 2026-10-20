@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.marksixlab.draw.dto.CurrentDrawResponse;
+import com.marksixlab.draw.dto.DrawResponse;
 import com.marksixlab.draw.model.Draw;
 import com.marksixlab.draw.model.DrawStatus;
 import com.marksixlab.draw.repository.DrawRepository;
@@ -90,5 +92,17 @@ public class DrawService {
             }
             drawn.add(draw);
         }
+    }
+
+    public CurrentDrawResponse current(Instant now){
+        DrawSlot slot = drawSchedule.slotAt(now);
+        DrawResponse current = drawRepository.findByDrawNo(slot.drawNo())
+                .map(DrawResponse::from)
+                .orElseGet(() -> new DrawResponse(slot.drawNo(),DrawStatus.OPEN,slot.openAt(),slot.closeAt(),slot.drawAt(),null,null));
+        DrawResponse previous = drawRepository
+                .findFirstByStatusInOrderByDrawAtDesc(List.of(DrawStatus.DRAWN,DrawStatus.SETTLED))
+                .map(DrawResponse::from)
+                .orElse(null);
+        return new CurrentDrawResponse(now,current,previous);
     }
 }

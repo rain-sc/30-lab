@@ -28,6 +28,7 @@ public class Draw {
 
     private Instant openAt;
 
+    @Indexed
     private Instant drawAt;
 
     private Instant closeAt;
