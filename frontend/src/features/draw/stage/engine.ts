@@ -1,11 +1,11 @@
 // 開獎舞台：three.js 渲染 + matter.js 2D 物理（從 docs/prototypes/draw-stage.html 搬過來）
 // - 49 顆號碼球堆在玻璃球底部；可下注時可以點（彈跳）、按住（放大看號碼）、拖動甩球
 // - 截止後吹氣攪珠；開獎時開出的那顆球從球堆彈出、飛到上方結果列、沿軌道滾到位置
-// - 階段由 stagePhaseAt(現在時間) 決定，重新整理、切回分頁都會接著播
+// - 階段（含開獎號碼）每一幀向外部要（getPhase，見 timeline.ts 的 stagePhaseAt），重新整理、切回分頁都會接著播
 //
 // 和原型的差別：
 // - three 改用 npm 的 r186：顏色空間改名（SRGBColorSpace）；光照改成物理單位，強度乘 π 維持原型的亮度
-// - 開獎時間、號碼由外部提供（resultFor），不是按鈕觸發
+// - 開獎時間、號碼來自後端（由 DrawStage 透過 getPhase 提供），不是按鈕觸發
 // - 看不到時（捲出畫面、切到別的分頁）暫停渲染和物理，省電
 // - dispose() 釋放 WebGL 資源：Next 的 Activity 隱藏頁面時會執行 effect 清除，回來再重建
 //
@@ -13,7 +13,7 @@
 import Matter from "matter-js";
 import * as THREE from "three";
 import { ballColor, type BallColor } from "@/lib/ball";
-import { BALL_ANIM_MS, stagePhaseAt, T } from "./timeline";
+import { BALL_ANIM_MS, T, type StagePhase } from "./timeline";
 
 const { Engine, Bodies, Body, Composite, Constraint } = Matter;
 
@@ -64,16 +64,14 @@ export type StageOptions = {
   canvas: HTMLCanvasElement;
   /** 決定畫布大小的容器 */
   container: HTMLElement;
-  /** 某一期開出的 7 個號碼，依開出順序（最後一個是特別號碼） */
-  resultFor: (drawAt: number) => number[];
+  /** 目前的舞台階段（每一幀呼叫）；開獎的號碼在階段資料裡 */
+  getPhase: () => StagePhase;
   reducedMotion: boolean;
-  /** 現在時間；之後接上後端時傳入用 serverTime 校正過的時鐘 */
-  now?: () => number;
   /** 第一次畫完時通知（用來移除佔位圖） */
   onReady?: () => void;
 };
 
-export function createStage({ canvas, container, resultFor, reducedMotion, now = Date.now, onReady }: StageOptions) {
+export function createStage({ canvas, container, getPhase, reducedMotion, onReady }: StageOptions) {
   // ---------- three.js ----------
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
@@ -340,17 +338,9 @@ export function createStage({ canvas, container, resultFor, reducedMotion, now =
   };
 
   // ---------- 開獎狀態 ----------
-  let phase = stagePhaseAt(now(), reducedMotion);
-  const results = new Map<number, number[]>();
-  const resultOf = (drawAt: number) => {
-    let r = results.get(drawAt);
-    if (!r) {
-      r = resultFor(drawAt);
-      results.set(drawAt, r);
-      if (results.size > 4) results.delete(results.keys().next().value!);
-    }
-    return r;
-  };
+  let phase = getPhase();
+  /** 結果列上那期的 7 個號碼（攪珠中、還沒開過獎時是 null） */
+  const shownNumbers = () => (phase.kind === "mixing" ? null : phase.numbers);
   const isInteractive = () => phase.kind === "idle";
   const isStirring = () => !reducedMotion && phase.kind !== "idle";
 
@@ -501,7 +491,7 @@ export function createStage({ canvas, container, resultFor, reducedMotion, now =
 
   // 依目前階段決定每顆球該在哪裡：球堆（物理）、飛行中、結果列
   const syncBalls = () => {
-    const shown = phase.kind === "mixing" ? null : resultOf(phase.drawAt);
+    const shown = shownNumbers();
     const revealed = phase.kind === "idle" ? 7 : phase.kind === "drawing" ? phase.revealed : 0;
     const active = phase.kind === "drawing" ? phase.active : null;
 
@@ -539,7 +529,7 @@ export function createStage({ canvas, container, resultFor, reducedMotion, now =
     const dt = Math.min(t - last, 50);
     last = t;
 
-    phase = stagePhaseAt(now(), reducedMotion);
+    phase = getPhase();
     syncBalls();
 
     // 物理：固定步長，一幀最多補 4 步
@@ -579,10 +569,11 @@ export function createStage({ canvas, container, resultFor, reducedMotion, now =
         m.position.set(b.position.x / S, -b.position.y / S, ball.mag * 2.6);
         m.scale.setScalar(1 + 0.9 * ball.mag);
       } else if (ball.mode === "draw" && phase.kind === "drawing") {
-        const i = resultOf(phase.drawAt).indexOf(ball.n);
+        const i = phase.numbers.indexOf(ball.n);
         drawPose(ball, phase.active?.t ?? BALL_ANIM_MS, i);
-      } else if (ball.mode === "slot" && phase.kind !== "mixing") {
-        m.position.set(SLOT_X[resultOf(phase.drawAt).indexOf(ball.n)], ROW_Y, 0);
+      } else if (ball.mode === "slot") {
+        const numbers = shownNumbers();
+        if (numbers) m.position.set(SLOT_X[numbers.indexOf(ball.n)], ROW_Y, 0);
         m.quaternion.identity();
         m.scale.setScalar(1);
       }

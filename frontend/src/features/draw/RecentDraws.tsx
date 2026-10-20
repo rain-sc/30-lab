@@ -1,19 +1,22 @@
 "use client";
 
 import { useMemo } from "react";
-import { useFormatter } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
+import { useDrawFeed } from "./feed";
 import { sampleRecentDraws } from "./mock";
 import { ResultBalls } from "./ResultBalls";
 import type { NextDraw } from "./useNextDraw";
 
-/** 近期開獎：期數、時間、號碼，新的在上 */
+/** 近期開獎：期數、時間、號碼，新的在上；前端沒收到真實結果的期數用示例補上，並標「示例」 */
 export function RecentDraws({ next, count }: { next: NextDraw | null; count: number }) {
   const format = useFormatter();
+  const t = useTranslations("Live");
+  const results = useDrawFeed((s) => s.results);
   // 開獎動畫播完才列出（見 NextDraw.revealedDrawAt）
   const revealedDrawAt = next?.revealedDrawAt;
   const draws = useMemo(
-    () => (revealedDrawAt ? sampleRecentDraws(revealedDrawAt, count) : []),
-    [revealedDrawAt, count],
+    () => (revealedDrawAt ? sampleRecentDraws(revealedDrawAt, count, results) : []),
+    [revealedDrawAt, count, results],
   );
 
   if (!next) {
@@ -32,6 +35,9 @@ export function RecentDraws({ next, count }: { next: NextDraw | null; count: num
             <time dateTime={new Date(d.drawAt).toISOString()} className="text-sm text-muted">
               {format.dateTime(d.drawAt, { hour: "2-digit", minute: "2-digit" })}
             </time>
+            {d.sample && (
+              <span className="rounded-md border border-line px-1.5 text-[11px] text-muted">{t("sampleShort")}</span>
+            )}
           </div>
           <ResultBalls result={d} size="xs" />
         </li>

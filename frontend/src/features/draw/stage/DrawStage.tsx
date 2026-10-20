@@ -4,17 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import { sampleResultFor } from "../mock";
-import { formatDrawNo } from "../schedule";
+import { feedNow, useDrawFeed } from "../feed";
 import { StagePreview } from "../StagePreview";
-import { useNow } from "../useNextDraw";
 import { stagePhaseAt } from "./timeline";
+import { useStagePhase } from "./useStagePhase";
 
-/** 【示例】某一期開出的 7 個號碼（開出順序，最後一個是特別號碼）；接上 API 後改用後端的 numbers + specialNumber */
-const resultFor = (drawAt: number) => {
-  const r = sampleResultFor(formatDrawNo(drawAt));
-  return [...r.numbers, r.special];
-};
+/** 舞台每一幀的階段：用校正過的時間 + 後端的期數資料（feed.ts） */
+const phaseNow = (reduced: boolean) => stagePhaseAt(feedNow(), useDrawFeed.getState(), reduced);
 
 /**
  * 開獎舞台（3D）。一頁只能放一個（WebGL 場景很吃資源）。
@@ -43,7 +39,7 @@ export function DrawStage({ className, hint = true }: { className?: string; hint
           canvas,
           // 依畫布區域（狀態標籤下方）的大小對焦，不是整個卡片
           container: hostRef.current,
-          resultFor,
+          getPhase: () => phaseNow(reduced),
           reducedMotion: reduced,
           onReady: () => setReady(true),
         });
@@ -78,8 +74,7 @@ export function DrawStage({ className, hint = true }: { className?: string; hint
 /** 舞台上的狀態標籤和操作提示（螢幕閱讀器也會讀到開獎進度） */
 function StageStatus({ reduced, hint }: { reduced: boolean; hint: boolean }) {
   const t = useTranslations("Stage");
-  const now = useNow();
-  const phase = now === null ? null : stagePhaseAt(now, reduced);
+  const phase = useStagePhase(reduced);
 
   const label =
     phase === null

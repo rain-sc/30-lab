@@ -24,6 +24,8 @@ type Subscription = {
 
 let client: Client | null = null;
 const subscriptions = new Set<Subscription>();
+/** 每次連上（含重連）時通知：斷線期間可能漏掉推播，要重新抓一次資料 */
+const connectListeners = new Set<() => void>();
 
 function parse(message: IMessage): unknown {
   try {
@@ -48,10 +50,19 @@ function getClient(): Client {
       maxReconnectDelay: 60000,
       heartbeatIncoming: 10000,
       heartbeatOutgoing: 10000,
-      onConnect: () => subscriptions.forEach(attach),
+      onConnect: () => {
+        subscriptions.forEach(attach);
+        connectListeners.forEach((listener) => listener());
+      },
     });
   }
   return client;
+}
+
+/** 每次連上（含重連）時呼叫 listener，回傳取消的函式 */
+export function onWsConnect(listener: () => void): () => void {
+  connectListeners.add(listener);
+  return () => connectListeners.delete(listener);
 }
 
 /** 開始連線（重複呼叫沒關係） */

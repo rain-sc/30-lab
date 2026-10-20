@@ -27,7 +27,9 @@
     "ruleCutoff": "Betting closes <b>{seconds}</b> s before the draw",
     "open": "Betting open",
     "closedShort": "Betting closed",
-    "cutoffAt": "Closes {seconds}s before draw"
+    "cutoffAt": "Closes {seconds}s before draw",
+    "sampleShort": "Sample",
+    "feedError": "Can’t load the current draw. Retrying automatically…"
   },
   "Auth": {
     "pageTitle": "Sign in / Sign up",
@@ -156,7 +158,8 @@
     "lost": "No win",
     "won": "Won +{points} points",
     "hits": "{count} matched",
-    "tierPrize": "{tier, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} prize +{points}"
+    "tierPrize": "{tier, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} prize +{points}",
+    "unconfirmed": "Pending confirmation (you were offline at draw time)"
   },
   "Stage": {
     "title": "Draw stage",

@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Ball } from "@/components/Ball";
 import { useSession } from "@/features/auth/session";
-import { sampleResultFor } from "@/features/draw/mock";
+import { useDrawFeed } from "@/features/draw/feed";
 import { ResultBalls } from "@/features/draw/ResultBalls";
 import { useNow } from "@/features/draw/useNextDraw";
 import { Link } from "@/i18n/navigation";
@@ -18,13 +18,14 @@ export function MyBets() {
   const user = useSession((s) => s.user);
   const bets = useUserBets(user?.username);
   const now = useNow();
+  const results = useDrawFeed((s) => s.results);
 
   const groups = useMemo(() => {
     if (now === null) return [];
     const map = new Map<string, ReturnType<typeof settle>>();
-    for (const bet of settle(bets, now)) map.set(bet.drawNo, [...(map.get(bet.drawNo) ?? []), bet]);
+    for (const bet of settle(bets, now, results)) map.set(bet.drawNo, [...(map.get(bet.drawNo) ?? []), bet]);
     return [...map.entries()];
-  }, [bets, now]);
+  }, [bets, now, results]);
 
   if (now === null) return <div aria-hidden="true" className="h-40" />;
 
@@ -42,7 +43,8 @@ export function MyBets() {
   return (
     <ol className="m-0 flex list-none flex-col gap-4 p-0">
       {groups.map(([drawNo, list]) => {
-        const drawn = list[0].result !== null;
+        const { status } = list[0];
+        const real = results[drawNo];
         const won = list.reduce((sum, b) => sum + (b.result?.prize ?? 0), 0);
         return (
           <li key={drawNo} className="flex flex-col gap-3 rounded-card border border-line bg-panel p-4 md:p-5">
@@ -50,10 +52,16 @@ export function MyBets() {
               <div className="flex items-baseline gap-3">
                 <h2 className="m-0 font-num text-lg font-bold tabular-nums">{t("drawNo", { drawNo })}</h2>
                 <span className={cn("text-sm", won > 0 ? "font-bold text-gold" : "text-muted")}>
-                  {!drawn ? t("waiting") : won > 0 ? t("won", { points: format.number(won) }) : t("lost")}
+                  {status === "waiting"
+                    ? t("waiting")
+                    : status === "unconfirmed"
+                      ? t("unconfirmed")
+                      : won > 0
+                        ? t("won", { points: format.number(won) })
+                        : t("lost")}
                 </span>
               </div>
-              {drawn && <ResultBalls result={sampleResultFor(drawNo)} size="xs" />}
+              {status === "settled" && real && <ResultBalls result={real} size="xs" />}
             </div>
             <ul className="m-0 flex list-none flex-col gap-2 p-0">
               {list.map((bet) => (

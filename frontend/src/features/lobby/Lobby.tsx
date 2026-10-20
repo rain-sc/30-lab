@@ -8,6 +8,7 @@ import { NumberPad } from "@/features/betting/NumberPad";
 import { PendingTickets } from "@/features/betting/PendingTickets";
 import { PlacedBets } from "@/features/betting/PlacedBets";
 import { CountdownDigits, DrawProgress } from "@/features/draw/Countdown";
+import { DrawFeedError } from "@/features/draw/DrawFeedError";
 import { DrawStatus } from "@/features/draw/DrawStatus";
 import { HotCold, useHotCold } from "@/features/draw/HotCold";
 import { SAMPLE_JACKPOT } from "@/features/draw/mock";
@@ -43,6 +44,7 @@ export function Lobby() {
   return (
     <>
       <div className="mx-auto flex w-full max-w-8xl flex-col gap-3 px-4 pt-3 pb-44 md:gap-5 md:px-10 md:pt-6 md:pb-10">
+        <DrawFeedError />
         <div className={cn("hidden md:block", FADE_UP)}>
           <DrawStatus next={next} />
         </div>
@@ -184,6 +186,7 @@ function MobileDrawCard({ next, stage, className }: { next: NextDraw | null; sta
         <span className="text-[11px] text-muted">
           {t("jackpot")}{" "}
           <CountUp to={SAMPLE_JACKPOT} delay={0.2} className="font-num text-lg font-bold text-gold tabular-nums" />
+          <span className="ml-1">· {t("sample")}</span>
         </span>
       </div>
       {stage && <MobileStage className="w-33" />}

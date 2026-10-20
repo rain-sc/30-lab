@@ -27,7 +27,9 @@
     "ruleCutoff": "開獎前 <b>{seconds}</b> 秒截止下注",
     "open": "接受下注中",
     "closedShort": "已截止下注",
-    "cutoffAt": "開獎前 {seconds} 秒截止"
+    "cutoffAt": "開獎前 {seconds} 秒截止",
+    "sampleShort": "示例",
+    "feedError": "暫時無法取得期數資料，正在自動重試…"
   },
   "Auth": {
     "pageTitle": "登入 / 註冊",
@@ -156,7 +158,8 @@
     "lost": "未中獎",
     "won": "中獎 +{points} 積分",
     "hits": "中 {count} 個",
-    "tierPrize": "{tier, select, 1 {頭獎} 2 {二獎} 3 {三獎} 4 {四獎} 5 {五獎} 6 {六獎} other {七獎}} +{points}"
+    "tierPrize": "{tier, select, 1 {頭獎} 2 {二獎} 3 {三獎} 4 {四獎} 5 {五獎} 6 {六獎} other {七獎}} +{points}",
+    "unconfirmed": "待確認（開獎時不在線上，等開獎紀錄上線後補上）"
   },
   "Stage": {
     "title": "開獎舞台",

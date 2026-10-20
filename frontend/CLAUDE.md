@@ -18,7 +18,7 @@
 | 客戶端狀態 | Zustand（選號、待下注、登入的使用者；【示例】注單） | |
 | 表單 | React Hook Form + Zod 4 | |
 | API 類型 | openapi-typescript（`npm run gen:api`，從 `../docs/api/openapi.json` 生成 `src/types/api.d.ts`） | |
-| 即時連線 | @stomp/stompjs 7（`src/lib/ws/client.ts`；目前用於「別台裝置登入」通知） | 開獎倒數、開獎結果 |
+| 即時連線 | @stomp/stompjs 7（`src/lib/ws/client.ts`；「別台裝置登入」通知、期數 / 開獎推播 `/topic/draws`） | |
 | 動畫 | Motion 14（UI 動畫唯一的動畫庫；`MotionProvider` 設定 `reducedMotion="user"`）；開獎舞台 three.js + matter.js（`features/draw/stage/`） | |
 | 國際化 | next-intl 4（繁體中文 `zh-TW` 預設、英文 `en`） | |
 | 圖表 | — | Recharts（冷熱號碼、後台儀表板） |
@@ -149,7 +149,7 @@ src/
 - 尊重 `prefers-reduced-motion`：用戶關閉動畫時直接顯示號碼。
 - 遊戲端所有文字都走 i18n（繁中、英文），不寫死在組件裡；管理後台之後再決定。
 - 同一頁只放一個 WebGL 場景（開獎頁已有 3D 舞台，不再加 WebGL 背景效果）。
-- 期數、彩池等資料在後端 API 完成前用 `src/features/draw/mock.ts` 的示例資料，畫面上必須標示「示例數據」。
+- 後端還沒有的資料（彩池、開獎紀錄、下注、積分）用 `src/features/draw/mock.ts` 的示例資料，畫面上必須標示「示例數據」。
 
 ## 遊戲端頁面
 
@@ -161,10 +161,18 @@ src/
 - Zustand 的 `persist` store 一律 `skipHydration: true`，由 `GameSessionGate` 掛載後 `rehydrate()`：伺服器端沒有 storage，直接讀會 hydration 不一致。
   選號、待下注存 **sessionStorage**（每個分頁各自一份，和登入規則一致）。
 - **【示例】下注和積分**：後端還沒有下注、錢包 API，注單存在 localStorage（`betting/mockBets.ts`，依帳號分開）。
-  積分餘額不另外存，**由注單算出來**：起始 1000 − 每注 10 + 已開獎注單的獎金；開獎號碼用 `sampleResultFor(期數號)` 固定產生，所以重新整理結果不變。接上 API 後刪掉 `mockBets.ts`，改用 TanStack Query。
-- 開獎時間以「每 5 分鐘整點」在前端推算（`draw/schedule.ts`、`useNextDraw`）；截止下注後「確認下注」停用，下一期開始自動恢復。
+  積分餘額不另外存，**由注單算出來**：起始 1000 − 每注 10 + 已開獎注單的獎金。對獎用**真實開獎號碼**；開獎時不在線上（前端沒收到號碼）的顯示「待確認」，獎金先不算。接上 API 後刪掉 `mockBets.ts`，改用 TanStack Query。
+- **期數資料**（`features/draw/feed.ts`，[locale]/layout 的 `DrawFeed` 啟動，登入頁也用）：`GET /api/draws/current` + `/topic/draws` 推播
+  - 時鐘用 `serverTime` 校正：時間一律用 `feedNow()` / `useNow()`，不要直接 `Date.now()`
+  - 期數依 `drawNo` 存：「目前這期」= 開獎時間最晚的、「上一期」= 有號碼的期數裡最晚的（後端重啟會補送過期事件，不能假設收到的就是目前這期）
+  - 號碼開獎前**欄位不存在**（不是 null），用 `hasResult()` 判斷；`numbers` 是開出順序，顯示時自己排序
+  - 收到的開獎號碼存在 localStorage（`useDrawFeed` 的 `results`），對獎、開獎紀錄用
+  - 重抓時機：WebSocket 重連（`onWsConnect`）、分頁切回來、看門狗（過了開獎時間 5 秒還沒收到推播）；抓不到時 `status === "error"`，大廳顯示 `DrawFeedError`
+  - 期數號由後端決定（UTC）；`schedule.ts` 的 `formatDrawNo` 只用來補齊示例的開獎紀錄
+- **開獎紀錄、冷熱號碼**（開獎紀錄 API 完成前）：收到過的真實結果優先，更早的期數用示例補齊，示例那幾期標「示例」
+- 截止下注後「確認下注」停用，下一期開始自動恢復
 - **開獎舞台**（`features/draw/stage/`）：
-  - `timeline.ts`：純函數 `stagePhaseAt(現在時間)` → 可下注 / 攪珠（截止後）/ 開獎中（第幾顆、播了多久）。動畫進度完全由時間算出，重新整理、切回分頁都接著播
+  - `timeline.ts`：純函數 `stagePhaseAt(現在時間, { current, previous })` → 可下注 / 攪珠（截止後，或推播晚到還沒收到號碼）/ 開獎中（第幾顆、播了多久），號碼帶在階段資料裡。動畫進度完全由時間算出，重新整理、切回分頁都接著播；引擎每一幀呼叫 `getPhase()`
   - `engine.ts`：three.js + matter.js（原型 `docs/prototypes/draw-stage.html` 改寫成 TS），**用純 three.js，不用 React Three Fiber**（原型的邏輯幾乎原封不動）。
     three r186 的差異：光照強度乘 π、`SRGBColorSpace`、`PCFSoftShadowMap` 已移除
   - `DrawStage.tsx`：動態 `import("./engine")`（three + matter 不進初始 JS），載入前顯示 `StagePreview`；effect 清除時 `dispose()` 釋放 WebGL（Activity 隱藏頁面也會執行），**每次重建都用新的 canvas**（`forceContextLoss` 後同一個 canvas 不能再用）

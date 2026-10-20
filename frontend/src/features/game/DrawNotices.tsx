@@ -7,7 +7,7 @@ import { CountUp } from "@/components/fx/CountUp";
 import { useSession } from "@/features/auth/session";
 import { settle, useUserBets } from "@/features/betting/mockBets";
 import type { PrizeTier } from "@/features/betting/prizes";
-import { sampleResultFor, type DrawResult } from "@/features/draw/mock";
+import { useDrawFeed, type DrawResult } from "@/features/draw/feed";
 import { ResultBalls } from "@/features/draw/ResultBalls";
 import { revealedAt } from "@/features/draw/stage/timeline";
 import { useNow } from "@/features/draw/useNextDraw";
@@ -39,6 +39,7 @@ export function DrawNotices() {
   const user = useSession((s) => s.user);
   const bets = useUserBets(user?.username);
   const now = useNow();
+  const results = useDrawFeed((s) => s.results);
   const [startedAt, setStartedAt] = useState<number | null>(null);
   const [notified, setNotified] = useState<ReadonlySet<number>>(new Set());
   const [notices, setNotices] = useState<Notice[]>([]);
@@ -46,12 +47,17 @@ export function DrawNotices() {
   // 在渲染時比對（React 文件建議的「依 props 調整 state」做法，不用 effect）
   if (now !== null && startedAt === null) setStartedAt(now);
   if (now !== null && startedAt !== null) {
+    // 動畫播完、而且收到了真實號碼（開獎時不在線上的期數不通知）
     const due = [...new Set(bets.map((b) => b.drawAt))].filter(
-      (d) => revealedAt(d) > startedAt && revealedAt(d) <= now && !notified.has(d),
+      (d) =>
+        revealedAt(d) > startedAt &&
+        revealedAt(d) <= now &&
+        !notified.has(d) &&
+        bets.some((b) => b.drawAt === d && results[b.drawNo]),
     );
     if (due.length > 0) {
       setNotified(new Set([...notified, ...due]));
-      setNotices((list) => [...list, ...due.map((d) => buildNotice(bets.filter((b) => b.drawAt === d), now))]);
+      setNotices((list) => [...list, ...due.map((d) => buildNotice(bets.filter((b) => b.drawAt === d), now, results))]);
     }
   }
 
@@ -73,8 +79,8 @@ export function DrawNotices() {
   );
 }
 
-function buildNotice(bets: ReturnType<typeof useUserBets>, now: number): Notice {
-  const settled = settle(bets, now);
+function buildNotice(bets: ReturnType<typeof useUserBets>, now: number, results: Record<string, DrawResult>): Notice {
+  const settled = settle(bets, now, results);
   const byTier = new Map<PrizeTier, number>();
   let total = 0;
   for (const b of settled) {
@@ -85,7 +91,7 @@ function buildNotice(bets: ReturnType<typeof useUserBets>, now: number): Notice 
   return {
     drawAt: bets[0].drawAt,
     drawNo: bets[0].drawNo,
-    result: sampleResultFor(bets[0].drawNo),
+    result: results[bets[0].drawNo],
     tickets: bets.length,
     tiers: [...byTier.entries()].sort(([a], [b]) => a - b).map(([tier, count]) => ({ tier, count })),
     total,

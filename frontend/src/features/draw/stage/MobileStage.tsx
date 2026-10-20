@@ -7,9 +7,9 @@ import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { CountdownDigits } from "../Countdown";
 import { StagePreview } from "../StagePreview";
-import { useNextDraw, useNow } from "../useNextDraw";
+import { useNextDraw } from "../useNextDraw";
 import { DrawStage } from "./DrawStage";
-import { stagePhaseAt } from "./timeline";
+import { useStagePhase } from "./useStagePhase";
 
 /**
  * 手機版的舞台：平常是卡片右邊的縮圖（靜態，不跑 WebGL），點一下放大成全畫面的 3D 舞台。
@@ -23,8 +23,7 @@ export function MobileStage({ className }: { className?: string }) {
   const [manualOpen, setManualOpen] = useState(false);
   const [dismissedDrawAt, setDismissedDrawAt] = useState<number | null>(null);
 
-  const now = useNow();
-  const phase = now === null ? null : stagePhaseAt(now, reduced);
+  const phase = useStagePhase(reduced);
   const autoOpen = !reduced && phase !== null && phase.kind !== "idle" && dismissedDrawAt !== phase.drawAt;
   const open = manualOpen || autoOpen;
 

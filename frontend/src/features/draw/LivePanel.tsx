@@ -7,7 +7,8 @@ import { Ball } from "@/components/Ball";
 import { CountUp } from "@/components/fx/CountUp";
 import { RollingDigits } from "@/components/fx/RollingDigits";
 import { cn } from "@/lib/utils";
-import { SAMPLE_JACKPOT, sampleResultFor } from "./mock";
+import { hasResult, useDrawFeed } from "./feed";
+import { SAMPLE_JACKPOT } from "./mock";
 import { BETTING_CUTOFF_SECONDS, DRAW_INTERVAL_MINUTES, POINTS_PER_BET } from "./rules";
 import { useNextDraw } from "./useNextDraw";
 
@@ -43,7 +44,9 @@ export function LivePanel({ className }: { className?: string }) {
 
   const minutes = next ? pad(Math.floor(next.remainingSeconds / 60)) : "--";
   const seconds = next ? pad(next.remainingSeconds % 60) : "--";
-  const lastResult = next ? sampleResultFor(next.lastDrawNo) : null;
+  // 上期開獎結果（後端）；登入頁沒有舞台，開獎後就直接顯示
+  const previous = useDrawFeed((s) => s.previous);
+  const lastResult = hasResult(previous) ? { numbers: previous.numbers, special: previous.specialNumber } : null;
   const bold = (chunks: ReactNode) => <b className="font-bold text-fg">{chunks}</b>;
 
   return (
@@ -62,7 +65,6 @@ export function LivePanel({ className }: { className?: string }) {
           LIVE
         </span>
         <span className="text-[13px] text-muted md:text-sm">{next ? t("drawNo", { drawNo: next.drawNo }) : " "}</span>
-        <span className="rounded-md border border-line px-2 py-0.5 text-xs text-muted">{t("sample")}</span>
       </div>
 
       <div className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-4 [grid-template-areas:'count_jackpot'_'result_result'] md:grid-cols-[auto_1fr] md:gap-x-12 md:gap-y-7 md:[grid-template-areas:'count_count'_'jackpot_result']">
@@ -87,7 +89,10 @@ export function LivePanel({ className }: { className?: string }) {
         </div>
 
         <div className="flex flex-col items-end gap-1 self-end [grid-area:jackpot] md:items-start md:self-auto">
-          <span className="text-[13px] text-muted md:text-sm">{t("jackpot")}</span>
+          <span className="text-[13px] text-muted md:text-sm">
+            {/* 彩池要等後端的結算模組，目前是示例 */}
+            {t("jackpot")} <span className="text-[11px]">· {t("sample")}</span>
+          </span>
           <CountUp
             to={SAMPLE_JACKPOT}
             delay={0.3}
@@ -102,14 +107,14 @@ export function LivePanel({ className }: { className?: string }) {
             <AnimatePresence mode="wait">
               {lastResult ? (
                 <motion.div
-                  key={next!.lastDrawNo}
+                  key={previous!.drawNo}
                   variants={rowVariants}
                   initial="hidden"
                   animate="show"
                   exit="exit"
                   className="flex items-center gap-1.5 md:gap-2"
                 >
-                  {lastResult.numbers.map((n) => (
+                  {[...lastResult.numbers].sort((a, b) => a - b).map((n) => (
                     <motion.span key={n} variants={ballVariants} className="inline-flex">
                       <Ball number={n} size="sm" className={BALL_CLASS} />
                     </motion.span>

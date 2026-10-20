@@ -13,7 +13,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 註冊 (成功後直接登入) */
+        /** 註冊（成功後直接登入；這個瀏覽器原本登入的其他帳號會被登出） */
         post: operations["register"];
         delete?: never;
         options?: never;
@@ -47,8 +47,25 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 登入 (同一帳號會踢掉之前的登入) */
+        /** 登入（同一帳號會踢掉之前的登入；這個瀏覽器原本登入的其他帳號會被登出） */
         post: operations["login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/draws/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 目前期數和最近一期的開獎結果 (不用登入) */
+        get: operations["current"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -94,23 +111,42 @@ export interface components {
             password: string;
         };
         ResultUserResponse: {
-            /** Format: int32 */
-            code?: number;
-            msg?: string;
-            data?: components["schemas"]["UserResponse"];
+            /**
+             * Format: int32
+             * @description 0 表示成功，失敗時是 5 位數錯誤碼
+             */
+            code: number;
+            /** @description 給開發看的說明，不直接顯示給使用者 */
+            msg: string;
+            /** @description 回應資料；沒有資料時是 null */
+            data: components["schemas"]["UserResponse"];
         };
         UserResponse: {
-            id?: string;
-            username?: string;
-            nickname?: string;
-            /** Format: date-time */
-            createdAt?: string;
+            /** @example 6acf47cac63fcceb21f21085 */
+            id: string;
+            /**
+             * @description 帳號（小寫）
+             * @example rain_01
+             */
+            username: string;
+            /** @example 小雨 */
+            nickname: string;
+            /**
+             * Format: date-time
+             * @description 註冊時間（UTC）
+             */
+            createdAt: string;
         };
         ResultVoid: {
-            /** Format: int32 */
-            code?: number;
-            msg?: string;
-            data?: unknown;
+            /**
+             * Format: int32
+             * @description 0 表示成功，失敗時是 5 位數錯誤碼
+             */
+            code: number;
+            /** @description 給開發看的說明，不直接顯示給使用者 */
+            msg: string;
+            /** @description 回應資料；沒有資料時是 null */
+            data: unknown;
         };
         LoginRequest: {
             /**
@@ -123,6 +159,59 @@ export interface components {
              * @example password123
              */
             password: string;
+        };
+        CurrentDrawResponse: {
+            /**
+             * Format: date-time
+             * @description 伺服器時間 (毫秒精度), 前端用來校正時鐘
+             */
+            serverTime: string;
+            /** @description 目前這一期 */
+            current: components["schemas"]["DrawResponse"];
+            /** @description 最近一期已開獎的 系統剛上線、還沒開過獎時沒有 */
+            previous?: components["schemas"]["DrawResponse"];
+        };
+        DrawResponse: {
+            /**
+             * @description 期數號 (UTC 日期 + 當天第幾期)
+             * @example 20261020-0046
+             */
+            drawNo: string;
+            /** @enum {string} */
+            status: "OPEN" | "CLOSED" | "DRAWN" | "SETTLED";
+            /**
+             * Format: date-time
+             * @description 開放下注時間
+             */
+            openAt: string;
+            /**
+             * Format: date-time
+             * @description 停止下注時間（開獎前 15 秒）
+             */
+            closeAt: string;
+            /**
+             * Format: date-time
+             * @description 開獎時間
+             */
+            drawAt: string;
+            /** @description 6個正碼,依開出順序,不排序;開獎後才有 */
+            numbers?: number[];
+            /**
+             * Format: int32
+             * @description 特別號碼;開獎後才有
+             */
+            specialNumber?: number;
+        };
+        ResultCurrentDrawResponse: {
+            /**
+             * Format: int32
+             * @description 0 表示成功，失敗時是 5 位數錯誤碼
+             */
+            code: number;
+            /** @description 給開發看的說明，不直接顯示給使用者 */
+            msg: string;
+            /** @description 回應資料；沒有資料時是 null */
+            data: components["schemas"]["CurrentDrawResponse"];
         };
     };
     responses: never;
@@ -197,6 +286,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ResultUserResponse"];
+                };
+            };
+        };
+    };
+    current: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultCurrentDrawResponse"];
                 };
             };
         };

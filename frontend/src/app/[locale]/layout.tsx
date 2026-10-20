@@ -4,6 +4,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getTranslations } from "next-intl/server";
 import { MotionProvider } from "@/components/MotionProvider";
 import { SessionGuard } from "@/features/auth/SessionGuard";
+import { DrawFeed } from "@/features/draw/DrawFeed";
 import { routing } from "@/i18n/routing";
 import "../globals.css";
 
@@ -49,6 +50,8 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
           <MotionProvider>{children}</MotionProvider>
           {/* 同一個瀏覽器的其他分頁登入時，這個分頁變成登出 */}
           <SessionGuard />
+          {/* 期數資料（後端 API + 推播）：大廳、開獎舞台、登入頁的直播面板共用 */}
+          <DrawFeed />
         </NextIntlClientProvider>
       </body>
     </html>

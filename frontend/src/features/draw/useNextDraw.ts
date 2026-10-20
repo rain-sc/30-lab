@@ -1,8 +1,8 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { BETTING_CUTOFF_SECONDS } from "./rules";
-import { formatDrawNo, INTERVAL_MS, nextDrawAt } from "./schedule";
+import { feedNow, hasResult, useDrawFeed } from "./feed";
+import { INTERVAL_MS } from "./schedule";
 import { revealedAt } from "./stage/timeline";
 
 // 每秒通知一次；snapshot 取到「秒」，同一秒內回傳相同的值，React 不會重複渲染
@@ -10,25 +10,23 @@ const subscribe = (onTick: () => void) => {
   const id = setInterval(onTick, 1000);
   return () => clearInterval(id);
 };
-const getSnapshot = () => Math.floor(Date.now() / 1000);
+const getSnapshot = () => Math.floor(feedNow() / 1000);
 // 伺服器端不知道使用者看到頁面的時間，先回傳 null，畫面顯示佔位符，避免 hydration 不一致
 const getServerSnapshot = () => null;
 
-/** 現在時間（每秒更新一次，毫秒）；伺服器端和 hydrate 前是 null */
+/** 現在時間（用後端 serverTime 校正過，每秒更新一次，毫秒）；伺服器端和 hydrate 前是 null */
 export function useNow(): number | null {
   const seconds = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   return seconds === null ? null : seconds * 1000;
 }
 
 export type NextDraw = {
-  /** 下一期的期數號 */
+  /** 目前這一期（下注中 / 已截止）的期數號 */
   drawNo: string;
-  /** 下一期的開獎時間（毫秒） */
+  /** 目前這一期的開獎時間（毫秒） */
   drawAt: number;
-  /** 上一期（已開獎）的期數號 */
-  lastDrawNo: string;
-  /** 上一期的開獎時間 */
-  lastDrawAt: number;
+  /** 上一期（已開獎）的期數號；系統剛上線還沒開過獎時是 null */
+  lastDrawNo: string | null;
   /**
    * 最近一期「已公布」的開獎時間：開獎動畫播完（開獎後 25 秒）才算公布。
    * 開獎紀錄、冷熱號碼用這個，避免列表比舞台先劇透號碼
@@ -38,30 +36,33 @@ export type NextDraw = {
   remainingSeconds: number;
   /** 這一期已經過了多少（0–1），進度條用 */
   progress: number;
-  /** 已過截止時間（開獎前 15 秒），不能再下注 */
+  /** 已截止（開獎前 15 秒），不能再下注 */
   closed: boolean;
 };
 
 /**
- * 下一期開獎資訊。
- * 【暫時】後端還沒有期數 API：依「每 5 分鐘整點開獎」的規則在前端推算。
- * 接上 API 後改用後端的 drawAt + serverTime 校正（見 docs/draw-animation.md）。
+ * 目前這一期的資訊（後端 GET /api/draws/current + /topic/draws，見 feed.ts）。
+ * 還沒拿到資料時是 null（畫面顯示佔位符；拿不到時 useDrawFeed 的 status 是 "error"）
  */
 export function useNextDraw(): NextDraw | null {
   const now = useNow();
-  if (now === null) return null;
+  const current = useDrawFeed((s) => s.current);
+  const previous = useDrawFeed((s) => s.previous);
+  if (now === null || !current) return null;
 
-  const drawAt = nextDrawAt(now);
-  const remainingSeconds = Math.round((drawAt - now) / 1000);
+  const openAt = Date.parse(current.openAt);
+  const closeAt = Date.parse(current.closeAt);
+  const drawAt = Date.parse(current.drawAt);
+  const lastDrawAt = previous ? Date.parse(previous.drawAt) : openAt;
 
   return {
-    drawNo: formatDrawNo(drawAt),
+    drawNo: current.drawNo,
     drawAt,
-    lastDrawNo: formatDrawNo(drawAt - INTERVAL_MS),
-    lastDrawAt: drawAt - INTERVAL_MS,
-    revealedDrawAt: now >= revealedAt(drawAt - INTERVAL_MS) ? drawAt - INTERVAL_MS : drawAt - 2 * INTERVAL_MS,
-    remainingSeconds,
-    progress: 1 - (drawAt - now) / INTERVAL_MS,
-    closed: remainingSeconds <= BETTING_CUTOFF_SECONDS,
+    lastDrawNo: previous?.drawNo ?? null,
+    revealedDrawAt: now >= revealedAt(lastDrawAt) ? lastDrawAt : lastDrawAt - INTERVAL_MS,
+    remainingSeconds: Math.max(0, Math.round((drawAt - now) / 1000)),
+    progress: Math.min(1, Math.max(0, (now - openAt) / (drawAt - openAt))),
+    // 已開獎但新的一期還沒到（推播差幾毫秒）也算截止
+    closed: current.status !== "OPEN" || hasResult(current) || now >= closeAt,
   };
 }
