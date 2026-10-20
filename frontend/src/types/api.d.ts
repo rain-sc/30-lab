@@ -55,6 +55,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/wallet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 我的積分餘額 */
+        get: operations["balance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/wallet/transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 我的積分流水, 由新到舊 */
+        get: operations["transactions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/draws": {
         parameters: {
             query?: never;
@@ -176,6 +210,74 @@ export interface components {
              * @example password123
              */
             password: string;
+        };
+        ResultWalletResponse: {
+            /**
+             * Format: int32
+             * @description 0 表示成功，失敗時是 5 位數錯誤碼
+             */
+            code: number;
+            /** @description 給開發看的說明，不直接顯示給使用者 */
+            msg: string;
+            /** @description 回應資料；沒有資料時是 null */
+            data: components["schemas"]["WalletResponse"];
+        };
+        WalletResponse: {
+            /**
+             * Format: int64
+             * @description 積分餘額
+             * @example 10000
+             */
+            balance: number;
+        };
+        PageResultWalletTransactionResponse: {
+            list: components["schemas"]["WalletTransactionResponse"][];
+            /**
+             * Format: int64
+             * @description 總筆數
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 第幾頁,從 1 開始
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 每頁筆數
+             */
+            size: number;
+        };
+        ResultPageResultWalletTransactionResponse: {
+            /**
+             * Format: int32
+             * @description 0 表示成功，失敗時是 5 位數錯誤碼
+             */
+            code: number;
+            /** @description 給開發看的說明，不直接顯示給使用者 */
+            msg: string;
+            /** @description 回應資料；沒有資料時是 null */
+            data: components["schemas"]["PageResultWalletTransactionResponse"];
+        };
+        WalletTransactionResponse: {
+            /** @enum {string} */
+            type: "SIGNUP_BONUS" | "BET" | "PAYOUT";
+            /**
+             * Format: int64
+             * @description 變動金額，收入為正、支出為負
+             * @example -10
+             */
+            amount: number;
+            /**
+             * Format: int64
+             * @description 變動後的餘額
+             * @example 9990
+             */
+            balanceAfter: number;
+            /** @description 關聯的資料：註冊贈送是使用者 id，下注 / 派彩是注單 id */
+            refId: string;
+            /** Format: date-time */
+            createdAt: string;
         };
         DrawResponse: {
             /**
@@ -332,6 +434,49 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ResultUserResponse"];
+                };
+            };
+        };
+    };
+    balance: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultWalletResponse"];
+                };
+            };
+        };
+    };
+    transactions: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultPageResultWalletTransactionResponse"];
                 };
             };
         };

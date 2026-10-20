@@ -9,6 +9,7 @@ import { logout } from "@/features/auth/api";
 import { useSession } from "@/features/auth/session";
 import { useBalance } from "@/features/betting/mockBets";
 import { useNow } from "@/features/draw/useNextDraw";
+import { useWallet } from "@/features/wallet/api";
 import { BalanceDelta } from "@/features/wallet/BalanceDelta";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
@@ -55,6 +56,25 @@ function BalancePill() {
   const t = useTranslations("Wallet");
   const user = useSession((s) => s.user);
   const balance = useBalance(user?.username, useNow());
+  const wallet = useWallet(user?.username);
+
+  // 錢包載入失敗：整顆變成重試按鈕（不能一直顯示「—」而沒有下一步）
+  if (wallet.isError && balance === null) {
+    return (
+      <button
+        type="button"
+        onClick={() => wallet.refetch()}
+        title={t("retryHint")}
+        aria-label={t("retryHint")}
+        className="inline-flex items-center gap-2 rounded-full border border-danger/50 bg-panel px-3 py-1 text-sm text-danger md:px-3.5 md:py-1.5"
+      >
+        <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7" />
+        </svg>
+        {t("retry")}
+      </button>
+    );
+  }
 
   return (
     <span

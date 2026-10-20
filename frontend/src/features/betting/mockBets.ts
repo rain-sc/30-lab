@@ -1,15 +1,15 @@
 "use client";
 
-// 【示例資料】後端還沒有下注、錢包 API：下注記錄存在瀏覽器的 localStorage，依帳號分開。
-// 積分餘額不另外存，由注單算出來（起始積分 − 下注花費 + 已開獎的獎金），不會有「扣了錢但沒注單」的不一致。
-// 接上 API 後刪掉這個檔案，改用 TanStack Query 讀後端的注單和餘額。
+// 【示例資料】後端還沒有下注 API：下注記錄存在瀏覽器的 localStorage，依帳號分開。
+// 積分 = 後端錢包的餘額（GET /api/wallet）+ 示例注單的增減（− 下注花費 + 已開獎的獎金）。
+// 下注 API 完成後刪掉這個檔案，注單改用 TanStack Query 讀後端，積分直接用錢包餘額。
 import { useMemo } from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { useDrawFeed, type DrawResult } from "@/features/draw/feed";
-import { SAMPLE_INITIAL_POINTS } from "@/features/draw/mock";
 import { POINTS_PER_BET } from "@/features/draw/rules";
 import { revealedAt } from "@/features/draw/stage/timeline";
+import { useWallet } from "@/features/wallet/api";
 import { checkTicket, type TicketResult } from "./prizes";
 
 export type PlacedBet = {
@@ -68,14 +68,18 @@ export function settle(bets: PlacedBet[], now: number, results: Record<string, D
   });
 }
 
-/** 示例積分餘額；now 是 null（hydrate 前）時回傳 null */
+/**
+ * 積分餘額 = 後端錢包餘額 + 示例注單的增減（下注 API 完成前）。
+ * 錢包還沒拿到、或 now 是 null（hydrate 前）時回傳 null
+ */
 export function useBalance(username: string | undefined, now: number | null): number | null {
   const bets = useUserBets(username);
   const results = useDrawFeed((s) => s.results);
+  const wallet = useWallet(username).data;
   return useMemo(() => {
-    if (now === null || !username) return null;
+    if (now === null || !username || !wallet) return null;
     const spent = bets.length * POINTS_PER_BET;
     const won = settle(bets, now, results).reduce((sum, b) => sum + (b.result?.prize ?? 0), 0);
-    return SAMPLE_INITIAL_POINTS - spent + won;
-  }, [bets, now, username, results]);
+    return wallet.balance - spent + won;
+  }, [bets, now, username, results, wallet]);
 }

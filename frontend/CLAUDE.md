@@ -14,7 +14,7 @@
 | 框架 | Next.js 16.4（App Router）、React 19.3、TypeScript | |
 | 樣式 | Tailwind CSS 4（design token 在 `src/app/globals.css`）、clsx + tailwind-merge（`cn()`） | shadcn/ui |
 | HTTP 請求 | axios（`src/lib/api/client.ts` 的 `api`，所有 API 都用它） | |
-| 伺服器數據 | TanStack Query 5（`src/lib/query/QueryProvider.tsx`；開獎紀錄、補查） | |
+| 伺服器數據 | TanStack Query 5（`src/lib/query/QueryProvider.tsx`；開獎紀錄、補查、錢包） | |
 | 客戶端狀態 | Zustand（選號、待下注、登入的使用者；【示例】注單） | |
 | 表單 | React Hook Form + Zod 4 | |
 | API 類型 | openapi-typescript（`npm run gen:api`，從 `../docs/api/openapi.json` 生成 `src/types/api.d.ts`） | |
@@ -149,7 +149,7 @@ src/
 - 尊重 `prefers-reduced-motion`：用戶關閉動畫時直接顯示號碼。
 - 遊戲端所有文字都走 i18n（繁中、英文），不寫死在組件裡；管理後台之後再決定。
 - 同一頁只放一個 WebGL 場景（開獎頁已有 3D 舞台，不再加 WebGL 背景效果）。
-- 後端還沒有的資料（彩池、下注、積分）用 `src/features/draw/mock.ts` 的示例資料，畫面上必須標示「示例數據」。
+- 後端還沒有的資料（彩池、下注）用 `src/features/draw/mock.ts` 的示例資料，畫面上必須標示「示例數據」。
 
 ## 遊戲端頁面
 
@@ -160,8 +160,8 @@ src/
 - 登入的使用者放在 `useSession`（`features/auth/session.ts`），頁首、注單依 `username` 讀取。
 - Zustand 的 `persist` store 一律 `skipHydration: true`，由 `GameSessionGate` 掛載後 `rehydrate()`：伺服器端沒有 storage，直接讀會 hydration 不一致。
   選號、待下注存 **sessionStorage**（每個分頁各自一份，和登入規則一致）。
-- **【示例】下注和積分**：後端還沒有下注、錢包 API，注單存在 localStorage（`betting/mockBets.ts`，依帳號分開）。
-  積分餘額不另外存，**由注單算出來**：起始 1000 − 每注 10 + 已開獎注單的獎金。對獎用**真實開獎號碼**；還沒拿到號碼的顯示「結果確認中」，獎金先不算。接上 API 後刪掉 `mockBets.ts`，改用 TanStack Query。
+- **【示例】下注**：後端還沒有下注 API，注單存在 localStorage（`betting/mockBets.ts`，依帳號分開）。
+  **積分 = 後端錢包餘額（`GET /api/wallet`，`wallet/api.ts` 的 `useWallet`）+ 示例注單的增減**（− 每注 10 + 已開獎注單的獎金）；錢包載入失敗時頁首變成重試按鈕。對獎用**真實開獎號碼**；還沒拿到號碼的顯示「結果確認中」，獎金先不算。接上 API 後刪掉 `mockBets.ts`，改用 TanStack Query。
 - **期數資料**（`features/draw/feed.ts`，[locale]/layout 的 `DrawFeed` 啟動，登入頁也用）：`GET /api/draws/current` + `/topic/draws` 推播
   - 時鐘用 `serverTime` 校正：時間一律用 `feedNow()` / `useNow()`，不要直接 `Date.now()`
   - 期數依 `drawNo` 存：「目前這期」= 開獎時間最晚的、「上一期」= 有號碼的期數裡最晚的（後端重啟會補送過期事件，不能假設收到的就是目前這期）

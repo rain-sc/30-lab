@@ -83,6 +83,7 @@
     "40400": "We couldn't find what you asked for",
     "40900": "The data has changed. Refresh and try again.",
     "40901": "This username is already taken",
+    "40902": "Not enough points",
     "50000": "The server is busy. Please try again later.",
     "network": "Can't reach the server. Check your connection and try again."
   },
@@ -102,7 +103,9 @@
   "Wallet": {
     "balance": "My points",
     "points": "points",
-    "sampleNote": "Sample points: simulated until the wallet API is ready"
+    "sampleNote": "Server balance plus sample tickets (until the betting API is ready)",
+    "retry": "Retry",
+    "retryHint": "Couldn’t load points. Click to retry"
   },
   "Lobby": {
     "stage": "Draw stage",
