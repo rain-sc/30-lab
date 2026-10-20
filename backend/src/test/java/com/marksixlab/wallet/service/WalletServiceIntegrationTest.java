@@ -16,10 +16,8 @@ import com.marksixlab.wallet.model.WalletTransaction;
 import com.marksixlab.wallet.model.WalletTransactionType;
 import com.marksixlab.wallet.repository.WalletRepository;
 import com.marksixlab.wallet.repository.WalletTransactionRepository;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DuplicateKeyException;
@@ -27,7 +25,7 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 
 @SpringBootTest(properties = "spring.mongodb.uri=mongodb://localhost:27018/marksixlab_test?directConnection=true")
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+
 class WalletServiceIntegrationTest {
 
     @Autowired
@@ -46,11 +44,6 @@ class WalletServiceIntegrationTest {
     void clean() {
         mongoTemplate.remove(new Query(), Wallet.class);
         mongoTemplate.remove(new Query(), WalletTransaction.class);
-    }
-
-    @AfterAll
-    void dropTestDatabase() {
-        mongoTemplate.getDb().drop();
     }
 
     @Test

@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.marksixlab.common.BusinessException;
+import com.marksixlab.common.ErrorCode;
 import com.marksixlab.common.PageResult;
 import com.marksixlab.common.Pagination;
 import com.marksixlab.draw.dto.CurrentDrawResponse;
@@ -41,6 +43,13 @@ public class DrawService {
         List<Draw> closed = closeDue(now);
         List<Draw> drawn = drawDue(now);
         return new TickResult(opened, closed, drawn);
+    }
+
+    public void requireOpenForBetting(String drawNo, Instant now){
+        DrawSlot slot = drawSchedule.slotAt(now);
+        if(!slot.drawNo().equals(drawNo) || !now.isBefore(slot.closeAt())){
+            throw new BusinessException(ErrorCode.BETTING_CLOSED);
+        }
     }
 
     private Draw openCurrent(Instant now) {

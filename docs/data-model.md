@@ -17,11 +17,16 @@ MongoDB，資料庫名 `marksixlab`。**草稿**：階段 0 逐個集合討論�
 | `wallets` | 積分餘額（每人一個） | `userId`、`balance` | `userId` |
 | `wallet_transactions` | 積分流水 | `userId`、`type`、`amount`、`balanceAfter`、`refId` | `type + refId` |
 | `draws` | 期數 | `drawNo`、`status`、`openAt`、`closeAt`、`drawAt`、`numbers`、`specialNumber`、`drawnAt`、`poolAmount` | `drawNo` |
-| `tickets` | 注單 | `userId`、`drawNo`、`betType`、`selections`、`lines`、`cost`、`status`、`prizeTier`、`payout`、`idempotencyKey` | `userId + idempotencyKey` |
+| `tickets` | 注單 | `userId`、`drawNo`、`betType`、`lines`、`cost`、`status`、`idempotencyKey`（結算後加每注的中獎結果、`payout`） | `userId + idempotencyKey` |
 
 ## 設計重點
 
-- **注單預留複式、膽拖**：`betType`（`SINGLE` / `MULTIPLE` / `BANKER`）+ 玩家原始選號 `selections`，再展開成一注一注的 `lines`。單式時 `lines` 只有一注。
+- **注單預留複式、膽拖**：`betType`（`SINGLE` / `MULTIPLE` / `BANKER`）+ 玩家原始選號 `selections`，再展開成一注一注的 `lines`。
+  - 目前只有單式：一張注單的 `lines` 就是玩家送出的每一注（每注 6 個號碼，存成由小到大），`cost = 注數 × 10`
+  - `selections` 等做複式、膽拖時再加（單式時跟 `lines` 一樣，先不重複存）
+- **下注流程**：檢查期數（目前這期、`OPEN`、還沒過 `closeAt`）→ 在同一個事務裡**建立注單 + 扣積分 + 寫流水**（流水 `refId` = 注單 id）
+  - `idempotencyKey`：前端每次確認下注產生一個 UUID；同一個 key 再送一次，直接回傳第一次建立的注單，不會重複扣款
+- **注單索引**：`userId + idempotencyKey`（唯一）、`userId + createdAt`（我的注單列表）、`drawNo + status`（結算時找這期待結算的注單）
 - **扣積分防並發**：`updateOne({ userId, balance: { $gte: cost } }, { $inc: { balance: -cost } })`，餘額檢查和扣減是同一個原子操作。
 - **積分流水**：每一筆餘額變動都寫一筆，`amount` 收入為正、支出為負，`balanceAfter` 是變動後的餘額。
   - `type`：`SIGNUP_BONUS`（註冊贈送，`refId` = userId）、`BET`（下注，`refId` = 注單 id）、`PAYOUT`（派彩，`refId` = 注單 id）。之後有退款、簽到再加

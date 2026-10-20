@@ -22,7 +22,11 @@ public enum ErrorCode {
     USERNAME_TAKEN(40901, "帳號已被使用"),
 
     // 錢包
-    INSUFFICIENT_POINTS(40902,"積分不足");
+    INSUFFICIENT_POINTS(40902,"積分不足"),
+
+    // 下注
+    TOO_MANY_LINES(40002, "注數超過上限"),
+    BETTING_CLOSED(40903, "這一期已截止下注");
 
     private final int code;
     private final String message;
