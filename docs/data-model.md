@@ -16,7 +16,7 @@ MongoDB，資料庫名 `marksixlab`。**草稿**：階段 0 逐個集合討論�
 | `users` | 帳戶 | `username`、`passwordHash`、`nickname`、`roles`、`enabled` | `username` |
 | `wallets` | 積分餘額（每人一個） | `userId`、`balance`、`version` | `userId` |
 | `wallet_transactions` | 積分流水 | `userId`、`type`、`amount`、`balanceAfter`、`refId` | `type + refId` |
-| `draws` | 期數 | `drawNo`、`status`、`openAt`、`closeAt`、`drawAt`、`numbers`、`specialNumber`、`poolAmount` | `drawNo` |
+| `draws` | 期數 | `drawNo`、`status`、`openAt`、`closeAt`、`drawAt`、`numbers`、`specialNumber`、`drawnAt`、`poolAmount` | `drawNo` |
 | `tickets` | 注單 | `userId`、`drawNo`、`betType`、`selections`、`lines`、`cost`、`status`、`prizeTier`、`payout`、`idempotencyKey` | `userId + idempotencyKey` |
 
 ## 設計重點
@@ -25,7 +25,11 @@ MongoDB，資料庫名 `marksixlab`。**草稿**：階段 0 逐個集合討論�
 - **扣積分防並發**：`updateOne({ userId, balance: { $gte: cost } }, { $inc: { balance: -cost } })`，餘額檢查和扣減是同一個原子操作。
 - **下注是一個事務**：扣餘額 + 寫流水 + 建立注單，三件事要麼都成功、要麼都失敗（需要副本集）。
 - **登入 session 不存 MongoDB**：Redis `session:{userId}` 存目前有效的 session id（TTL = JWT 有效期），JWT 帶同一個 id；不一致代表被新登入踢掉。登出就刪 key。
-- **期數號 `drawNo`**：格式待定（例如 `20261014-0001`，一天 288 期）。
+- **期數號 `drawNo`**：`yyyyMMdd-NNNN`，**以 UTC 計算**，由開放時間 `openAt` 推出：日期是 `openAt` 的 UTC 日期，`NNNN` 是當天第幾個 5 分鐘（`0001`~`0288`）。例如 UTC `00:00` 開放、`00:05` 開獎的是 `-0001`；`23:55` 開放、隔天 `00:00` 開獎的是 `-0288`。
+  - 期數號只是編號，全世界一致；玩家看的時間用 `openAt` / `closeAt` / `drawAt`，由前端轉成當地時間。
+  - 開獎時間對齊整點（`:00`、`:05`…），同一個時間點永遠算出同一個期數號，加上唯一索引，重啟或重跑都不會建出重複的期數。
+- **`drawAt` 和 `drawnAt`**：`drawAt` 是排定的開獎時間；`drawnAt` 是實際開出號碼的時間（後端當機重啟後補開時，`drawnAt` 會比 `drawAt` 晚）。
+- **定時任務**：每秒「對帳」一次，補做該做的事（建立目前這期、過了截止時間就 `CLOSED`、過了開獎時間就開獎），狀態變更一律用條件更新，重複執行安全。
 
 ## 待討論
 
