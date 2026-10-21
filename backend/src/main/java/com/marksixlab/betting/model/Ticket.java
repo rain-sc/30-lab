@@ -38,6 +38,12 @@ public class Ticket {
 
     private String idempotencyKey;
 
+    private List<LineResult> results;
+
+    private long payout;
+
+    private Instant settledAt;
+
     @CreatedDate
     private Instant createdAt;
 

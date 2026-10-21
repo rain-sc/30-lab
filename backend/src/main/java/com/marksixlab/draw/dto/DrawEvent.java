@@ -7,6 +7,7 @@ public record DrawEvent(Type type, Instant serverTime, DrawResponse draw) {
     public  enum Type {
         OPENED,
         CLOSED,
-        DRAWN
+        DRAWN,
+        SETTLED
     }
 }

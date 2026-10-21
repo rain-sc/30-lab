@@ -39,6 +39,14 @@ public class Draw {
 
     private Instant drawnAt;
 
+    private Long poolAmount;
+
+    private Integer jackpotWinners;
+
+    private Long jackpotRollover;
+
+    private Instant settledAt;
+
     @CreatedDate
     private Instant createdAt;
 

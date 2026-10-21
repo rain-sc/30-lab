@@ -3,6 +3,7 @@ package com.marksixlab.draw.service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import com.marksixlab.common.BusinessException;
 import com.marksixlab.common.ErrorCode;
@@ -107,6 +108,29 @@ public class DrawService {
             drawn.add(draw);
         }
     }
+
+    public Optional<Draw> nextToSettle() {
+        return drawRepository.findFirstByStatusOrderByDrawAtAsc(DrawStatus.DRAWN);
+    }
+
+    public long previousRollover(Draw draw) {
+        return drawRepository.findFirstByStatusAndDrawAtBeforeOrderByDrawAtDesc(DrawStatus.SETTLED, draw.getDrawAt())
+                .map(Draw::getJackpotRollover)
+                .orElse(0L);
+    }
+
+    public Draw markSettled(String drawNo, long poolAmount, int jackpotWinners, long jackpotRollover, Instant now) {
+        Query query = Query.query(Criteria.where("drawNo").is(drawNo).and("status").is(DrawStatus.DRAWN));
+        Update update = new Update()
+                .set("status", DrawStatus.SETTLED)
+                .set("poolAmount", poolAmount)
+                .set("jackpotWinners", jackpotWinners)
+                .set("jackpotRollover", jackpotRollover)
+                .set("settledAt", now)
+                .set("updatedAt", now);
+        return mongoTemplate.findAndModify(query, update, FindAndModifyOptions.options().returnNew(true), Draw.class);
+    }
+
 
     public CurrentDrawResponse current(Instant now){
         DrawSlot slot = drawSchedule.slotAt(now);

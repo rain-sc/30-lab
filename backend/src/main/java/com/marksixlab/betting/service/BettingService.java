@@ -1,11 +1,13 @@
 package com.marksixlab.betting.service;
 
 import java.time.Instant;
+import java.util.List;
 
 import com.marksixlab.betting.dto.PlaceBetRequest;
 import com.marksixlab.betting.dto.PlaceBetResponse;
 import com.marksixlab.betting.dto.TicketResponse;
 import com.marksixlab.betting.model.BetType;
+import com.marksixlab.betting.model.LineResult;
 import com.marksixlab.betting.model.Ticket;
 import com.marksixlab.betting.model.TicketStatus;
 import com.marksixlab.betting.repository.TicketRepository;
@@ -22,6 +24,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -37,6 +43,7 @@ public class BettingService {
     private final TransactionTemplate transactionTemplate;
     private final BettingProperties bettingProperties;
     private final GameProperties gameProperties;
+    private final MongoTemplate mongoTemplate;
 
     public PlaceBetResponse place(String userId, PlaceBetRequest req, Instant now) {
         for (int attempt = 1; ; attempt++) {
@@ -84,6 +91,32 @@ public class BettingService {
         return PageResult.of(ticketRepository.findByUserId(userId,pageable).map(TicketResponse::from));
     }
 
+    public List<Ticket> ticketsOfDraw(String drawNo){
+        return ticketRepository.findByDrawNo(drawNo);
+    }
+
+    public List<Ticket> wonTicketsOfDraw(String drawNo){
+        return ticketRepository.findByDrawNoAndStatus(drawNo, TicketStatus.WON);
+    }
+
+    public void recordResult(String ticketId, List<LineResult> results, long payout, Instant now){
+        Query query = Query.query(Criteria.where("_id").is(ticketId).and("status").is(TicketStatus.PENDING));
+        Update update = new Update()
+                .set("status",payout > 0 ? TicketStatus.WON : TicketStatus.LOST)
+                .set("results",results)
+                .set("payout",payout)
+                .set("settledAt",now)
+                .set("updatedAt",now);
+        mongoTemplate.updateFirst(query,update,Ticket.class);
+    }
+
+    public void markPaid(String ticketId, Instant now){
+        Query query = Query.query(Criteria.where("_id").is(ticketId).and("status").is(TicketStatus.WON));
+        Update update = new Update()
+                .set("status", TicketStatus.PAID)
+                .set("updatedAt", now);
+        mongoTemplate.updateFirst(query, update, Ticket.class);
+    }
 
     private PlaceBetResponse withBalance(Ticket ticket, String userId) {
         return new PlaceBetResponse(TicketResponse.from(ticket), walletService.balance(userId).balance());

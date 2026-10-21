@@ -28,8 +28,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.test.context.ActiveProfiles;
 
-@SpringBootTest(properties = "spring.mongodb.uri=mongodb://localhost:27018/marksixlab_test?directConnection=true")
+@SpringBootTest
+@ActiveProfiles("test")
 class BettingServiceIntegrationTest {
 
     private static final Instant NOW = Instant.parse("2026-10-20T03:02:00Z");
