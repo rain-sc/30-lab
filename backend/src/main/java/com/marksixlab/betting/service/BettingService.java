@@ -11,6 +11,8 @@ import com.marksixlab.betting.model.TicketStatus;
 import com.marksixlab.betting.repository.TicketRepository;
 import com.marksixlab.common.BusinessException;
 import com.marksixlab.common.ErrorCode;
+import com.marksixlab.common.PageResult;
+import com.marksixlab.common.Pagination;
 import com.marksixlab.config.BettingProperties;
 import com.marksixlab.config.GameProperties;
 import com.marksixlab.draw.service.DrawService;
@@ -18,6 +20,8 @@ import com.marksixlab.wallet.model.WalletTransactionType;
 import com.marksixlab.wallet.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -74,6 +78,12 @@ public class BettingService {
         });
         return new PlaceBetResponse(TicketResponse.from(ticket), balance);
     }
+
+    public PageResult<TicketResponse> myTickets(String userId, int page, int size){
+        Pageable pageable = Pagination.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        return PageResult.of(ticketRepository.findByUserId(userId,pageable).map(TicketResponse::from));
+    }
+
 
     private PlaceBetResponse withBalance(Ticket ticket, String userId) {
         return new PlaceBetResponse(TicketResponse.from(ticket), walletService.balance(userId).balance());

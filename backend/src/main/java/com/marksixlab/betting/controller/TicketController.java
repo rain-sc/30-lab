@@ -2,17 +2,16 @@ package com.marksixlab.betting.controller;
 
 import com.marksixlab.betting.dto.PlaceBetRequest;
 import com.marksixlab.betting.dto.PlaceBetResponse;
+import com.marksixlab.betting.dto.TicketResponse;
 import com.marksixlab.betting.service.BettingService;
+import com.marksixlab.common.PageResult;
 import com.marksixlab.common.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -30,5 +29,15 @@ public class TicketController {
     public Result<PlaceBetResponse> place(@AuthenticationPrincipal String userId,
                                           @Valid @RequestBody PlaceBetRequest req){
         return Result.ok(bettingService.place(userId,req, Instant.now().truncatedTo(ChronoUnit.MILLIS)));
+    }
+
+    @GetMapping
+    @Operation(summary = "我的注單，由新到舊")
+    public Result<PageResult<TicketResponse>> myTickets(
+            @AuthenticationPrincipal String userId,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "20") int size
+    ){
+        return Result.ok(bettingService.myTickets(userId,page,size));
     }
 }
