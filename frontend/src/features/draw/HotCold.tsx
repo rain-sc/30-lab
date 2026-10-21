@@ -1,24 +1,35 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Ball } from "@/components/Ball";
+import { Button } from "@/components/ui/Button";
 import { PICK_COUNT, useBetting } from "@/features/betting/store";
-import { MAX_PAGE_SIZE } from "./api";
-import { computeHotCold } from "./hotColdStats";
-import { useDrawHistory } from "./useDrawHistory";
+import { fetchNumberStats, toHotCold } from "./hotColdStats";
 import type { NextDraw } from "./useNextDraw";
 
-/** 冷熱號碼：用最近 100 期的開獎紀錄計算（選號盤也用來標示熱門號碼）；window 是實際算了幾期 */
+/**
+ * 冷熱號碼（後端統計最近 100 期；選號盤也用來標示熱門號碼）。
+ * queryKey 帶 revealedDrawAt：開獎動畫播完才重抓。
+ * 動畫播放中（最新一期已經在後端的統計裡、畫面還沒公布）不抓，沿用上一份資料，不提前暴露號碼
+ */
 export function useHotCold(next: NextDraw | null) {
-  const { list } = useDrawHistory(1, MAX_PAGE_SIZE, next);
-  return useMemo(() => computeHotCold(list), [list]);
+  const query = useQuery({
+    queryKey: ["number-stats", next?.revealedDrawAt ?? null],
+    queryFn: () => fetchNumberStats(),
+    enabled: !!next?.latestRevealed,
+    placeholderData: keepPreviousData,
+    select: toHotCold,
+  });
+  return { data: query.data ?? null, isError: query.isError && !query.data, refetch: query.refetch };
 }
 
 /** 冷熱號碼：最近 100 期最常開出、最久沒開的號碼；點號碼加入選號盤 */
 export function HotCold({ next }: { next: NextDraw | null }) {
   const t = useTranslations("HotCold");
-  const data = useHotCold(next);
+  const errorT = useTranslations("Draws");
+  const { data, isError, refetch } = useHotCold(next);
   const add = useBetting((s) => s.add);
   const picked = useBetting((s) => s.picked);
   const [message, setMessage] = useState("");
@@ -84,8 +95,15 @@ export function HotCold({ next }: { next: NextDraw | null }) {
             false,
           )}
         </div>
+      ) : isError ? (
+        <div role="alert" className="flex flex-wrap items-center gap-3">
+          <p className="m-0 text-sm text-danger">{t("error")}</p>
+          <Button variant="ghost" className="h-9 text-sm" onClick={() => refetch()}>
+            {errorT("retry")}
+          </Button>
+        </div>
       ) : (
-        <div aria-hidden="true" className="h-20" />
+        <div aria-hidden="true" className="h-20 animate-pulse rounded-control bg-sunken motion-reduce:animate-none" />
       )}
       <p aria-live="polite" className="m-0 min-h-5 text-[13px] text-gold">
         {message}

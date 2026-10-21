@@ -154,7 +154,8 @@
     "coldAria": "{number}, absent for {count} draws, pick it",
     "added": "Added {number} ({count} / {total})",
     "already": "{number} is already picked",
-    "full": "You already picked 6 numbers"
+    "full": "You already picked 6 numbers",
+    "error": "Couldn’t load hot & cold numbers"
   },
   "MyBets": {
     "empty": "No tickets yet",

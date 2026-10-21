@@ -179,7 +179,8 @@ src/
   - 重抓時機：WebSocket 重連（`onWsConnect`）、分頁切回來、看門狗（過了開獎時間 5 秒還沒收到推播）；抓不到時 `status === "error"`，大廳顯示 `DrawFeedError`
   - 期數號由後端決定（UTC），前端不推算
 - **頭獎彩池**（`draw/jackpot.ts` 的 `useJackpot`、`JackpotAmount`）：`GET /api/jackpot`，進頁面、`SETTLED`、自己下注成功、每 30 秒重抓；**不能在 `OPENED` 時抓**（上一期還沒結算完）；`drawNo` 和目前這期不同時不顯示
-- **開獎紀錄**（`GET /api/draws`，`useDrawHistory`）：大廳近期開獎、開獎紀錄頁（分頁）、冷熱號碼（`size=100`）
+- **開獎紀錄**（`GET /api/draws`，`useDrawHistory`）：大廳近期開獎、開獎紀錄頁（分頁）
+- **冷熱號碼**（`GET /api/draws/number-stats?window=100`，`draw/HotCold.tsx` 的 `useHotCold`）：熱門用 `count + specialCount` 排序、冷門用 `missed`；queryKey 帶 `revealedDrawAt`，**動畫播完才抓**，`latestRevealed` 為 false（動畫播放中）時不抓、沿用上一份
   - 結算後每期有 `poolAmount`、`jackpotWinners`，開獎紀錄顯示「彩池・有沒有人中頭獎」
   - queryKey 帶 `revealedDrawAt`：新的一期公布時自動重抓；列表濾掉還沒公布的期數（不劇透）
   - 期數號可能不連續（後端停機期間沒有期數），不要用期數號推算前後期

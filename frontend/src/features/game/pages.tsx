@@ -14,7 +14,7 @@ import { GamePage } from "./GamePage";
 export function TrendsView() {
   const t = useTranslations("Lobby");
   const next = useNextDraw();
-  const drawCount = useHotCold(next)?.window;
+  const drawCount = useHotCold(next).data?.window;
   return (
     <GamePage title={t("hotCold")} note={drawCount ? t("hotColdNote", { count: drawCount }) : undefined}>
       <HotCold next={next} />

@@ -154,7 +154,8 @@
     "coldAria": "{number}，{count} 期沒開，加入選號",
     "added": "已加入 {number}（{count} / {total}）",
     "already": "{number} 已經選了",
-    "full": "已經選滿 6 個號碼"
+    "full": "已經選滿 6 個號碼",
+    "error": "無法載入冷熱號碼"
   },
   "MyBets": {
     "empty": "還沒有注單",

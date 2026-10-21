@@ -32,6 +32,8 @@ export type NextDraw = {
    * 開獎紀錄、冷熱號碼用這個，避免列表比舞台先劇透號碼
    */
   revealedDrawAt: number;
+  /** 最近一期的開獎動畫已經播完（後端的統計包含了最新一期，播完前抓會提前暴露號碼） */
+  latestRevealed: boolean;
   /** 距離開獎還有幾秒 */
   remainingSeconds: number;
   /** 這一期已經過了多少（0–1），進度條用 */
@@ -60,6 +62,7 @@ export function useNextDraw(): NextDraw | null {
     drawAt,
     lastDrawNo: previous?.drawNo ?? null,
     revealedDrawAt: now >= revealedAt(lastDrawAt) ? lastDrawAt : lastDrawAt - INTERVAL_MS,
+    latestRevealed: now >= revealedAt(lastDrawAt),
     remainingSeconds: Math.max(0, Math.round((drawAt - now) / 1000)),
     progress: Math.min(1, Math.max(0, (now - openAt) / (drawAt - openAt))),
     // 已開獎但新的一期還沒到（推播差幾毫秒）也算截止

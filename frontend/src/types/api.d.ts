@@ -141,6 +141,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/draws/number-stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 冷熱號碼:最近window期每個號碼開出幾次、連續幾期沒開 (不用登入) */
+        get: operations["numberStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/draws/current": {
         parameters: {
             query?: never;
@@ -546,6 +563,53 @@ export interface components {
             /** @description 回應資料；沒有資料時是 null */
             data: components["schemas"]["PageResultDrawResponse"];
         };
+        NumberStat: {
+            /**
+             * Format: int32
+             * @description 號碼 1~49
+             * @example 7
+             */
+            number: number;
+            /**
+             * Format: int32
+             * @description 統計範圍內開出幾次正碼
+             * @example 12
+             */
+            count: number;
+            /**
+             * Format: int32
+             * @description 統計範圍內開出幾次特別號碼
+             * @example 2
+             */
+            specialCount: number;
+            /**
+             * Format: int32
+             * @description 已經連續幾期沒開出（正碼或特別號碼都算開出）；0 = 最近一期有開出；整段都沒開過 = window
+             * @example 3
+             */
+            missed: number;
+        };
+        NumberStatsResponse: {
+            /**
+             * Format: int32
+             * @description 實際統計了最近幾期（已開獎的期數不夠時會比要求的少）
+             * @example 100
+             */
+            window: number;
+            /** @description 1~49 每個號碼的統計，依號碼排序，固定 49 筆 */
+            numbers: components["schemas"]["NumberStat"][];
+        };
+        ResultNumberStatsResponse: {
+            /**
+             * Format: int32
+             * @description 0 表示成功，失敗時是 5 位數錯誤碼
+             */
+            code: number;
+            /** @description 給開發看的說明，不直接顯示給使用者 */
+            msg: string;
+            /** @description 回應資料；沒有資料時是 null */
+            data: components["schemas"]["NumberStatsResponse"];
+        };
         CurrentDrawResponse: {
             /**
              * Format: date-time
@@ -774,6 +838,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ResultPageResultDrawResponse"];
+                };
+            };
+        };
+    };
+    numberStats: {
+        parameters: {
+            query?: {
+                window?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultNumberStatsResponse"];
                 };
             };
         };

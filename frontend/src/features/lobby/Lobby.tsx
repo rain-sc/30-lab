@@ -37,7 +37,7 @@ const FADE_UP = "animate-fade-up motion-reduce:animate-none";
 export function Lobby() {
   const t = useTranslations("Lobby");
   const next = useNextDraw();
-  const hotCold = useHotCold(next);
+  const hotCold = useHotCold(next).data;
   const hot = hotCold?.hot.map((h) => h.number);
   const isDesktop = useIsDesktop();
 
