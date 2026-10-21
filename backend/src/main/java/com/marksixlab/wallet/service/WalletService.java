@@ -1,13 +1,11 @@
 package com.marksixlab.wallet.service;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-
 import com.marksixlab.common.BusinessException;
 import com.marksixlab.common.ErrorCode;
 import com.marksixlab.common.PageResult;
 import com.marksixlab.common.Pagination;
 import com.marksixlab.config.WalletProperties;
+import com.marksixlab.wallet.dto.PayoutRank;
 import com.marksixlab.wallet.dto.WalletResponse;
 import com.marksixlab.wallet.dto.WalletTransactionResponse;
 import com.marksixlab.wallet.model.Wallet;
@@ -21,11 +19,17 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class WalletService {
@@ -47,6 +51,20 @@ public class WalletService {
         getOrOpen(userId);
         Pageable pageable = Pagination.of(page, size, Sort.by(Sort.Direction.DESC,"createdAt"));
         return PageResult.of(transactionRepository.findByUserId(userId, pageable).map(WalletTransactionResponse::from));
+    }
+
+    public List<PayoutRank> payoutRanking(Instant from, Instant to){
+        Aggregation aggregation = Aggregation.newAggregation(
+                Aggregation.match(Criteria.where("type").is(WalletTransactionType.PAYOUT)
+                        .and("createdAt").gte(from).lt(to)),
+                Aggregation.group("userId").sum("amount").as("amount"),
+                Aggregation.stage("""
+                        { $setWindowFields: { sortBy: { amount: -1 }, output: { rank: { $rank: { } } } } }
+                        """),
+                Aggregation.stage("""
+                        { $sort: { rank: 1, _id: 1 } }
+                        """));
+                return mongoTemplate.aggregate(aggregation, WalletTransaction.class,PayoutRank.class).getMappedResults();
     }
 
     // 扣款

@@ -15,7 +15,7 @@ MongoDB，資料庫名 `marksixlab`。**草稿**：階段 0 逐個集合討論�
 |---|---|---|---|
 | `users` | 帳戶 | `username`、`passwordHash`、`nickname`、`roles`、`enabled` | `username` |
 | `wallets` | 積分餘額（每人一個） | `userId`、`balance` | `userId` |
-| `wallet_transactions` | 積分流水 | `userId`、`type`、`amount`、`balanceAfter`、`refId` | `type + refId` |
+| `wallet_transactions` | 積分流水 | `userId`、`type`、`amount`、`balanceAfter`、`refId` | `type + refId`（唯一）、`userId + createdAt`（我的流水）、`type + createdAt`（排行榜：某段時間的派彩） |
 | `draws` | 期數 | `drawNo`、`status`、`openAt`、`closeAt`、`drawAt`、`numbers`、`specialNumber`、`drawnAt`；結算後加 `poolAmount`、`jackpotWinners`、`jackpotRollover`、`settledAt` | `drawNo` |
 | `tickets` | 注單 | `userId`、`drawNo`、`betType`、`lines`、`cost`、`status`、`idempotencyKey`；結算後加 `results`（每注 `matched`、`specialHit`、`tier`、`prize`）、`payout`、`settledAt` | `userId + idempotencyKey` |
 

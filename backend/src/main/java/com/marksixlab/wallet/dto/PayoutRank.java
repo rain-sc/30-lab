@@ -1,0 +1,6 @@
+package com.marksixlab.wallet.dto;
+
+import org.springframework.data.annotation.Id;
+
+public record PayoutRank(@Id String userId, long amount, int rank) {
+}

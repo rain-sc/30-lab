@@ -28,7 +28,7 @@ com.marksixlab
 ├── betting/       投注：選號、下注、注單
 ├── draw/          開獎：期數、定時任務、號碼生成、開獎紀錄、冷熱號碼
 ├── settlement/    結算：判獎、彩池、派彩
-└── stats/         統計：跨模組的統計（例如排行榜，還沒開始；只讀開獎資料的放在 draw）
+└── stats/         統計：跨模組的統計（排行榜：組合 wallet 的派彩名次 + account 的暱稱；只讀開獎資料的放在 draw）
 ```
 
 每個模組內部再分 `controller/`、`service/`、`repository/`、`model/`、`dto/`。

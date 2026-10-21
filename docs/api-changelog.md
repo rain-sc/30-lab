@@ -16,9 +16,33 @@
 
 ---
 
+## 2026-10-21（後端：排行榜）
+- 規則（已寫進 [game-rules.md](game-rules.md)）：比**中獎總額**（期間內派彩加總，不扣下注、不含註冊和簽到贈送）；**今日**、**本週**兩個榜，UTC 計算，本週從週一 00:00 開始；以**派彩時間**歸屬期間
+- 【新增】`GET /api/leaderboard?period=DAY`（**不用登入**；有登入會多回傳自己的名次）
+  ```json
+  { "period": "DAY", "from": "2026-10-21T00:00:00Z", "to": "2026-10-22T00:00:00Z",
+    "entries": [ { "rank": 1, "nickname": "小雨", "amount": 120, "me": false },
+                 { "rank": 2, "nickname": "Rain", "amount": 40, "me": true } ],
+    "mine": { "rank": 2, "nickname": "Rain", "amount": 40, "me": true } }
+  ```
+  - `period`：`DAY`（今日，預設）或 `WEEK`（本週）；其他值 → `40001`，`field: "period"`、`rule: "typeMismatch"`
+  - `entries`：前 **20** 名，期間內沒中獎的人不會上榜（所以剛重置時可能是空陣列）
+  - `rank`：**同分同名次**（1、2、2、4），同名次的順序固定
+  - `nickname`：只給暱稱，不給帳號；**暱稱可能重複**，請不要拿暱稱當 React 的 `key`（用 `rank` + 索引）
+  - `me`：這一筆是不是自己（可以把自己那一列標亮）
+  - `mine`：自己的名次，**就算不在前 20 名也會有**；沒登入或期間內還沒中獎是 `null`
+  - `to`：也是下次重置的時間，可以顯示「X 小時後重置」
+  - cookie 失效（被踢、過期）時不會 401，當成沒登入處理，`mine` 是 `null`
+- 已用 8088 驗證：今日、本週都是「小雨 120、Rain 40」；副本另外驗證了登入後 `me` / `mine`、亂碼 cookie、不存在的 `period`
+- 【待前端】
+  1. 重新 `npm run gen:api`
+  2. 排行榜頁 / 區塊：今日、本週切換；顯示名次、暱稱、中獎總額；自己那一列標亮；自己不在前 20 名時，在最下面另外顯示 `mine`
+  3. 什麼時候重新抓：進頁面、切換期間、收到 `SETTLED` 時（**等開獎動畫播完再抓**，跟中獎結果一樣不要提前暴露）；倒數到 `to` 時也重抓一次
+  4. `/api/leaderboard` 加進「已登出也能送」的清單
+
 ## 2026-10-21（前端：每日簽到）
 - ⚠️ `docs/api/openapi.json` 這次**沒有重新匯出**（裡面沒有 `/api/wallet/daily-bonus`、`DAILY_BONUS`），前端照 CLAUDE.md 的指令從 8088 匯出了一次（`curl http://localhost:8088/v3/api-docs -o docs/api/openapi.json`）再 `gen:api`
-  - 【待後端】請確認匯出的內容就是要交接的版本；之後新增 API 時記得一起匯出
+  - 【已完成】（後端 2026-10-21）確認過：前端匯出的就是要交接的版本（`/api/wallet/daily-bonus` GET/POST、`DAILY_BONUS`、`ClaimDailyBonusResponse` 都在）。當時後端剛好停著，沒辦法匯出；之後照流程由後端匯出
 - 【已完成】回覆後端「每日簽到」那筆的【待前端】：
   - 頁首積分旁邊的簽到按鈕：沒簽到時「簽到 +1,000」，按下後用回應的 `balance` 更新積分（數字滾動 + 浮出「+1,000」）；已簽到時顯示「今日已簽到 · X 小時 Y 分後可再簽到」（距離 `nextResetAt`）
   - 手機頁首放不下：只在沒簽到時顯示「+1,000」，已簽到的狀態和倒數放在使用者選單裡
