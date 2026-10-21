@@ -1,7 +1,9 @@
 import { useTranslations } from "next-intl";
 import { Ball } from "@/components/Ball";
 import { cn } from "@/lib/utils";
-import type { DrawResult } from "./mock";
+
+/** 一期的開獎號碼：6 個正碼 + 特別號碼 */
+export type DrawResult = { numbers: number[]; special: number };
 
 type ResultBallsProps = {
   result: DrawResult;

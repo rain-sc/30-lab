@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import { useTranslations } from "next-intl";
-import { CountUp } from "@/components/fx/CountUp";
 import { MobileBetBar } from "@/features/betting/MobileBetBar";
 import { NumberPad } from "@/features/betting/NumberPad";
 import { PendingTickets } from "@/features/betting/PendingTickets";
@@ -11,7 +10,7 @@ import { CountdownDigits, DrawProgress } from "@/features/draw/Countdown";
 import { DrawFeedError } from "@/features/draw/DrawFeedError";
 import { DrawStatus } from "@/features/draw/DrawStatus";
 import { HotCold, useHotCold } from "@/features/draw/HotCold";
-import { SAMPLE_JACKPOT } from "@/features/draw/mock";
+import { JackpotAmount } from "@/features/draw/JackpotAmount";
 import { RecentDraws } from "@/features/draw/RecentDraws";
 import { DrawStage } from "@/features/draw/stage/DrawStage";
 import { MobileStage } from "@/features/draw/stage/MobileStage";
@@ -155,14 +154,8 @@ function JackpotCard({ className }: { className?: string }) {
   return (
     <section className={cn(CARD, "flex-col justify-center gap-2 px-5.5 py-3.5 xl:gap-2.5 xl:py-4.5", className)}>
       <StatLabel>{t("jackpot")}</StatLabel>
-      <CountUp
-        to={SAMPLE_JACKPOT}
-        delay={0.2}
-        className="font-num text-[44px] leading-[0.95] font-bold text-gold tabular-nums xl:text-[56px]"
-      />
-      <span className="text-[13px] text-muted">
-        {t("points")} · {t("sample")}
-      </span>
+      <JackpotAmount className="font-num text-[44px] leading-[0.95] font-bold text-gold tabular-nums xl:text-[56px]" />
+      <span className="text-[13px] text-muted">{t("points")}</span>
     </section>
   );
 }
@@ -186,8 +179,7 @@ function MobileDrawCard({ next, stage, className }: { next: NextDraw | null; sta
         <DrawProgress next={next} showLabels={false} />
         <span className="text-[11px] text-muted">
           {t("jackpot")}{" "}
-          <CountUp to={SAMPLE_JACKPOT} delay={0.2} className="font-num text-lg font-bold text-gold tabular-nums" />
-          <span className="ml-1">· {t("sample")}</span>
+          <JackpotAmount className="font-num text-lg font-bold text-gold tabular-nums" />
         </span>
       </div>
       {stage && <MobileStage className="w-33" />}

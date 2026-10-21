@@ -107,6 +107,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/jackpot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 目前這期的頭獎彩池(不用登入) */
+        get: operations["current"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/draws": {
         parameters: {
             query?: never;
@@ -132,7 +149,7 @@ export interface paths {
             cookie?: never;
         };
         /** 目前期數和最近一期的開獎結果 (不用登入) */
-        get: operations["current"];
+        get: operations["current_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -196,6 +213,27 @@ export interface components {
              */
             lines: number[][];
         };
+        LineResult: {
+            /**
+             * Format: int32
+             * @description 中了幾個正碼
+             * @example 3
+             */
+            matched: number;
+            /** @description 有沒有中特別號碼 */
+            specialHit: boolean;
+            /**
+             * @description 獎級 沒中獎是 null
+             * @enum {string}
+             */
+            tier?: "FIRST" | "SECOND" | "THIRD" | "FOURTH" | "FIFTH" | "SIXTH" | "SEVENTH";
+            /**
+             * Format: int64
+             * @description 這一注的獎金
+             * @example 40
+             */
+            prize: number;
+        };
         PlaceBetResponse: {
             ticket: components["schemas"]["TicketResponse"];
             /**
@@ -232,6 +270,19 @@ export interface components {
             cost: number;
             /** @enum {string} */
             status: "PENDING" | "LOST" | "WON" | "PAID";
+            /** @description 每一注的判獎結果, 順序跟lines一樣 結算前是 null */
+            results?: components["schemas"]["LineResult"][];
+            /**
+             * Format: int64
+             * @description 這張注單的總獎金；結算前是 0
+             * @example 80
+             */
+            payout: number;
+            /**
+             * Format: date-time
+             * @description 結算時間; 結算前是 null
+             */
+            settledAt?: string;
             /** Format: date-time */
             createdAt: string;
         };
@@ -399,6 +450,30 @@ export interface components {
             /** @description 回應資料；沒有資料時是 null */
             data: components["schemas"]["PageResultTicketResponse"];
         };
+        JackpotResponse: {
+            /**
+             * @description 目前這期的期數號
+             * @example 20261021-0080
+             */
+            drawNo: string;
+            /**
+             * Format: int64
+             * @description 本期頭獎彩池(估計值,隨下注增加;開獎後以結算結果為準)
+             * @example 1000056
+             */
+            amount: number;
+        };
+        ResultJackpotResponse: {
+            /**
+             * Format: int32
+             * @description 0 表示成功，失敗時是 5 位數錯誤碼
+             */
+            code: number;
+            /** @description 給開發看的說明，不直接顯示給使用者 */
+            msg: string;
+            /** @description 回應資料；沒有資料時是 null */
+            data: components["schemas"]["JackpotResponse"];
+        };
         DrawResponse: {
             /**
              * @description 期數號 (UTC 日期 + 當天第幾期)
@@ -429,6 +504,18 @@ export interface components {
              * @description 特別號碼;開獎後才有
              */
             specialNumber?: number;
+            /**
+             * Format: int64
+             * @description 本期頭獎彩池結算後才有
+             * @example 1000056
+             */
+            poolAmount?: number;
+            /**
+             * Format: int32
+             * @description 中頭獎的注數(0 = 沒人中, 彩池滾到下期);結算後才有
+             * @example 0
+             */
+            jackpotWinners?: number;
         };
         PageResultDrawResponse: {
             list: components["schemas"]["DrawResponse"][];
@@ -648,6 +735,26 @@ export interface operations {
             };
         };
     };
+    current: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultJackpotResponse"];
+                };
+            };
+        };
+    };
     history: {
         parameters: {
             query?: {
@@ -671,7 +778,7 @@ export interface operations {
             };
         };
     };
-    current: {
+    current_1: {
         parameters: {
             query?: never;
             header?: never;

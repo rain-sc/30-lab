@@ -6,6 +6,10 @@ import { api } from "@/lib/api/client";
 import type { components } from "@/types/api";
 
 export type Ticket = components["schemas"]["TicketResponse"];
+export type LineResult = components["schemas"]["LineResult"];
+/** 獎級：FIRST 頭獎 … SEVENTH 七獎（沒中獎時 LineResult.tier 不存在） */
+export type Tier = NonNullable<LineResult["tier"]>;
+export const TIERS: Tier[] = ["FIRST", "SECOND", "THIRD", "FOURTH", "FIFTH", "SIXTH", "SEVENTH"];
 export type PlaceBetRequest = components["schemas"]["PlaceBetRequest"];
 export type PlaceBetResponse = components["schemas"]["PlaceBetResponse"];
 type TicketPage = components["schemas"]["PageResultTicketResponse"];

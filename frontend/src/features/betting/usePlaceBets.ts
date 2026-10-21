@@ -55,6 +55,7 @@ export function usePlaceBets() {
       queryClient.setQueryData<Wallet>(["wallet", username], { balance: res.balance });
       void queryClient.invalidateQueries({ queryKey: ["tickets"] });
       void queryClient.invalidateQueries({ queryKey: ["wallet-transactions"] });
+      void queryClient.invalidateQueries({ queryKey: ["jackpot"] });
       clearPending();
       setFeedback({ tone: "success", text: t("placed", { count: res.ticket.lines.length, drawNo: res.ticket.drawNo }) });
     },

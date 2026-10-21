@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { onWsConnect, subscribeWs } from "@/lib/ws/client";
 import { fetchCurrentDraw, feedNow, useDrawFeed, type DrawEvent } from "./feed";
 
@@ -15,8 +16,12 @@ const LATE_MS = 5_000;
  * - WebSocket 重連、分頁切回來時重新抓（斷線期間可能漏掉推播）
  * - 看門狗：過了開獎時間還沒收到新的一期、或新的一期開始了還沒收到上一期的號碼 → 重新抓
  * - 抓失敗每 10 秒重試；畫面依 status === "error" 顯示錯誤
+ * - 收到 SETTLED（派彩已完成）→ 重新抓注單、錢包、積分紀錄、彩池、開獎紀錄
+ *   （中獎結果、積分增加由畫面等開獎動畫播完才顯示，見 wallet/api.ts 的 useBalance）
  */
 export function DrawFeed() {
+  const queryClient = useQueryClient();
+
   useEffect(() => {
     void useDrawFeed.persist.rehydrate();
     let cancelled = false;
@@ -36,7 +41,13 @@ export function DrawFeed() {
 
     const stopEvents = subscribeWs("/topic/draws", (body) => {
       const event = body as DrawEvent | null;
-      if (event?.draw?.drawNo) useDrawFeed.getState().applyEvent(event);
+      if (!event?.draw?.drawNo) return;
+      useDrawFeed.getState().applyEvent(event);
+      if (event.type === "SETTLED") {
+        for (const key of ["tickets", "wallet", "wallet-transactions", "jackpot", "draws"]) {
+          void queryClient.invalidateQueries({ queryKey: [key] });
+        }
+      }
     });
     const stopReconnect = onWsConnect(load);
     const onVisible = () => !document.hidden && load();
@@ -60,7 +71,7 @@ export function DrawFeed() {
       stopReconnect();
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, []);
+  }, [queryClient]);
 
   return null;
 }

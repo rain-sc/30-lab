@@ -4,11 +4,10 @@ import { useLayoutEffect, useState, type ReactNode } from "react";
 import { AnimatePresence, motion, type Variants } from "motion/react";
 import { useTranslations } from "next-intl";
 import { Ball } from "@/components/Ball";
-import { CountUp } from "@/components/fx/CountUp";
 import { RollingDigits } from "@/components/fx/RollingDigits";
 import { cn } from "@/lib/utils";
 import { hasResult, useDrawFeed } from "./feed";
-import { SAMPLE_JACKPOT } from "./mock";
+import { JackpotAmount } from "./JackpotAmount";
 import { BETTING_CUTOFF_SECONDS, DRAW_INTERVAL_MINUTES, POINTS_PER_BET } from "./rules";
 import { useNextDraw } from "./useNextDraw";
 
@@ -90,14 +89,9 @@ export function LivePanel({ className }: { className?: string }) {
 
         <div className="flex flex-col items-end gap-1 self-end [grid-area:jackpot] md:items-start md:self-auto">
           <span className="text-[13px] text-muted md:text-sm">
-            {/* 彩池要等後端的結算模組，目前是示例 */}
-            {t("jackpot")} <span className="text-[11px]">· {t("sample")}</span>
+            {t("jackpot")}
           </span>
-          <CountUp
-            to={SAMPLE_JACKPOT}
-            delay={0.3}
-            className="font-num text-[32px] leading-none font-bold text-gold tabular-nums md:text-5xl"
-          />
+          <JackpotAmount className="font-num text-[32px] leading-none font-bold text-gold tabular-nums md:text-5xl" />
           <span className="text-xs text-muted md:hidden">{t("points")}</span>
         </div>
 

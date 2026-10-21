@@ -14,7 +14,7 @@
 | 框架 | Next.js 16.4（App Router）、React 19.3、TypeScript | |
 | 樣式 | Tailwind CSS 4（design token 在 `src/app/globals.css`）、clsx + tailwind-merge（`cn()`） | shadcn/ui |
 | HTTP 請求 | axios（`src/lib/api/client.ts` 的 `api`，所有 API 都用它） | |
-| 伺服器數據 | TanStack Query 5（`src/lib/query/QueryProvider.tsx`；開獎紀錄、補查、錢包、注單、下注） | |
+| 伺服器數據 | TanStack Query 5（`src/lib/query/QueryProvider.tsx`；開獎紀錄、補查、錢包、注單、下注、頭獎彩池） | |
 | 客戶端狀態 | Zustand（選號、待下注、登入的使用者、期數資料） | |
 | 表單 | React Hook Form + Zod 4 | |
 | API 類型 | openapi-typescript（`npm run gen:api`，從 `../docs/api/openapi.json` 生成 `src/types/api.d.ts`） | |
@@ -83,7 +83,7 @@ src/
 | `fx/CountUp` | React Bits Count Up（改用 next-intl 數字格式） | 頭獎彩池進場累加、中獎金額累加 |
 | `fx/RollingNumber` | — | 積分從舊值滾到新值（下注扣款、派彩）；直接改 DOM 文字，不重新渲染 |
 | `wallet/BalanceDelta` | — | 積分旁浮出「+40」「−20」往上飄 |
-| `game/DrawNotices` | — | 開獎結果通知：可能中獎金色卡片 + 火花（頭獎到三獎更大），沒中獎小卡片 |
+| `game/DrawNotices` | — | 開獎結果通知：中獎金色卡片 + 火花 + 獎金累加（頭獎到三獎更大），沒中獎小卡片 |
 | `fx/SpotlightCard` | React Bits Spotlight Card（只保留核心，CSS 變數） | 表單卡片游標聚光燈 |
 | `fx/ClickSpark` | React Bits Click Spark（Canvas 改成 CSS） | 送出按鈕點擊火花 |
 | `Button` primary 的 `before:` 光澤 | Uiverse shine button | 按鈕 hover |
@@ -149,7 +149,7 @@ src/
 - 尊重 `prefers-reduced-motion`：用戶關閉動畫時直接顯示號碼。
 - 遊戲端所有文字都走 i18n（繁中、英文），不寫死在組件裡；管理後台之後再決定。
 - 同一頁只放一個 WebGL 場景（開獎頁已有 3D 舞台，不再加 WebGL 背景效果）。
-- 後端還沒有的資料（頭獎彩池，要等結算模組）用 `src/features/draw/mock.ts` 的示例資料，畫面上必須標示「示例數據」。
+- 所有資料都來自後端，前端沒有示例資料。之後如果又需要暫時的示例資料，畫面上必須標示「示例數據」。
 
 ## 遊戲端頁面
 
@@ -164,18 +164,23 @@ src/
   - `idempotencyKey`：每次確認下注產生新的；失敗原因不確定（網路、逾時、5xx）而且待下注沒變時沿用（後端不會重複扣款），同時重新抓積分和注單
   - 成功：用回應的 `balance` 直接更新錢包快取（`setQueryData`），invalidate `["tickets"]`、`["wallet-transactions"]`
   - `40903` 已截止 → `reloadCurrentDraw()`；`40902` 積分不足 → 重新抓錢包；每張最多 50 注（`MAX_LINES`，待下注滿了不能再加）
-- **積分**：完全是 `GET /api/wallet`（`wallet/api.ts` 的 `useWallet` / `useBalance`）；載入失敗時頁首變成重試按鈕
+- **積分**：`GET /api/wallet`（`wallet/api.ts` 的 `useWallet`）；載入失敗時頁首變成重試按鈕
+  - **畫面上的積分用 `useBalance`**：= 錢包餘額 − 還沒播完開獎動畫那幾期的 `payout`（派彩在開獎後約 1 秒就完成，比動畫早 20 幾秒，不能先漲）
 - **我的注單 / 積分紀錄**（`/bets`，分頁籤切換）：`GET /api/tickets`、`GET /api/wallet/transactions`，都分頁
-  - **結算模組完成前**：開獎動畫播完後，前端用開獎號碼標出每注中了哪幾個、可能的獎級（`betting/prizes.ts` 的 `checkLine`），狀態「已開獎・等待結算」，**不顯示獎金**；開獎通知也一樣
+  - 每注的獎級、獎金用後端的 `results`（和 `lines` 一一對應，`tier` 沒中獎時不存在）、注單的 `payout`；獎級名稱在 `Tier` 翻譯
+  - **中獎結果等開獎動畫播完才顯示**（`revealedAt`）：之前顯示「待開獎」，過了還是 `PENDING` 顯示「結算中」；開獎通知也一樣
   - 注單沒有開獎時間：用 `schedule.ts` 的 `drawAtOf(期數號)` 算（後端的規則：UTC、第 N 個 5 分鐘）
 - **期數資料**（`features/draw/feed.ts`，[locale]/layout 的 `DrawFeed` 啟動，登入頁也用）：`GET /api/draws/current` + `/topic/draws` 推播
+  - 推播 `OPENED` / `CLOSED` / `DRAWN` / `SETTLED`；**收到 `SETTLED`（派彩已完成）→ invalidate 注單、錢包、積分紀錄、彩池、開獎紀錄**（`DrawFeed`）
   - 時鐘用 `serverTime` 校正：時間一律用 `feedNow()` / `useNow()`，不要直接 `Date.now()`
   - 期數依 `drawNo` 存：「目前這期」= 開獎時間最晚的、「上一期」= 有號碼的期數裡最晚的（後端重啟會補送過期事件，不能假設收到的就是目前這期）
   - 號碼開獎前**欄位不存在**（不是 null），用 `hasResult()` 判斷；`numbers` 是開出順序，顯示時自己排序
   - 收到的開獎號碼存在 localStorage（`useDrawFeed` 的 `results`），對獎、開獎紀錄用
   - 重抓時機：WebSocket 重連（`onWsConnect`）、分頁切回來、看門狗（過了開獎時間 5 秒還沒收到推播）；抓不到時 `status === "error"`，大廳顯示 `DrawFeedError`
   - 期數號由後端決定（UTC），前端不推算
+- **頭獎彩池**（`draw/jackpot.ts` 的 `useJackpot`、`JackpotAmount`）：`GET /api/jackpot`，進頁面、`SETTLED`、自己下注成功、每 30 秒重抓；**不能在 `OPENED` 時抓**（上一期還沒結算完）；`drawNo` 和目前這期不同時不顯示
 - **開獎紀錄**（`GET /api/draws`，`useDrawHistory`）：大廳近期開獎、開獎紀錄頁（分頁）、冷熱號碼（`size=100`）
+  - 結算後每期有 `poolAmount`、`jackpotWinners`，開獎紀錄顯示「彩池・有沒有人中頭獎」
   - queryKey 帶 `revealedDrawAt`：新的一期公布時自動重抓；列表濾掉還沒公布的期數（不劇透）
   - 期數號可能不連續（後端停機期間沒有期數），不要用期數號推算前後期
   - 拿到的號碼也記進 `useDrawFeed` 的 `results`
@@ -201,7 +206,7 @@ src/
 0. ✅ 開獎動畫方案文件、原型
 1. ✅ i18n 骨架（繁中 / 英文、`[locale]` 路由）
 2. ✅ 登入 / 註冊頁（順帶完成 design token、號碼球、表單基礎元件）；已接上後端帳戶 API，成功後進大廳
-3. ✅ 大廳（設計稿 D）+ 選號盤 + 待下注列表 + 冷熱 / 開獎紀錄 / 我的注單；期數、下注、積分是前端示例資料
+3. ✅ 大廳（設計稿 D）+ 選號盤 + 待下注列表 + 冷熱 / 開獎紀錄 / 我的注單（當時用示例資料，2026-10-21 已全部接上後端）
 4. ✅ 3D 開獎舞台搬進大廳（npm 的 three.js + matter.js；手機開獎時舞台自動放大）
 5. ✅ 中獎提示、積分滾動等效果
 

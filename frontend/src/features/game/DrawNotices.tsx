@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useTranslations } from "next-intl";
+import { CountUp } from "@/components/fx/CountUp";
 import { useSession } from "@/features/auth/session";
-import { useRecentTickets, type Ticket } from "@/features/betting/api";
-import { checkLine, type PrizeTier } from "@/features/betting/prizes";
+import { TIERS, useRecentTickets, type Ticket, type Tier } from "@/features/betting/api";
 import { useDrawFeed, type DrawResult } from "@/features/draw/feed";
 import { ResultBalls } from "@/features/draw/ResultBalls";
 import { drawAtOf } from "@/features/draw/schedule";
@@ -20,8 +20,10 @@ type Notice = {
   result: DrawResult;
   /** 這一期下了幾注 */
   lines: number;
-  /** 中獎的獎級和注數，獎級高的在前（前端用開獎號碼對的，正式結果和獎金等後端結算） */
-  tiers: { tier: PrizeTier; count: number }[];
+  /** 中獎的獎級和注數，獎級高的在前（後端結算的結果） */
+  tiers: { tier: Tier; count: number }[];
+  /** 這一期的總獎金 */
+  total: number;
 };
 
 /** 中獎提示停留久一點，沒中獎的很快消失 */
@@ -30,7 +32,7 @@ const LOSE_MS = 5000;
 
 /**
  * 開獎結果通知：自己有下注的那一期，開獎動畫播完（revealedAt）時跳出來。
- * - 中獎：金色卡片 + 火花，列出獎級和注數；頭獎到三獎更大。獎金等後端結算後派彩，這裡不顯示金額
+ * - 中獎：金色卡片 + 火花 + 獎金累加，列出獎級和注數；頭獎到三獎更大（後端結算的結果）
  * - 沒中獎：小卡片，很快消失
  * 只通知「打開頁面之後」才公布的期數，重新整理不會把舊的再跳一次。
  * 放在遊戲端版面裡（任何遊戲頁面都會收到）。
@@ -47,10 +49,11 @@ export function DrawNotices() {
   // 在渲染時比對（React 文件建議的「依 props 調整 state」做法，不用 effect）
   if (now !== null && startedAt === null) setStartedAt(now);
   if (now !== null && startedAt !== null) {
-    // 動畫播完、而且有開獎號碼的期數
+    // 動畫播完、有開獎號碼、而且這期的注單都結算完了（SETTLED 比動畫早 20 幾秒到，通常早就結算好）
     const due = [...new Set((tickets ?? []).map((ticket) => ticket.drawNo))].filter((drawNo) => {
       const at = revealedAt(drawAtOf(drawNo));
-      return at > startedAt && at <= now && !notified.has(drawAtOf(drawNo)) && results[drawNo];
+      const settled = tickets!.every((ticket) => ticket.drawNo !== drawNo || ticket.status !== "PENDING");
+      return at > startedAt && at <= now && !notified.has(drawAtOf(drawNo)) && results[drawNo] && settled;
     });
     if (due.length > 0) {
       setNotified(new Set([...notified, ...due.map(drawAtOf)]));
@@ -80,25 +83,27 @@ export function DrawNotices() {
 }
 
 function buildNotice(drawNo: string, tickets: Ticket[], result: DrawResult): Notice {
-  const byTier = new Map<PrizeTier, number>();
-  const lines = tickets.flatMap((ticket) => ticket.lines);
-  for (const line of lines) {
-    const { tier } = checkLine(line, result);
-    if (tier) byTier.set(tier, (byTier.get(tier) ?? 0) + 1);
+  const byTier = new Map<Tier, number>();
+  for (const ticket of tickets) {
+    for (const line of ticket.results ?? []) {
+      if (line.tier) byTier.set(line.tier, (byTier.get(line.tier) ?? 0) + 1);
+    }
   }
   return {
     drawAt: drawAtOf(drawNo),
     drawNo,
     result,
-    lines: lines.length,
-    tiers: [...byTier.entries()].sort(([a], [b]) => a - b).map(([tier, count]) => ({ tier, count })),
+    lines: tickets.reduce((sum, ticket) => sum + ticket.lines.length, 0),
+    tiers: TIERS.filter((tier) => byTier.has(tier)).map((tier) => ({ tier, count: byTier.get(tier)! })),
+    total: tickets.reduce((sum, ticket) => sum + ticket.payout, 0),
   };
 }
 
 function NoticeCard({ notice, onDismiss }: { notice: Notice; onDismiss: (drawAt: number) => void }) {
   const t = useTranslations("Notice");
-  const won = notice.tiers.length > 0;
-  const big = notice.tiers.some((x) => x.tier <= 3);
+  const tt = useTranslations("Tier");
+  const won = notice.total > 0;
+  const big = notice.tiers.some((x) => x.tier === "FIRST" || x.tier === "SECOND" || x.tier === "THIRD");
   const { drawAt } = notice;
   const close = () => onDismiss(drawAt);
 
@@ -130,7 +135,7 @@ function NoticeCard({ notice, onDismiss }: { notice: Notice; onDismiss: (drawAt:
         <div className="flex flex-col gap-0.5">
           <span className="text-xs text-muted">{t("drawNo", { drawNo: notice.drawNo })}</span>
           <strong className={cn("font-bold", won ? (big ? "text-2xl text-gold" : "text-lg text-gold") : "text-base text-fg")}>
-            {won ? (big ? t("bigWin", { tier: notice.tiers[0].tier }) : t("win")) : t("lose", { count: notice.lines })}
+            {won ? (big ? t("bigWin", { tier: tt(notice.tiers[0].tier) }) : t("win")) : t("lose", { count: notice.lines })}
           </strong>
         </div>
         <button
@@ -149,12 +154,14 @@ function NoticeCard({ notice, onDismiss }: { notice: Notice; onDismiss: (drawAt:
         <div className="flex items-end justify-between gap-3">
           <ul className="m-0 flex list-none flex-col gap-0.5 p-0 text-sm text-fg-soft">
             {notice.tiers.map(({ tier, count }) => (
-              <li key={tier}>{t("tierCount", { tier, count })}</li>
+              <li key={tier}>{t("tierCount", { tier: tt(tier), count })}</li>
             ))}
           </ul>
-          {/* 獎金等後端結算模組派彩，這裡不顯示金額 */}
-          <span className="relative text-right text-[13px] text-gold">
-            {t("awaitingPayout")}
+          <span className="relative flex items-baseline gap-1 text-gold">
+            <span className="font-num text-[40px] leading-none font-bold">
+              +<CountUp to={notice.total} duration={1.4} delay={0.25} />
+            </span>
+            <span className="text-sm">{t("points")}</span>
             <Sparks count={big ? 20 : 12} />
           </span>
         </div>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { useApiErrorText } from "@/lib/api/useApiErrorText";
+import { cn } from "@/lib/utils";
 import type { Draw } from "./feed";
 import { ResultBalls } from "./ResultBalls";
 import { useDrawHistory } from "./useDrawHistory";
@@ -81,6 +82,7 @@ function HistoryState({
 
 function DrawList({ draws }: { draws: Draw[] }) {
   const format = useFormatter();
+  const t = useTranslations("Draws");
   return (
     <ol className="m-0 flex list-none flex-col p-0">
       {draws.map((d) => (
@@ -88,11 +90,19 @@ function DrawList({ draws }: { draws: Draw[] }) {
           key={d.drawNo}
           className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1.5 border-t border-line py-2.5 first:border-t-0"
         >
-          <div className="flex items-baseline gap-3">
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
             <span className="font-num text-[17px] tabular-nums">{d.drawNo}</span>
             <time dateTime={d.drawAt} className="text-sm text-muted">
               {format.dateTime(new Date(d.drawAt), { hour: "2-digit", minute: "2-digit" })}
             </time>
+            {/* 結算後才有：這期的頭獎彩池、中頭獎的注數（0 = 沒人中，滾到下一期） */}
+            {d.poolAmount !== undefined && (
+              <span className={cn("text-xs", d.jackpotWinners ? "font-bold text-gold" : "text-muted")}>
+                {d.jackpotWinners
+                  ? t("jackpotWon", { count: d.jackpotWinners, points: format.number(d.poolAmount) })
+                  : t("rolledOver", { points: format.number(d.poolAmount) })}
+              </span>
+            )}
           </div>
           {d.numbers && d.specialNumber !== undefined && (
             <ResultBalls result={{ numbers: d.numbers, special: d.specialNumber }} size="xs" />

@@ -13,7 +13,7 @@ import type { components } from "@/types/api";
 
 export type Draw = components["schemas"]["DrawResponse"];
 type CurrentDrawResponse = components["schemas"]["CurrentDrawResponse"];
-export type DrawEvent = { type: "OPENED" | "CLOSED" | "DRAWN"; serverTime: string; draw: Draw };
+export type DrawEvent = { type: "OPENED" | "CLOSED" | "DRAWN" | "SETTLED"; serverTime: string; draw: Draw };
 
 /** 一期的開獎結果：numbers 是開出順序（沒有排序） */
 export type DrawResult = { numbers: number[]; special: number; drawAt: number };

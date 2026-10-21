@@ -2,6 +2,10 @@
 
 // 錢包（要登入）
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useRecentTickets } from "@/features/betting/api";
+import { drawAtOf } from "@/features/draw/schedule";
+import { revealedAt } from "@/features/draw/stage/timeline";
+import { useNow } from "@/features/draw/useNextDraw";
 import { api } from "@/lib/api/client";
 import type { components } from "@/types/api";
 
@@ -11,9 +15,20 @@ export function fetchWallet() {
   return api.get<Wallet>("/wallet");
 }
 
-/** 積分餘額；還沒拿到時是 null */
+/**
+ * 畫面上顯示的積分；還沒拿到時是 null。
+ * 派彩在開獎後約 1 秒就完成（SETTLED），比開獎動畫早 20 幾秒：
+ * 顯示的積分 = 錢包餘額 − 還沒播完開獎動畫的那幾期的獎金，動畫播完的那一刻才滾上去，不會比舞台先劇透
+ */
 export function useBalance(username: string | undefined): number | null {
-  return useWallet(username).data?.balance ?? null;
+  const wallet = useWallet(username).data;
+  const tickets = useRecentTickets(username).data?.list;
+  const now = useNow();
+  if (!wallet) return null;
+  const unrevealed = (tickets ?? [])
+    .filter((ticket) => ticket.payout > 0 && (now === null || revealedAt(drawAtOf(ticket.drawNo)) > now))
+    .reduce((sum, ticket) => sum + ticket.payout, 0);
+  return wallet.balance - unrevealed;
 }
 
 /**

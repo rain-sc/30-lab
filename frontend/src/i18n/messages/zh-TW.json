@@ -14,7 +14,6 @@
   "Live": {
     "heading": "目前期數",
     "drawNo": "第 {drawNo} 期",
-    "sample": "示例數據",
     "nextDraw": "距離下一期開獎",
     "closed": "已截止下注，即將開獎",
     "countdownLabel": "還有 {minutes} 分 {seconds} 秒開獎",
@@ -163,7 +162,6 @@
     "drawNo": "第 {drawNo} 期",
     "waiting": "待開獎",
     "hits": "中 {count} 個",
-    "unconfirmed": "開獎結果確認中…",
     "notFound": "查不到這期的開獎結果",
     "error": "無法載入注單：{reason}",
     "retry": "重試",
@@ -171,9 +169,11 @@
     "prev": "上一頁",
     "next": "下一頁",
     "page": "第 {page} / {pages} 頁",
-    "awaitingSettlement": "已開獎・等待結算",
-    "tierHit": "{tier, select, 1 {頭獎} 2 {二獎} 3 {三獎} 4 {四獎} 5 {五獎} 6 {六獎} other {七獎}}",
-    "cost": "{count} 注 · {points} 積分"
+    "cost": "{count} 注 · {points} 積分",
+    "settling": "已開獎・結算中…",
+    "won": "中獎 +{points} 積分",
+    "lost": "未中獎",
+    "linePrize": "{tier} +{points}"
   },
   "Stage": {
     "title": "開獎舞台",
@@ -188,12 +188,12 @@
   "Notice": {
     "drawNo": "第 {drawNo} 期開獎",
     "win": "恭喜中獎！",
-    "bigWin": "{tier, select, 1 {頭獎} 2 {二獎} other {三獎}}！恭喜！",
+    "bigWin": "{tier}！恭喜！",
     "lose": "{count} 注未中獎，下一期再來",
-    "tierCount": "{tier, select, 1 {頭獎} 2 {二獎} 3 {三獎} 4 {四獎} 5 {五獎} 6 {六獎} other {七獎}} × {count}",
+    "tierCount": "{tier} × {count}",
     "viewBets": "查看注單",
     "close": "關閉",
-    "awaitingPayout": "等待結算派彩"
+    "points": "積分"
   },
   "Draws": {
     "pagination": "開獎紀錄分頁",
@@ -202,7 +202,9 @@
     "page": "第 {page} / {pages} 頁",
     "error": "無法載入開獎紀錄：{reason}",
     "retry": "重試",
-    "empty": "還沒有開獎紀錄"
+    "empty": "還沒有開獎紀錄",
+    "jackpotWon": "頭獎 {count} 注中・彩池 {points}",
+    "rolledOver": "彩池 {points}・無人中頭獎"
   },
   "Points": {
     "error": "無法載入積分紀錄：{reason}",
@@ -214,5 +216,14 @@
     "prev": "上一頁",
     "next": "下一頁",
     "page": "第 {page} / {pages} 頁"
+  },
+  "Tier": {
+    "FIRST": "頭獎",
+    "SECOND": "二獎",
+    "THIRD": "三獎",
+    "FOURTH": "四獎",
+    "FIFTH": "五獎",
+    "SIXTH": "六獎",
+    "SEVENTH": "七獎"
   }
 }

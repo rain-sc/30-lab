@@ -14,7 +14,6 @@
   "Live": {
     "heading": "Current draw",
     "drawNo": "Draw {drawNo}",
-    "sample": "Sample data",
     "nextDraw": "Next draw in",
     "closed": "Betting closed, drawing soon",
     "countdownLabel": "{minutes} minutes {seconds} seconds until the draw",
@@ -163,7 +162,6 @@
     "drawNo": "Draw {drawNo}",
     "waiting": "Awaiting draw",
     "hits": "{count} matched",
-    "unconfirmed": "Checking result…",
     "notFound": "Result not found for this draw",
     "error": "Couldn’t load your tickets: {reason}",
     "retry": "Retry",
@@ -171,9 +169,11 @@
     "prev": "Previous",
     "next": "Next",
     "page": "Page {page} of {pages}",
-    "awaitingSettlement": "Drawn · awaiting settlement",
-    "tierHit": "{tier, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} prize",
-    "cost": "{count, plural, one {# line} other {# lines}} · {points} points"
+    "cost": "{count, plural, one {# line} other {# lines}} · {points} points",
+    "settling": "Drawn · settling…",
+    "won": "Won +{points} points",
+    "lost": "No win",
+    "linePrize": "{tier} +{points}"
   },
   "Stage": {
     "title": "Draw stage",
@@ -188,12 +188,12 @@
   "Notice": {
     "drawNo": "Draw {drawNo} results",
     "win": "You won!",
-    "bigWin": "{tier, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} prize! Congratulations!",
+    "bigWin": "{tier}! Congratulations!",
     "lose": "No win on {count, plural, one {# ticket} other {# tickets}}. Next draw soon",
-    "tierCount": "{tier, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} prize × {count}",
+    "tierCount": "{tier} × {count}",
     "viewBets": "My tickets",
     "close": "Close",
-    "awaitingPayout": "Payout after settlement"
+    "points": "points"
   },
   "Draws": {
     "pagination": "Results pages",
@@ -202,7 +202,9 @@
     "page": "Page {page} of {pages}",
     "error": "Couldn’t load results: {reason}",
     "retry": "Retry",
-    "empty": "No draws yet"
+    "empty": "No draws yet",
+    "jackpotWon": "Jackpot won ×{count} · pool {points}",
+    "rolledOver": "Pool {points} · no jackpot winner"
   },
   "Points": {
     "error": "Couldn’t load points history: {reason}",
@@ -214,5 +216,14 @@
     "prev": "Previous",
     "next": "Next",
     "page": "Page {page} of {pages}"
+  },
+  "Tier": {
+    "FIRST": "1st prize",
+    "SECOND": "2nd prize",
+    "THIRD": "3rd prize",
+    "FOURTH": "4th prize",
+    "FIFTH": "5th prize",
+    "SIXTH": "6th prize",
+    "SEVENTH": "7th prize"
   }
 }
