@@ -85,6 +85,7 @@
     "40901": "This username is already taken",
     "40902": "Not enough points",
     "40903": "Betting is closed for this draw. Please wait for the next one",
+    "40904": "You already claimed today’s bonus",
     "50000": "The server is busy. Please try again later.",
     "network": "Can't reach the server. Check your connection and try again."
   },
@@ -107,7 +108,12 @@
     "balance": "My points",
     "points": "points",
     "retry": "Retry",
-    "retryHint": "Couldn’t load points. Click to retry"
+    "retryHint": "Couldn’t load points. Click to retry",
+    "dailyClaim": "Daily bonus +{points}",
+    "dailyClaimLabel": "Claim the daily bonus of {points} points",
+    "dailyClaimed": "Claimed today",
+    "dailyAvailable": "Daily bonus available",
+    "dailyNext": "next in {hours, plural, =0 {} other {#h }}{minutes}m"
   },
   "Lobby": {
     "stage": "Draw stage",
@@ -211,7 +217,7 @@
     "error": "Couldn’t load points history: {reason}",
     "retry": "Retry",
     "empty": "No points history yet",
-    "type": "{type, select, SIGNUP_BONUS {Sign-up bonus} BET {Bet} PAYOUT {Payout} other {Other}}",
+    "type": "{type, select, SIGNUP_BONUS {Sign-up bonus} DAILY_BONUS {Daily bonus} BET {Bet} PAYOUT {Payout} other {Other}}",
     "balanceAfter": "Balance {points}",
     "pagination": "Points history pages",
     "prev": "Previous",

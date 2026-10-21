@@ -4,6 +4,24 @@
  */
 
 export interface paths {
+    "/api/wallet/daily-bonus": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 今天簽到了沒、可以領多少、下次重置時間 */
+        get: operations["dailyBonus"];
+        put?: never;
+        /** 每日簽到領積分（每個 UTC 日一次；今天已經領過回傳 40904） */
+        post: operations["claimDailyBonus"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/tickets": {
         parameters: {
             query?: never;
@@ -196,6 +214,36 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        ClaimDailyBonusResponse: {
+            /**
+             * Format: int64
+             * @description 這次領到的積分
+             * @example 1000
+             */
+            amount: number;
+            /**
+             * Format: int64
+             * @description 簽到後的積分餘額
+             * @example 11000
+             */
+            balance: number;
+            /**
+             * Format: date-time
+             * @description 下次可以簽到的時間(下一個 UTC 00:00)
+             */
+            nextResetAt: string;
+        };
+        ResultClaimDailyBonusResponse: {
+            /**
+             * Format: int32
+             * @description 0 表示成功，失敗時是 5 位數錯誤碼
+             */
+            code: number;
+            /** @description 給開發看的說明，不直接顯示給使用者 */
+            msg: string;
+            /** @description 回應資料；沒有資料時是 null */
+            data: components["schemas"]["ClaimDailyBonusResponse"];
+        };
         PlaceBetRequest: {
             /**
              * @description 要下注的期數, 必須是目前這期
@@ -420,7 +468,7 @@ export interface components {
         };
         WalletTransactionResponse: {
             /** @enum {string} */
-            type: "SIGNUP_BONUS" | "BET" | "PAYOUT";
+            type: "SIGNUP_BONUS" | "DAILY_BONUS" | "BET" | "PAYOUT";
             /**
              * Format: int64
              * @description 變動金額，收入為正、支出為負
@@ -437,6 +485,32 @@ export interface components {
             refId: string;
             /** Format: date-time */
             createdAt: string;
+        };
+        DailyBonusResponse: {
+            /** @description 今天(UTC)是否已經簽到 */
+            claimed: boolean;
+            /**
+             * Format: int64
+             * @description 每次簽到可以領的積分
+             * @example 1000
+             */
+            amount: number;
+            /**
+             * Format: date-time
+             * @description 下次可以簽到的時間(下一個UTC 00:00)
+             */
+            nextResetAt: string;
+        };
+        ResultDailyBonusResponse: {
+            /**
+             * Format: int32
+             * @description 0 表示成功，失敗時是 5 位數錯誤碼
+             */
+            code: number;
+            /** @description 給開發看的說明，不直接顯示給使用者 */
+            msg: string;
+            /** @description 回應資料；沒有資料時是 null */
+            data: components["schemas"]["DailyBonusResponse"];
         };
         PageResultTicketResponse: {
             list: components["schemas"]["TicketResponse"][];
@@ -641,6 +715,46 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    dailyBonus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultDailyBonusResponse"];
+                };
+            };
+        };
+    };
+    claimDailyBonus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultClaimDailyBonusResponse"];
+                };
+            };
+        };
+    };
     myTickets: {
         parameters: {
             query?: {

@@ -85,6 +85,7 @@
     "40901": "這個帳號已經有人使用",
     "40902": "積分不足",
     "40903": "這一期已截止下注，請等下一期",
+    "40904": "今天已經簽到過了",
     "50000": "系統繁忙，請稍後再試",
     "network": "連不到伺服器，請檢查網路後再試一次"
   },
@@ -107,7 +108,12 @@
     "balance": "我的積分",
     "points": "積分",
     "retry": "重試",
-    "retryHint": "積分載入失敗，按一下重試"
+    "retryHint": "積分載入失敗，按一下重試",
+    "dailyClaim": "簽到 +{points}",
+    "dailyClaimLabel": "每日簽到，領 {points} 積分",
+    "dailyClaimed": "今日已簽到",
+    "dailyAvailable": "今天還沒簽到",
+    "dailyNext": "{hours, plural, =0 {} other {# 小時 }}{minutes} 分後可再簽到"
   },
   "Lobby": {
     "stage": "開獎舞台",
@@ -211,7 +217,7 @@
     "error": "無法載入積分紀錄：{reason}",
     "retry": "重試",
     "empty": "還沒有積分紀錄",
-    "type": "{type, select, SIGNUP_BONUS {註冊贈送} BET {下注} PAYOUT {派彩} other {其他}}",
+    "type": "{type, select, SIGNUP_BONUS {註冊贈送} DAILY_BONUS {每日簽到} BET {下注} PAYOUT {派彩} other {其他}}",
     "balanceAfter": "餘額 {points}",
     "pagination": "積分紀錄分頁",
     "prev": "上一頁",

@@ -166,6 +166,7 @@ src/
   - `40903` 已截止 → `reloadCurrentDraw()`；`40902` 積分不足 → 重新抓錢包；每張最多 50 注（`MAX_LINES`，待下注滿了不能再加）
 - **積分**：`GET /api/wallet`（`wallet/api.ts` 的 `useWallet`）；載入失敗時頁首變成重試按鈕
   - **畫面上的積分用 `useBalance`**：= 錢包餘額 − 還沒播完開獎動畫那幾期的 `payout`（派彩在開獎後約 1 秒就完成，比動畫早 20 幾秒，不能先漲）
+- **每日簽到**（`wallet/dailyBonus.ts`、`DailyBonusButton`，頁首積分旁邊）：每個 UTC 日一次；成功用回應的 `balance` 更新錢包快取；`40904` 當成「已簽到」（不顯示錯誤，重新抓狀態和積分）；到 `nextResetAt` 自動重抓，跨日後按鈕恢復。手機頁首只在沒簽到時顯示，已簽到的狀態在使用者選單裡
 - **我的注單 / 積分紀錄**（`/bets`，分頁籤切換）：`GET /api/tickets`、`GET /api/wallet/transactions`，都分頁
   - 每注的獎級、獎金用後端的 `results`（和 `lines` 一一對應，`tier` 沒中獎時不存在）、注單的 `payout`；獎級名稱在 `Tier` 翻譯
   - **中獎結果等開獎動畫播完才顯示**（`revealedAt`）：之前顯示「待開獎」，過了還是 `PENDING` 顯示「結算中」；開獎通知也一樣

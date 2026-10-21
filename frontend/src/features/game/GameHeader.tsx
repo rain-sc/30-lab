@@ -9,6 +9,7 @@ import { logout } from "@/features/auth/api";
 import { useSession } from "@/features/auth/session";
 import { useBalance, useWallet } from "@/features/wallet/api";
 import { BalanceDelta } from "@/features/wallet/BalanceDelta";
+import { DailyBonusButton, DailyBonusStatus } from "@/features/wallet/DailyBonusButton";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { GAME_NAV } from "./nav";
@@ -43,6 +44,7 @@ export function GameHeader() {
         </nav>
       </div>
       <div className="flex items-center gap-3 md:gap-4">
+        <DailyBonusButton />
         <BalancePill />
         <UserMenu />
       </div>
@@ -151,6 +153,7 @@ function UserMenu() {
             <span className="truncate font-bold">{user?.nickname}</span>
             <span className="truncate text-xs text-muted">@{user?.username}</span>
           </div>
+          <DailyBonusStatus />
           <LocaleSwitcher />
           <button
             type="button"
