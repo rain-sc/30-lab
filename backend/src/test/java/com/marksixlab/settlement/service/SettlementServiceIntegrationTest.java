@@ -1,11 +1,5 @@
 package com.marksixlab.settlement.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
-
 import com.marksixlab.betting.dto.PlaceBetRequest;
 import com.marksixlab.betting.model.LineResult;
 import com.marksixlab.betting.model.PrizeTier;
@@ -16,6 +10,7 @@ import com.marksixlab.betting.service.BettingService;
 import com.marksixlab.draw.model.Draw;
 import com.marksixlab.draw.model.DrawStatus;
 import com.marksixlab.draw.repository.DrawRepository;
+import com.marksixlab.settlement.dto.JackpotResponse;
 import com.marksixlab.wallet.model.Wallet;
 import com.marksixlab.wallet.model.WalletTransaction;
 import com.marksixlab.wallet.model.WalletTransactionType;
@@ -28,6 +23,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.test.context.ActiveProfiles;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -162,6 +163,15 @@ class SettlementServiceIntegrationTest {
         assertThat(settlementService.settleNext(SETTLE_TIME)).get().extracting(Draw::getDrawNo).isEqualTo(DRAW_NO);
         assertThat(settlementService.settleNext(SETTLE_TIME)).get().extracting(Draw::getDrawNo).isEqualTo("20261020-0038");
         assertThat(settlementService.settleNext(SETTLE_TIME)).isEmpty();
+    }
+
+    @Test
+    void currentJackpotAddsRolloverAndBetsSoFar() {
+        saveDraw("20261020-0036", Instant.parse("2026-10-20T03:00:00Z"), DrawStatus.SETTLED, 1_500_000L);
+        bet("u6", NO_WIN, NO_WIN);
+        bet("u7", NO_WIN, NO_WIN, NO_WIN);
+
+        assertThat(settlementService.currentJackpot(BET_TIME)).isEqualTo(new JackpotResponse(DRAW_NO, 1_500_010));
     }
 
     @SafeVarargs

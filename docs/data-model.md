@@ -16,8 +16,8 @@ MongoDB，資料庫名 `marksixlab`。**草稿**：階段 0 逐個集合討論�
 | `users` | 帳戶 | `username`、`passwordHash`、`nickname`、`roles`、`enabled` | `username` |
 | `wallets` | 積分餘額（每人一個） | `userId`、`balance` | `userId` |
 | `wallet_transactions` | 積分流水 | `userId`、`type`、`amount`、`balanceAfter`、`refId` | `type + refId` |
-| `draws` | 期數 | `drawNo`、`status`、`openAt`、`closeAt`、`drawAt`、`numbers`、`specialNumber`、`drawnAt`、`poolAmount` | `drawNo` |
-| `tickets` | 注單 | `userId`、`drawNo`、`betType`、`lines`、`cost`、`status`、`idempotencyKey`（結算後加每注的中獎結果、`payout`） | `userId + idempotencyKey` |
+| `draws` | 期數 | `drawNo`、`status`、`openAt`、`closeAt`、`drawAt`、`numbers`、`specialNumber`、`drawnAt`；結算後加 `poolAmount`、`jackpotWinners`、`jackpotRollover`、`settledAt` | `drawNo` |
+| `tickets` | 注單 | `userId`、`drawNo`、`betType`、`lines`、`cost`、`status`、`idempotencyKey`；結算後加 `results`（每注 `matched`、`specialHit`、`tier`、`prize`）、`payout`、`settledAt` | `userId + idempotencyKey` |
 
 ## 設計重點
 
@@ -40,9 +40,18 @@ MongoDB，資料庫名 `marksixlab`。**草稿**：階段 0 逐個集合討論�
 - **`drawAt` 和 `drawnAt`**：`drawAt` 是排定的開獎時間；`drawnAt` 是實際開出號碼的時間（後端當機重啟後補開時，`drawnAt` 會比 `drawAt` 晚）。
 - **定時任務**：每秒「對帳」一次，補做該做的事（建立目前這期、過了截止時間就 `CLOSED`、過了開獎時間就開獎），狀態變更一律用條件更新，重複執行安全。
 
-- **頭獎彩池**：每期結算時記在 `draws.poolAmount`（本期彩池），滾存帶到下一期（細節在結算模組設計時定）。
+- **頭獎彩池**（規則見 [game-rules.md](game-rules.md)）：結算時記在 `draws`
+  - `poolAmount`：本期彩池 = max(1,000,000, 上期 `jackpotRollover` + 本期投注額 × 20%)
+  - `jackpotWinners`：中頭獎的**注數**（按注平分，不是按人）
+  - `jackpotRollover`：滾到下期的金額 = 沒人中時整個彩池，有人中時是平分後除不盡的零頭
+  - 本期的估計彩池不存，查詢時用同一個公式即時算（`GET /api/jackpot`）
+- **結算**：每秒對帳，找最早一期 `DRAWN` 的期數（**必須照時間順序**，因為要用上期滾存）。不包成一個大事務，而是每一步都能安全重跑：
+  1. 判獎：條件更新 `PENDING` → `WON` / `LOST`，寫入 `results`、`payout`
+  2. 派彩：每張 `WON` 的注單加積分 + 寫 `PAYOUT` 流水（`type + refId` 唯一索引擋住重複派彩）
+  3. 條件更新 `WON` → `PAID`
+  4. **最後**才把期數 `DRAWN` → `SETTLED`；中途當機的話，下一秒會重跑這一期，做過的步驟自動跳過
 
 ## 待討論
 
 - `draws` 是否存每個獎級的中獎注數與每注獎金（方便查詢，避免重算）
-- 注單量大時，`tickets` 依 `drawNo` 建索引、結算時批量處理
+- 注單量大時，結算改成批量更新（目前一張一張更新）

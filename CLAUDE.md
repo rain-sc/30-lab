@@ -89,6 +89,6 @@ cd frontend; npm run dev                              # 啟動前端
 
 ## 目前進度
 
-**階段 0：規劃**。專案骨架已建立；下一步是確定資料模型、狀態機、階段 1 的 API 設計。
+**階段 1：遊戲主流程**。後端的帳戶、開獎、錢包、下注、結算（判獎、派彩、頭獎彩池）模組已完成，從註冊、下注到開獎派彩整條流程已打通；前後端交接見 [docs/api-changelog.md](docs/api-changelog.md)。
 開獎攪珠動畫方案已確定，見 [docs/draw-animation.md](docs/draw-animation.md)（含後端需要配合的事項）。
 前端按 [frontend/CLAUDE.md](frontend/CLAUDE.md) 的「遊戲端開發順序」進行，下一步：i18n 骨架。

@@ -7,6 +7,8 @@ import com.marksixlab.betting.model.TicketStatus;
 import com.marksixlab.betting.service.BettingService;
 import com.marksixlab.draw.model.Draw;
 import com.marksixlab.draw.service.DrawService;
+import com.marksixlab.draw.service.DrawSlot;
+import com.marksixlab.settlement.dto.JackpotResponse;
 import com.marksixlab.wallet.model.WalletTransactionType;
 import com.marksixlab.wallet.service.WalletService;
 import lombok.RequiredArgsConstructor;
@@ -30,11 +32,19 @@ public class SettlementService {
         return drawService.nextToSettle().map(draw -> settle(draw,now));
     }
 
+    public JackpotResponse currentJackpot(Instant now){
+        DrawSlot slot = drawService.slotAt(now);
+        long turnover = turnover(bettingService.ticketsOfDraw(slot.drawNo()));
+        long amount = prizeCalculator.jackpotPool(drawService.previousRollover(slot.drawAt()),turnover);
+        return new JackpotResponse(slot.drawNo(),amount);
+    }
+
     private Draw settle(Draw draw, Instant now){
         List<Ticket> tickets = bettingService.ticketsOfDraw(draw.getDrawNo());
 
-        long turnover = tickets.stream().mapToLong(Ticket::getCost).sum();
-        long pool = prizeCalculator.jackpotPool(drawService.previousRollover(draw), turnover);
+        long turnover = turnover(tickets);
+        long pool = prizeCalculator.jackpotPool(drawService.previousRollover(draw.getDrawAt()), turnover);
+
         int jackpotLines = (int) tickets.stream()
                 .flatMap(ticket -> ticket.getLines().stream())
                 .filter(line -> isJackpot(line, draw))
@@ -62,6 +72,10 @@ public class SettlementService {
             bettingService.markPaid(ticket.getId(), now);
         }
         return drawService.markSettled(draw.getDrawNo(), pool, jackpotLines, rollover, now);
+    }
+
+    private static long turnover(List<Ticket> tickets){
+        return tickets.stream().mapToLong(Ticket::getCost).sum();
     }
 
     private boolean isJackpot(List<Integer> line, Draw draw){

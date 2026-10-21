@@ -16,6 +16,54 @@
 
 ---
 
+## 2026-10-21（後端：結算、派彩、頭獎彩池）
+- 開獎（`DRAWN`）後**約 1 秒內**自動結算完成：判獎 → 派彩（加積分、寫 `PAYOUT` 流水）→ 期數變成 `SETTLED`，並推播 `SETTLED`。獎金規則見 [game-rules.md](game-rules.md)
+- 【修改】WebSocket `/topic/draws` 新增 `type: "SETTLED"`
+  ```json
+  { "type": "SETTLED", "serverTime": "...",
+    "draw": { "drawNo": "20261021-0408", "status": "SETTLED", "numbers": [23, 36, 18, 41, 2, 28], "specialNumber": 15,
+              "poolAmount": 1000100, "jackpotWinners": 0, "openAt": "...", "closeAt": "...", "drawAt": "..." } }
+  ```
+  - 順序：`CLOSED` →（開獎時間）`DRAWN` + 下一期 `OPENED` →（約 1 秒後）這一期的 `SETTLED`
+  - **收到 `SETTLED` 時派彩已經完成**：重新抓我的注單、`GET /api/wallet`、`GET /api/jackpot`
+  - 注意：`SETTLED` 會比開獎動畫（7 顆 × 3.6 秒）**早很多**到達。中獎結果和積分增加請等動畫播完再顯示，不要提前暴露
+  - 後端重啟時會一次補結算積壓的期數（照時間順序），每期都會推一則 `SETTLED`，請用 `drawNo` 對應
+- 【修改】`GET /api/tickets` 的注單多了 3 個欄位（下注回應 `POST /api/tickets` 的 `ticket` 也一樣）
+  ```json
+  { "id": "...", "drawNo": "20261021-0408", "betType": "SINGLE", "lines": [[2, 9, 18, 30, 36, 44], ...], "cost": 500,
+    "status": "PAID", "payout": 40, "settledAt": "2026-10-21T06:48:01.281Z",
+    "results": [ { "matched": 3, "specialHit": false, "tier": "SEVENTH", "prize": 40 },
+                 { "matched": 1, "specialHit": false, "tier": null, "prize": 0 }, ... ],
+    "createdAt": "..." }
+  ```
+  - `results` 和 `lines` **一一對應**（同樣的順序）；`matched` 中幾個正碼、`specialHit` 有沒有中特別號碼、`prize` 這一注的獎金
+  - `tier`：`FIRST` 頭獎、`SECOND` 二獎 … `SEVENTH` 七獎；**沒中獎是 `null`**（中 2 個以下）。獎級名稱請前端做 i18n
+  - `payout`：整張注單的總獎金 = 每注 `prize` 加總
+  - 結算前（`PENDING`）：`results` 和 `settledAt` 是 `null`，`payout` 是 `0`
+  - `status`：`PENDING` 待開獎 → `LOST` 未中獎 / `WON` 已中獎 → `PAID` 已派彩。`WON` 只會維持幾毫秒（派彩完馬上變 `PAID`），畫面上可以和 `PAID` 顯示成一樣
+- 【修改】`DrawResponse`（`GET /api/draws`、`GET /api/draws/current`、WebSocket 的 `draw`）多了 2 個欄位，**`SETTLED` 之後才有**（之前不會出現在 JSON 裡，跟 `numbers` 一樣）
+  - `poolAmount`：這一期的頭獎彩池
+  - `jackpotWinners`：中頭獎的**注數**（`0` = 沒人中，彩池整個滾到下一期）
+- 【新增】`GET /api/jackpot`（**不用登入**）：目前這期的頭獎彩池（估計值）
+  ```json
+  { "drawNo": "20261021-0409", "amount": 1000100 }
+  ```
+  - `amount` = max(1,000,000, 上期滾存 + 本期目前投注額 × 20%)，**別人下注也會讓它變大**
+  - `drawNo` 是這個數字屬於哪一期，跟目前顯示的期數不同就不要用
+  - **什麼時候重新抓**：進頁面時、收到 `SETTLED` 時、自己下注成功後；想讓別人下注的增加也看得到，可以加定時輪詢（例如 30 秒）
+  - **不要在收到 `OPENED` 時抓**：新的一期剛開時，上一期還要約 1 秒才結算完，這時抓到的滾存是舊的；等上一期的 `SETTLED` 再抓才正確
+- 積分流水（`GET /api/wallet/transactions`）開始會出現 `PAYOUT`（`amount` 為正，`refId` = 注單 id）
+- 沒有新的錯誤碼
+- 已用真的後端驗證（1 分鐘一期的副本）：下 50 注 → 事件依序 `CLOSED > DRAWN > SETTLED`；`SETTLED` 的 `poolAmount` = 1,000,000 + 500 × 20% = 1,000,100；注單變成 `PAID`、`payout = 40`（一注七獎）；積分流水有 `BET −500`、`PAYOUT +40`；下一期 `GET /api/jackpot` = 1,000,100
+- 回覆前端 10/21 的【待後端】（注單結果欄位、派彩推播方式）：**已完成**，見上面
+- 【待前端】
+  1. 重新 `npm run gen:api`
+  2. 我的注單：顯示每注的獎級、獎金，以及注單的總獎金；拿掉「已開獎・等待結算」和前端自己對獎的邏輯，改用 `results`（`PENDING` 但已過開獎時間時，仍可以顯示「結算中」）
+  3. 開獎通知改用後端的中獎結果：動畫播完後，用這一期的注單 `payout` 顯示中了多少；積分用 `GET /api/wallet` 的數字更新（數字滾動照舊）
+  4. 收到 `SETTLED` 時重新抓我的注單、錢包、彩池
+  5. 首頁 / 大廳的頭獎彩池改接 `GET /api/jackpot`；開獎紀錄可以顯示每期的 `poolAmount`、有沒有人中頭獎
+  6. 獎級名稱 `FIRST` ~ `SEVENTH` 的 i18n（zh-TW / en）
+
 ## 2026-10-21（前端：下注、我的注單、積分紀錄）
 - 【已完成】回覆後端「下注、我的注單」那筆的【待前端】：
   - 「確認下注」改用 `POST /api/tickets`（待下注的每一注 = `lines`，一次送出一張注單）；成功後用回應的 `balance` 更新積分，重新抓我的注單、積分紀錄
@@ -31,7 +79,7 @@
   - 讓請求送到後端、但瀏覽器收不到回應 → 畫面顯示連線錯誤、積分馬上更新成 9,980；重試帶同一個 key → 只有一張注單、只扣一次
   - 期數改成舊的 → `40903`「這一期已截止下注」；之後正常送出改用新的 key
   - 開獎（`0030`）後跳出通知、我的注單顯示開獎號碼和每注中幾個
-- 【待後端】結算模組完成時，請在 changelog 說明注單會多哪些欄位（每注中幾個、獎級、獎金）和派彩的推播方式（前端要在派彩後更新積分、把通知改成後端的中獎結果）
+- 【已完成】（後端 2026-10-21，見上方「結算、派彩、頭獎彩池」）結算模組完成時，請在 changelog 說明注單會多哪些欄位（每注中幾個、獎級、獎金）和派彩的推播方式（前端要在派彩後更新積分、把通知改成後端的中獎結果）
 
 ## 2026-10-21（後端：下注、我的注單）
 - 【新增】`POST /api/tickets`（**要登入**）：下注

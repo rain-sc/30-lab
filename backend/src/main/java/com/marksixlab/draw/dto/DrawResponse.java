@@ -31,10 +31,16 @@ public record DrawResponse(
         List<Integer>numbers,
 
         @Schema(description = "特別號碼;開獎後才有")
-        Integer specialNumber
+        Integer specialNumber,
+
+        @Schema(description = "本期頭獎彩池結算後才有", example = "1000056")
+        Long poolAmount,
+
+        @Schema(description = "中頭獎的注數(0 = 沒人中, 彩池滾到下期);結算後才有", example = "0")
+        Integer jackpotWinners
 
 ) {
     public static DrawResponse from(Draw draw){
-        return new DrawResponse(draw.getDrawNo(),draw.getStatus(),draw.getOpenAt(),draw.getCloseAt(),draw.getDrawAt(),draw.getNumbers(),draw.getSpecialNumber());
+        return new DrawResponse(draw.getDrawNo(),draw.getStatus(),draw.getOpenAt(),draw.getCloseAt(),draw.getDrawAt(),draw.getNumbers(),draw.getSpecialNumber(),draw.getPoolAmount(),draw.getJackpotWinners());
     }
 }

@@ -35,7 +35,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/logout").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health", "/error", "/ws").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/draws/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/draws/**", "/api/jackpot").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint((req, res, ex) ->

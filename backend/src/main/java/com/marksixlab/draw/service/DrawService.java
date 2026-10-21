@@ -1,10 +1,5 @@
 package com.marksixlab.draw.service;
 
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
 import com.marksixlab.common.BusinessException;
 import com.marksixlab.common.ErrorCode;
 import com.marksixlab.common.PageResult;
@@ -17,7 +12,6 @@ import com.marksixlab.draw.repository.DrawRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
@@ -26,6 +20,11 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -113,8 +112,12 @@ public class DrawService {
         return drawRepository.findFirstByStatusOrderByDrawAtAsc(DrawStatus.DRAWN);
     }
 
-    public long previousRollover(Draw draw) {
-        return drawRepository.findFirstByStatusAndDrawAtBeforeOrderByDrawAtDesc(DrawStatus.SETTLED, draw.getDrawAt())
+    public DrawSlot slotAt(Instant now) {
+        return drawSchedule.slotAt(now);
+    }
+    
+    public long previousRollover(Instant drawAt) {
+        return drawRepository.findFirstByStatusAndDrawAtBeforeOrderByDrawAtDesc(DrawStatus.SETTLED, drawAt)
                 .map(Draw::getJackpotRollover)
                 .orElse(0L);
     }
@@ -136,7 +139,7 @@ public class DrawService {
         DrawSlot slot = drawSchedule.slotAt(now);
         DrawResponse current = drawRepository.findByDrawNo(slot.drawNo())
                 .map(DrawResponse::from)
-                .orElseGet(() -> new DrawResponse(slot.drawNo(),DrawStatus.OPEN,slot.openAt(),slot.closeAt(),slot.drawAt(),null,null));
+                .orElseGet(() -> new DrawResponse(slot.drawNo(),DrawStatus.OPEN,slot.openAt(),slot.closeAt(),slot.drawAt(),null,null,null,null));
         DrawResponse previous = drawRepository
                 .findFirstByStatusInOrderByDrawAtDesc(List.of(DrawStatus.DRAWN,DrawStatus.SETTLED))
                 .map(DrawResponse::from)
