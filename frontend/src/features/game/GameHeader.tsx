@@ -7,9 +7,7 @@ import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { RollingNumber } from "@/components/fx/RollingNumber";
 import { logout } from "@/features/auth/api";
 import { useSession } from "@/features/auth/session";
-import { useBalance } from "@/features/betting/mockBets";
-import { useNow } from "@/features/draw/useNextDraw";
-import { useWallet } from "@/features/wallet/api";
+import { useBalance, useWallet } from "@/features/wallet/api";
 import { BalanceDelta } from "@/features/wallet/BalanceDelta";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
@@ -55,7 +53,7 @@ export function GameHeader() {
 function BalancePill() {
   const t = useTranslations("Wallet");
   const user = useSession((s) => s.user);
-  const balance = useBalance(user?.username, useNow());
+  const balance = useBalance(user?.username);
   const wallet = useWallet(user?.username);
 
   // 錢包載入失敗：整顆變成重試按鈕（不能一直顯示「—」而沒有下一步）
@@ -78,7 +76,6 @@ function BalancePill() {
 
   return (
     <span
-      title={t("sampleNote")}
       className="relative inline-flex items-center gap-2 rounded-full border border-line bg-panel px-3 py-1 md:px-3.5 md:py-1.5"
     >
       <span

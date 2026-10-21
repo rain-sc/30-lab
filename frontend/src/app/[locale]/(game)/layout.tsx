@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { GameSessionGate } from "@/features/auth/GameSessionGate";
-import { ResultBackfill } from "@/features/betting/ResultBackfill";
 import { DrawNotices } from "@/features/game/DrawNotices";
 import { GameHeader } from "@/features/game/GameHeader";
 import { TabBar } from "@/features/game/TabBar";
@@ -16,8 +15,6 @@ export default function GameLayout({ children }: { children: ReactNode }) {
           {children}
           {/* 開獎結果通知（中獎提示）：任何遊戲頁面都會收到 */}
           <DrawNotices />
-          {/* 補查「待確認」注單的開獎號碼（開獎時不在線上的期數） */}
-          <ResultBackfill />
         </GameSessionGate>
       </main>
       <TabBar />

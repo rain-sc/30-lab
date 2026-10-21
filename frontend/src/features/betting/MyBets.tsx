@@ -1,36 +1,59 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Ball } from "@/components/Ball";
+import { Button } from "@/components/ui/Button";
 import { useSession } from "@/features/auth/session";
 import { useDrawFeed } from "@/features/draw/feed";
 import { ResultBalls } from "@/features/draw/ResultBalls";
+import { drawAtOf } from "@/features/draw/schedule";
+import { revealedAt } from "@/features/draw/stage/timeline";
+import { useResultBackfill } from "@/features/draw/useResultBackfill";
 import { useNow } from "@/features/draw/useNextDraw";
 import { Link } from "@/i18n/navigation";
+import { useApiErrorText } from "@/lib/api/useApiErrorText";
 import { cn } from "@/lib/utils";
-import { settle, useUserBets } from "./mockBets";
+import { useTickets, type Ticket } from "./api";
+import { checkLine } from "./prizes";
 
-/** 我的注單：依期數分組，新的在上；已開獎的顯示開獎號碼、中了哪些號碼、獎級和獎金 */
+const PAGE_SIZE = 20;
+
+/**
+ * 我的注單（GET /api/tickets，分頁），新的在上；一張注單 = 一次確認下注，裡面有一到多注。
+ * 結算模組完成前：開獎動畫播完後用開獎號碼標出每注中了哪幾個、可能的獎級，狀態顯示「等待結算」，不顯示獎金
+ */
 export function MyBets() {
   const t = useTranslations("MyBets");
-  const format = useFormatter();
-  const user = useSession((s) => s.user);
-  const bets = useUserBets(user?.username);
-  const now = useNow();
-  const results = useDrawFeed((s) => s.results);
-  const missing = useDrawFeed((s) => s.missing);
+  const errorText = useApiErrorText();
+  const username = useSession((s) => s.user?.username);
+  const [page, setPage] = useState(1);
+  const query = useTickets(username, page, PAGE_SIZE);
+  const tickets = query.data?.list ?? [];
+  const pages = Math.max(1, Math.ceil((query.data?.total ?? 0) / PAGE_SIZE));
+  // 這一頁的期數裡，開獎時不在線上（沒有號碼）的，用開獎紀錄補查
+  useResultBackfill(tickets.map((ticket) => ticket.drawNo));
 
-  const groups = useMemo(() => {
-    if (now === null) return [];
-    const map = new Map<string, ReturnType<typeof settle>>();
-    for (const bet of settle(bets, now, results)) map.set(bet.drawNo, [...(map.get(bet.drawNo) ?? []), bet]);
-    return [...map.entries()];
-  }, [bets, now, results]);
-
-  if (now === null) return <div aria-hidden="true" className="h-40" />;
-
-  if (groups.length === 0) {
+  if (query.isError && !query.data) {
+    return (
+      <div role="alert" className="flex flex-col items-center gap-3 py-12 text-center">
+        <p className="m-0 text-danger">{t("error", { reason: errorText(query.error) })}</p>
+        <Button variant="ghost" className="h-10 text-sm" onClick={() => query.refetch()}>
+          {t("retry")}
+        </Button>
+      </div>
+    );
+  }
+  if (!query.data) {
+    return (
+      <div aria-hidden="true" className="flex flex-col gap-4">
+        {Array.from({ length: 3 }, (_, i) => (
+          <div key={i} className="h-36 animate-pulse rounded-card bg-panel motion-reduce:animate-none" />
+        ))}
+      </div>
+    );
+  }
+  if (tickets.length === 0) {
     return (
       <div className="flex flex-col items-center gap-3 py-12 text-center">
         <p className="m-0 text-muted">{t("empty")}</p>
@@ -42,66 +65,77 @@ export function MyBets() {
   }
 
   return (
-    <ol className="m-0 flex list-none flex-col gap-4 p-0">
-      {groups.map(([drawNo, list]) => {
-        const { status } = list[0];
-        const real = results[drawNo];
-        const won = list.reduce((sum, b) => sum + (b.result?.prize ?? 0), 0);
-        return (
-          <li key={drawNo} className="flex flex-col gap-3 rounded-card border border-line bg-panel p-4 md:p-5">
-            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-              <div className="flex items-baseline gap-3">
-                <h2 className="m-0 font-num text-lg font-bold tabular-nums">{t("drawNo", { drawNo })}</h2>
-                <span className={cn("text-sm", won > 0 ? "font-bold text-gold" : "text-muted")}>
-                  {status === "waiting"
-                    ? t("waiting")
-                    : status === "unconfirmed"
-                      ? missing[drawNo]
-                        ? t("notFound")
-                        : t("unconfirmed")
-                      : won > 0
-                        ? t("won", { points: format.number(won) })
-                        : t("lost")}
-                </span>
-              </div>
-              {status === "settled" && real && <ResultBalls result={real} size="xs" />}
-            </div>
-            <ul className="m-0 flex list-none flex-col gap-2 p-0">
-              {list.map((bet) => (
-                <li
-                  key={bet.id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-button bg-sunken px-3 py-2"
-                >
-                  <span className="flex gap-1">
-                    {bet.numbers.map((n) => {
-                      const hit = bet.result?.matched.includes(n);
-                      return (
-                        <Ball
-                          key={n}
-                          number={n}
-                          size="sm"
-                          className={cn(
-                            "size-7 text-sm",
-                            bet.result && !hit && "opacity-35",
-                            hit && "ring-2 ring-gold",
-                          )}
-                        />
-                      );
-                    })}
-                  </span>
-                  {bet.result && (
-                    <span className={cn("text-sm", bet.result.tier ? "font-bold text-gold" : "text-muted")}>
-                      {bet.result.tier
-                        ? t("tierPrize", { tier: bet.result.tier, points: format.number(bet.result.prize) })
-                        : t("hits", { count: bet.result.matched.length })}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
+    <div className="flex flex-col gap-4">
+      <ol className="m-0 flex list-none flex-col gap-4 p-0">
+        {tickets.map((ticket) => (
+          <TicketCard key={ticket.id} ticket={ticket} />
+        ))}
+      </ol>
+      {pages > 1 && (
+        <nav aria-label={t("pagination")} className="flex items-center justify-between gap-3">
+          <Button variant="ghost" className="h-10 text-sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
+            {t("prev")}
+          </Button>
+          <span className="text-sm text-muted">{t("page", { page, pages })}</span>
+          <Button variant="ghost" className="h-10 text-sm" disabled={page >= pages} onClick={() => setPage((p) => p + 1)}>
+            {t("next")}
+          </Button>
+        </nav>
+      )}
+    </div>
+  );
+}
+
+function TicketCard({ ticket }: { ticket: Ticket }) {
+  const t = useTranslations("MyBets");
+  const format = useFormatter();
+  const now = useNow();
+  const result = useDrawFeed((s) => s.results[ticket.drawNo]);
+  const missing = useDrawFeed((s) => !!s.missing[ticket.drawNo]);
+
+  // 開獎動畫播完才對獎（不比舞台先劇透）
+  const revealed = now !== null && revealedAt(drawAtOf(ticket.drawNo)) <= now;
+  const shown = revealed && result ? result : null;
+  const lines = ticket.lines.map((line) => ({ line, check: shown ? checkLine(line, shown) : null }));
+  const status = !revealed ? t("waiting") : shown ? t("awaitingSettlement") : missing ? t("notFound") : t("unconfirmed");
+
+  return (
+    <li className="flex flex-col gap-3 rounded-card border border-line bg-panel p-4 md:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h2 className="m-0 font-num text-lg font-bold tabular-nums">{t("drawNo", { drawNo: ticket.drawNo })}</h2>
+          <span className="text-sm text-muted">{status}</span>
+        </div>
+        {shown && <ResultBalls result={shown} size="xs" />}
+      </div>
+      <ul className="m-0 flex list-none flex-col gap-2 p-0">
+        {lines.map(({ line, check }, i) => (
+          <li key={i} className="flex flex-wrap items-center justify-between gap-2 rounded-button bg-sunken px-3 py-2">
+            <span className="flex gap-1">
+              {line.map((n) => {
+                const hit = check?.matched.includes(n);
+                return (
+                  <Ball
+                    key={n}
+                    number={n}
+                    size="sm"
+                    className={cn("size-7 text-sm", check && !hit && "opacity-35", hit && "ring-2 ring-gold")}
+                  />
+                );
+              })}
+            </span>
+            {check && (
+              <span className={cn("text-sm", check.tier ? "font-bold text-gold" : "text-muted")}>
+                {check.tier ? t("tierHit", { tier: check.tier }) : t("hits", { count: check.matched.length })}
+              </span>
+            )}
           </li>
-        );
-      })}
-    </ol>
+        ))}
+      </ul>
+      <div className="flex justify-between text-xs text-muted">
+        <time dateTime={ticket.createdAt}>{format.dateTime(new Date(ticket.createdAt), { dateStyle: "short", timeStyle: "short" })}</time>
+        <span>{t("cost", { count: ticket.lines.length, points: format.number(ticket.cost) })}</span>
+      </div>
+    </li>
   );
 }

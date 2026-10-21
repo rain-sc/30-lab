@@ -6,6 +6,7 @@
 // - skipHydration：伺服器端沒有 sessionStorage，等 hydrate 完才由 GameSessionGate 讀回來，避免 hydration 不一致
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { MAX_LINES } from "./api";
 
 export const PICK_COUNT = 6;
 
@@ -19,7 +20,7 @@ type BettingState = {
   add: (n: number) => boolean;
   quickPick: () => void;
   clear: () => void;
-  /** 選滿 6 個時加入待下注 */
+  /** 選滿 6 個時加入待下注（最多 MAX_LINES 注，和後端每張注單的上限一致） */
   addToPending: () => void;
   removePending: (index: number) => void;
   clearPending: () => void;
@@ -58,7 +59,9 @@ export const useBetting = create<BettingState>()(
       clear: () => set({ picked: [] }),
       addToPending: () =>
         set(({ picked, pending }) =>
-          picked.length === PICK_COUNT ? { picked: [], pending: [...pending, [...picked].sort((a, b) => a - b)] } : {},
+          picked.length === PICK_COUNT && pending.length < MAX_LINES
+            ? { picked: [], pending: [...pending, [...picked].sort((a, b) => a - b)] }
+            : {},
         ),
       removePending: (index) => set(({ pending }) => ({ pending: pending.filter((_, i) => i !== index) })),
       clearPending: () => set({ pending: [] }),

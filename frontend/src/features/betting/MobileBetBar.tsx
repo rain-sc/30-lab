@@ -9,7 +9,7 @@ import { usePlaceBets } from "./usePlaceBets";
 export function MobileBetBar() {
   const t = useTranslations("Betting");
   const format = useFormatter();
-  const { pending, cost, closed, disabled, submit, feedback } = usePlaceBets();
+  const { pending, cost, closed, disabled, submitting, submit, feedback } = usePlaceBets();
   const num = (chunks: React.ReactNode) => <b className="font-num text-[22px] tabular-nums">{chunks}</b>;
 
   return (
@@ -22,7 +22,7 @@ export function MobileBetBar() {
             {t.rich("barSummary", { count: pending.length, points: format.number(cost), b: num })}
           </span>
         </div>
-        <Button onClick={submit} disabled={disabled} className="h-11.5 px-5 text-base">
+        <Button onClick={submit} disabled={disabled} loading={submitting} className="h-11.5 px-5 text-base">
           {closed ? t("closedButton") : t("submit")}
         </Button>
       </div>

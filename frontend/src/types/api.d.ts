@@ -4,6 +4,24 @@
  */
 
 export interface paths {
+    "/api/tickets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 我的注單，由新到舊 */
+        get: operations["myTickets"];
+        put?: never;
+        /** 下注（同一個 idempotencyKey 重送會回傳同一張注單，不會重複扣款） */
+        post: operations["place"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/register": {
         parameters: {
             query?: never;
@@ -144,6 +162,79 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        PlaceBetRequest: {
+            /**
+             * @description 要下注的期數, 必須是目前這期
+             * @example 20261020-0110
+             */
+            drawNo: string;
+            /**
+             * @description 防止重複送出: 每次確認下注產生一個新的UUID,重試時沿用
+             * @example 3f1c2a9e-8b7d-4c1e-9f2a-6d5b4e3c2a10
+             */
+            idempotencyKey: string;
+            /**
+             * @description 每一注 6 個號碼（1~49，不重複）
+             * @example [
+             *       [
+             *         3,
+             *         11,
+             *         18,
+             *         27,
+             *         34,
+             *         45
+             *       ],
+             *       [
+             *         1,
+             *         2,
+             *         3,
+             *         4,
+             *         5,
+             *         6
+             *       ]
+             *     ]
+             */
+            lines: number[][];
+        };
+        PlaceBetResponse: {
+            ticket: components["schemas"]["TicketResponse"];
+            /**
+             * Format: int64
+             * @description 下注後的積分餘額
+             * @example 9980
+             */
+            balance: number;
+        };
+        ResultPlaceBetResponse: {
+            /**
+             * Format: int32
+             * @description 0 表示成功，失敗時是 5 位數錯誤碼
+             */
+            code: number;
+            /** @description 給開發看的說明，不直接顯示給使用者 */
+            msg: string;
+            /** @description 回應資料；沒有資料時是 null */
+            data: components["schemas"]["PlaceBetResponse"];
+        };
+        TicketResponse: {
+            id: string;
+            /** @example 20261020-0110 */
+            drawNo: string;
+            /** @enum {string} */
+            betType: "SINGLE";
+            /** @description 每一注的 6 個號碼，由小到大 */
+            lines: number[][];
+            /**
+             * Format: int64
+             * @description 花費的積分
+             * @example 20
+             */
+            cost: number;
+            /** @enum {string} */
+            status: "PENDING" | "LOST" | "WON" | "PAID";
+            /** Format: date-time */
+            createdAt: string;
+        };
         RegisterRequest: {
             /**
              * @description 帳號，4–20 個英數字或底線，不分大小寫
@@ -279,6 +370,35 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        PageResultTicketResponse: {
+            list: components["schemas"]["TicketResponse"][];
+            /**
+             * Format: int64
+             * @description 總筆數
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 第幾頁,從 1 開始
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 每頁筆數
+             */
+            size: number;
+        };
+        ResultPageResultTicketResponse: {
+            /**
+             * Format: int32
+             * @description 0 表示成功，失敗時是 5 位數錯誤碼
+             */
+            code: number;
+            /** @description 給開發看的說明，不直接顯示給使用者 */
+            msg: string;
+            /** @description 回應資料；沒有資料時是 null */
+            data: components["schemas"]["PageResultTicketResponse"];
+        };
         DrawResponse: {
             /**
              * @description 期數號 (UTC 日期 + 當天第幾期)
@@ -370,6 +490,53 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    myTickets: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultPageResultTicketResponse"];
+                };
+            };
+        };
+    };
+    place: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlaceBetRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultPlaceBetResponse"];
+                };
+            };
+        };
+    };
     register: {
         parameters: {
             query?: never;

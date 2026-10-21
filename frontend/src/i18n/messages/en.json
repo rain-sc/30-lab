@@ -76,6 +76,7 @@
   "ApiErrors": {
     "40000": "Something went wrong with the request. Refresh and try again.",
     "40001": "Some fields are invalid. Check them and try again.",
+    "40002": "Up to 50 tickets per slip",
     "40100": "Please sign in first",
     "40101": "Incorrect username or password",
     "40102": "Your account was signed in elsewhere. Please sign in again.",
@@ -84,6 +85,7 @@
     "40900": "The data has changed. Refresh and try again.",
     "40901": "This username is already taken",
     "40902": "Not enough points",
+    "40903": "Betting is closed for this draw. Please wait for the next one",
     "50000": "The server is busy. Please try again later.",
     "network": "Can't reach the server. Check your connection and try again."
   },
@@ -94,7 +96,9 @@
     "history": "Results",
     "bets": "My tickets",
     "menu": "Account menu",
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "tabTickets": "Tickets",
+    "tabPoints": "Points history"
   },
   "Game": {
     "checking": "Checking sign-in…",
@@ -103,7 +107,6 @@
   "Wallet": {
     "balance": "My points",
     "points": "points",
-    "sampleNote": "Server balance plus sample tickets (until the betting API is ready)",
     "retry": "Retry",
     "retryHint": "Couldn’t load points. Click to retry"
   },
@@ -139,7 +142,9 @@
     "insufficient": "Not enough points",
     "placed": "Placed {count, plural, one {# ticket} other {# tickets}} (draw {drawNo})",
     "placedEmpty": "No tickets for this draw yet",
-    "placedMore": "{count} more {count, plural, one {ticket} other {tickets}} →"
+    "placedMore": "{count} more {count, plural, one {ticket} other {tickets}} →",
+    "tooMany": "Up to {max} tickets per slip. Please split them",
+    "slipFull": "The slip holds up to {max} tickets. Place them first"
   },
   "HotCold": {
     "hot": "Most drawn",
@@ -157,12 +162,18 @@
     "toLobby": "Go to the lobby",
     "drawNo": "Draw {drawNo}",
     "waiting": "Awaiting draw",
-    "lost": "No win",
-    "won": "Won +{points} points",
     "hits": "{count} matched",
-    "tierPrize": "{tier, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} prize +{points}",
     "unconfirmed": "Checking result…",
-    "notFound": "Result not found for this draw"
+    "notFound": "Result not found for this draw",
+    "error": "Couldn’t load your tickets: {reason}",
+    "retry": "Retry",
+    "pagination": "Tickets pages",
+    "prev": "Previous",
+    "next": "Next",
+    "page": "Page {page} of {pages}",
+    "awaitingSettlement": "Drawn · awaiting settlement",
+    "tierHit": "{tier, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} prize",
+    "cost": "{count, plural, one {# line} other {# lines}} · {points} points"
   },
   "Stage": {
     "title": "Draw stage",
@@ -180,9 +191,9 @@
     "bigWin": "{tier, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} prize! Congratulations!",
     "lose": "No win on {count, plural, one {# ticket} other {# tickets}}. Next draw soon",
     "tierCount": "{tier, selectordinal, one {#st} two {#nd} few {#rd} other {#th}} prize × {count}",
-    "points": "points",
     "viewBets": "My tickets",
-    "close": "Close"
+    "close": "Close",
+    "awaitingPayout": "Payout after settlement"
   },
   "Draws": {
     "pagination": "Results pages",
@@ -192,5 +203,16 @@
     "error": "Couldn’t load results: {reason}",
     "retry": "Retry",
     "empty": "No draws yet"
+  },
+  "Points": {
+    "error": "Couldn’t load points history: {reason}",
+    "retry": "Retry",
+    "empty": "No points history yet",
+    "type": "{type, select, SIGNUP_BONUS {Sign-up bonus} BET {Bet} PAYOUT {Payout} other {Other}}",
+    "balanceAfter": "Balance {points}",
+    "pagination": "Points history pages",
+    "prev": "Previous",
+    "next": "Next",
+    "page": "Page {page} of {pages}"
   }
 }

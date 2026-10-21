@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { ballColor } from "@/lib/ball";
 import { cn } from "@/lib/utils";
+import { MAX_LINES } from "./api";
 import { PICK_COUNT, useBetting } from "./store";
 
 const RING: Record<ReturnType<typeof ballColor>, string> = {
@@ -30,6 +31,9 @@ export function NumberPad({ hot = [] }: { hot?: number[] }) {
   const clear = useBetting((s) => s.clear);
   const addToPending = useBetting((s) => s.addToPending);
   const full = picked.length >= PICK_COUNT;
+  // 待下注已滿（每張注單最多 MAX_LINES 注）：不能再加，先送出
+  const slipFull = useBetting((s) => s.pending.length >= MAX_LINES);
+  const canAdd = full && !slipFull;
 
   return (
     <div className="flex flex-col gap-3.5">
@@ -93,10 +97,11 @@ export function NumberPad({ hot = [] }: { hot?: number[] }) {
         <button
           type="button"
           onClick={addToPending}
-          disabled={!full}
+          disabled={!canAdd}
+          title={slipFull ? t("slipFull", { max: MAX_LINES }) : undefined}
           className={cn(
             "h-11 rounded-button font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold",
-            full ? "bg-gold text-gold-ink hover:bg-gold-bright" : "cursor-not-allowed bg-line text-muted",
+            canAdd ? "bg-gold text-gold-ink hover:bg-gold-bright" : "cursor-not-allowed bg-line text-muted",
           )}
         >
           {t("addToPending")}

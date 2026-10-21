@@ -14,7 +14,7 @@ export function PendingTickets() {
   const t = useTranslations("Betting");
   const format = useFormatter();
   const removePending = useBetting((s) => s.removePending);
-  const { pending, cost, closed, disabled, submit, feedback } = usePlaceBets();
+  const { pending, cost, closed, disabled, submitting, submit, feedback } = usePlaceBets();
 
   return (
     <div className="flex h-full flex-col gap-2.5">
@@ -65,7 +65,7 @@ export function PendingTickets() {
             </span>
           </div>
           <ClickSpark className="w-full">
-            <Button onClick={submit} disabled={disabled} className="w-full text-base">
+            <Button onClick={submit} disabled={disabled} loading={submitting} className="w-full text-base">
               {closed ? t("closedButton") : t("submit")}
             </Button>
           </ClickSpark>

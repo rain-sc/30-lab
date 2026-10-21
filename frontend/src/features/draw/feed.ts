@@ -5,7 +5,7 @@
 // - 時鐘：用回應的 serverTime 算出和本機的差距，倒數和開獎動畫都用校正後的時間（feedNow）
 // - 推播可能晚到、可能補送過期的事件（後端重啟），所以不假設「收到的就是目前這期」：
 //   所有收到的期數依 drawNo 存起來，「目前這期」= 開獎時間最晚的那期，「上一期」= 有號碼的期數裡最晚的那期
-// - 收到的開獎號碼存在 localStorage：示例注單對獎、開獎紀錄要用（開獎紀錄 API 完成前）
+// - 收到的開獎號碼存在 localStorage：我的注單、開獎通知標出中了哪幾個（結算模組完成前由前端對）
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { api } from "@/lib/api/client";
@@ -114,6 +114,13 @@ export const feedNow = () => Date.now() + useDrawFeed.getState().offset;
 /** 某一期的開獎結果；前端沒收到（開獎時不在線上）是 undefined */
 export const useDrawResult = (drawNo: string | null | undefined) =>
   useDrawFeed((s) => (drawNo ? s.results[drawNo] : undefined));
+
+/** 立刻重新抓一次目前期數（例如下注回 40903 已截止時）；失敗就算了，DrawFeed 會自己重試 */
+export function reloadCurrentDraw() {
+  return fetchCurrentDraw()
+    .then((res) => useDrawFeed.getState().applyCurrent(res))
+    .catch(() => {});
+}
 
 export function fetchCurrentDraw() {
   return api.get<CurrentDrawResponse>("/draws/current", { redirectOnUnauthorized: false });

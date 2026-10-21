@@ -3,7 +3,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
-import { useMockBets } from "@/features/betting/mockBets";
 import { useBetting } from "@/features/betting/store";
 import { useRouter } from "@/i18n/navigation";
 import { ApiError, redirectToLogin, SESSION_REPLACED } from "@/lib/api/client";
@@ -18,7 +17,7 @@ type State = { kind: "checking" } | { kind: "ready" } | { kind: "error"; message
  * - 未登入 → 導向登入頁（不帶原因，第一次來的人不該看到「登入已過期」）；被別處登入踢掉 → 登入頁顯示原因
  * - 連不上後端 → 顯示錯誤和重試（不能永遠停在載入中）
  * - 每次顯示都重新確認：離開遊戲頁面時版面會被 Activity 隱藏保留，回來時 effect 會重新執行
- * 也在這裡把存在瀏覽器的選號、示例注單讀回 store（見 betting/store.ts 的 skipHydration）。
+ * 也在這裡把存在瀏覽器的選號、待下注讀回 store（見 betting/store.ts 的 skipHydration）。
  */
 export function GameSessionGate({ children }: { children: ReactNode }) {
   const apiErrorText = useApiErrorText();
@@ -29,7 +28,6 @@ export function GameSessionGate({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void useBetting.persist.rehydrate();
-    void useMockBets.persist.rehydrate();
   }, []);
 
   useEffect(() => {
