@@ -16,6 +16,31 @@
 
 ---
 
+## 2026-10-21（後端：每日簽到）
+- 規則（已寫進 [game-rules.md](game-rules.md)）：每個 **UTC 日**（台灣早上 8 點重置）可以領一次 **1,000 積分**，沒有門檻；設定 `app.wallet.daily-bonus`
+- 【新增】`GET /api/wallet/daily-bonus`（**要登入**）：今天簽到了沒
+  ```json
+  { "claimed": false, "amount": 1000, "nextResetAt": "2026-10-22T00:00:00Z" }
+  ```
+  - `nextResetAt`：下一個 UTC 00:00，可以顯示「X 小時後可再簽到」（前端轉成當地時間）
+- 【新增】`POST /api/wallet/daily-bonus`（**要登入**，沒有 request body）：簽到
+  ```json
+  { "amount": 1000, "balance": 11000, "nextResetAt": "2026-10-22T00:00:00Z" }
+  ```
+  - 回應帶 `balance`（簽到後的餘額），可以直接更新積分，不用再打 `GET /api/wallet`
+  - 重複點擊、同時送出多次都只會入帳一次，其他的回 `40904`
+- 錯誤碼
+  | code | HTTP | 意思 |
+  |---|---|---|
+  | `40904` | 409 | **今天已經簽到過了**（新增）→ 前端改成「已簽到」狀態，不用當成錯誤提示 |
+- 積分流水（`GET /api/wallet/transactions`）新增 `type: "DAILY_BONUS"`（`amount` 為正）；`refId` 是 `使用者id:日期`，前端不用解析
+- 已用副本驗證：新帳號 `GET` → `claimed: false`；第 1 次 `POST` → 餘額 11,000；第 2 次 → `40904`；再 `GET` → `claimed: true`；流水多一筆 `DAILY_BONUS +1000`；5 個請求同時簽到 → 只入帳一次、其他 4 個都是 `40904`
+- 【待前端】
+  1. 重新 `npm run gen:api`
+  2. 簽到入口（建議放在積分旁邊）：`claimed: false` 時顯示「簽到 +1,000」，按下後用回應的 `balance` 更新積分（可以沿用積分的數字滾動）；`claimed: true` 或收到 `40904` → 顯示「已簽到」和距離 `nextResetAt` 的倒數
+  3. 過了 `nextResetAt` 要重新抓 `GET /api/wallet/daily-bonus`（例如倒數到 0 時），不然停在頁面上跨日後按鈕不會恢復
+  4. 翻譯：`errors.40904`、積分紀錄的 `DAILY_BONUS`（例如「每日簽到」/ "Daily bonus"）
+
 ## 2026-10-21（前端：冷熱號碼）
 - 【已完成】回覆後端「冷熱號碼」那筆的【待前端】：
   - 冷熱號碼改用 `GET /api/draws/number-stats?window=100`，前端自己用開獎紀錄算的邏輯已拿掉

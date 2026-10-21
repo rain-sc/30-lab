@@ -29,7 +29,7 @@ MongoDB，資料庫名 `marksixlab`。**草稿**：階段 0 逐個集合討論�
 - **注單索引**：`userId + idempotencyKey`（唯一）、`userId + createdAt`（我的注單列表）、`drawNo + status`（結算時找這期待結算的注單）
 - **扣積分防並發**：`updateOne({ userId, balance: { $gte: cost } }, { $inc: { balance: -cost } })`，餘額檢查和扣減是同一個原子操作。
 - **積分流水**：每一筆餘額變動都寫一筆，`amount` 收入為正、支出為負，`balanceAfter` 是變動後的餘額。
-  - `type`：`SIGNUP_BONUS`（註冊贈送，`refId` = userId）、`BET`（下注，`refId` = 注單 id）、`PAYOUT`（派彩，`refId` = 注單 id）。之後有退款、簽到再加
+  - `type`：`SIGNUP_BONUS`（註冊贈送，`refId` = userId）、`DAILY_BONUS`（每日簽到，`refId` = `userId:yyyy-MM-dd`，UTC 日期）、`BET`（下注，`refId` = 注單 id）、`PAYOUT`（派彩，`refId` = 注單 id）。之後有退款再加
   - `type + refId` 唯一索引保證**同一件事只記一次**：註冊贈送重跑不會送兩次、同一張注單不會扣兩次也不會派彩兩次
 - **開戶**：註冊時建立錢包並贈送積分；舊帳號（錢包功能上線前註冊的）第一次查詢錢包時補開戶，同樣靠唯一索引避免重複
 - **下注是一個事務**：扣餘額 + 寫流水 + 建立注單，三件事要麼都成功、要麼都失敗（需要副本集）。

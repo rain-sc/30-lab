@@ -23,10 +23,12 @@ public enum ErrorCode {
 
     // 錢包
     INSUFFICIENT_POINTS(40902,"積分不足"),
+    DAILY_BONUS_CLAIMED(40904,"今天已經簽到過了"),
 
     // 下注
     TOO_MANY_LINES(40002, "注數超過上限"),
     BETTING_CLOSED(40903, "這一期已截止下注");
+
 
     private final int code;
     private final String message;
