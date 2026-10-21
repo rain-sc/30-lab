@@ -13,8 +13,8 @@
 | 資料 | spring-boot-starter-data-mongodb、data-redis | Mongock（索引與初始化數據的版本管理） |
 | 文件 / 監控 | springdoc 3.1.1、actuator | |
 | 工具 | Lombok、DevTools | MapStruct（DTO 轉換） |
-| 安全 | — | Spring Security + JWT（階段 1 帳戶模組） |
-| 定時任務 | — | ShedLock（多實例只開一次獎，階段 1 開獎模組） |
+| 安全 | Spring Security、jjwt 0.13（JWT 放 HttpOnly cookie） | |
+| 定時任務 | Spring `@Scheduled`（每秒對帳：開獎、結算） | 不用 ShedLock：開獎、結算的每一步都是條件更新 + 唯一索引，多台同時跑也不會重複。多台部署真正的阻礙是 WebSocket 用記憶體內 broker，要換成外部 broker（RabbitMQ 等）時再處理 |
 | 測試 | spring-boot-starter-*-test | Testcontainers（MongoDB、Redis） |
 
 ## 包結構（按業務模組分包）
@@ -26,9 +26,9 @@ com.marksixlab
 ├── account/       帳戶：註冊、登入、JWT
 ├── wallet/        錢包：餘額、積分流水
 ├── betting/       投注：選號、下注、注單
-├── draw/          開獎：期數、定時任務、號碼生成
+├── draw/          開獎：期數、定時任務、號碼生成、開獎紀錄、冷熱號碼
 ├── settlement/    結算：判獎、彩池、派彩
-└── stats/         統計：歷史、冷熱號碼（階段 2）
+└── stats/         統計：跨模組的統計（例如排行榜，還沒開始；只讀開獎資料的放在 draw）
 ```
 
 每個模組內部再分 `controller/`、`service/`、`repository/`、`model/`、`dto/`。

@@ -21,4 +21,5 @@ public interface DrawRepository extends MongoRepository<Draw,String> {
 
     Optional<Draw> findFirstByStatusAndDrawAtBeforeOrderByDrawAtDesc(DrawStatus status, Instant drawAt);
 
+    long countByStatusIn(Collection<DrawStatus> statuses);
 }

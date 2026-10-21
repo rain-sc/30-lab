@@ -4,7 +4,9 @@ import com.marksixlab.common.PageResult;
 import com.marksixlab.common.Result;
 import com.marksixlab.draw.dto.CurrentDrawResponse;
 import com.marksixlab.draw.dto.DrawResponse;
+import com.marksixlab.draw.dto.NumberStatsResponse;
 import com.marksixlab.draw.service.DrawService;
+import com.marksixlab.draw.service.NumberStatsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ import java.time.temporal.ChronoUnit;
 public class DrawController {
 
     private final DrawService drawService;
+    private final NumberStatsService numberStatsService;
 
     @GetMapping("/current")
     @Operation(summary = "目前期數和最近一期的開獎結果 (不用登入)")
@@ -34,5 +37,11 @@ public class DrawController {
     @Operation(summary = "開獎紀錄, 由新到舊 (不用登入)")
     public Result<PageResult<DrawResponse>> history(@RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size){
         return Result.ok(drawService.history(page, size));
+    }
+
+    @GetMapping("/number-stats")
+    @Operation(summary = "冷熱號碼:最近window期每個號碼開出幾次、連續幾期沒開 (不用登入)")
+    public Result<NumberStatsResponse> numberStats(@RequestParam(defaultValue = "100") int window){
+        return Result.ok(numberStatsService.numberStats(window));
     }
 }
