@@ -2,9 +2,11 @@ package com.marksixlab.stats.service;
 
 import com.marksixlab.account.model.User;
 import com.marksixlab.account.repository.UserRepository;
+import com.marksixlab.stats.dto.BalanceLeaderboardResponse;
 import com.marksixlab.stats.dto.LeaderboardEntry;
 import com.marksixlab.stats.dto.LeaderboardPeriod;
 import com.marksixlab.stats.dto.LeaderboardResponse;
+import com.marksixlab.wallet.model.Wallet;
 import com.marksixlab.wallet.model.WalletTransaction;
 import org.bson.Document;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,8 +43,36 @@ class LeaderboardServiceIntegrationTest {
     @BeforeEach
     void setUp() {
         mongoTemplate.remove(new Query(), User.class);
+        mongoTemplate.remove(new Query(), Wallet.class);
         mongoTemplate.remove(new Query(), WalletTransaction.class);
     }
+
+    @Test
+    void balanceBoardOnlyListsPlayersWhoHaveBet() {
+        user("u-alice", "Alice");
+        user("u-bob", "Bob");
+        user("u-carol", "Carol");
+        user("u-dave", "Dave");
+        wallet("u-alice", 12_000);
+        wallet("u-bob", 9_000);
+        wallet("u-carol", 11_000);   // 只領了簽到、沒下注過：不上榜
+        wallet("u-dave", 9_000);
+        transaction("u-alice", "BET", -10, NOW);
+        transaction("u-bob", "BET", -10, NOW);
+        transaction("u-dave", "BET", -10, NOW);
+        transaction("u-carol", "DAILY_BONUS", 1_000, NOW);
+
+        BalanceLeaderboardResponse board = leaderboardService.balanceLeaderboard("u-dave");
+
+        assertThat(board.entries()).containsExactly(
+                new LeaderboardEntry(1, "Alice", 12_000, false),
+                new LeaderboardEntry(2, "Bob", 9_000, false),
+                new LeaderboardEntry(2, "Dave", 9_000, true));
+        assertThat(board.mine()).isEqualTo(new LeaderboardEntry(2, "Dave", 9_000, true));
+        assertThat(leaderboardService.balanceLeaderboard("u-carol").mine()).isNull();
+        assertThat(leaderboardService.balanceLeaderboard(null).mine()).isNull();
+    }
+
 
     @Test
     void dailyBoardRanksTodaysPayoutsWithTies() {
@@ -118,6 +148,10 @@ class LeaderboardServiceIntegrationTest {
         user.setUsername(id);
         user.setNickname(nickname);
         userRepository.save(user);
+    }
+
+    private void wallet(String userId, long balance) {
+        mongoTemplate.insert(new Document("userId", userId).append("balance", balance), "wallets");
     }
 
     private void payout(String userId, long amount, Instant at) {

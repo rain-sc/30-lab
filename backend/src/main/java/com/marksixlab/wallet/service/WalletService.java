@@ -5,7 +5,7 @@ import com.marksixlab.common.ErrorCode;
 import com.marksixlab.common.PageResult;
 import com.marksixlab.common.Pagination;
 import com.marksixlab.config.WalletProperties;
-import com.marksixlab.wallet.dto.PayoutRank;
+import com.marksixlab.wallet.dto.UserRank;
 import com.marksixlab.wallet.dto.WalletResponse;
 import com.marksixlab.wallet.dto.WalletTransactionResponse;
 import com.marksixlab.wallet.model.Wallet;
@@ -53,7 +53,7 @@ public class WalletService {
         return PageResult.of(transactionRepository.findByUserId(userId, pageable).map(WalletTransactionResponse::from));
     }
 
-    public List<PayoutRank> payoutRanking(Instant from, Instant to){
+    public List<UserRank> payoutRanking(Instant from, Instant to){
         Aggregation aggregation = Aggregation.newAggregation(
                 Aggregation.match(Criteria.where("type").is(WalletTransactionType.PAYOUT)
                         .and("createdAt").gte(from).lt(to)),
@@ -64,7 +64,34 @@ public class WalletService {
                 Aggregation.stage("""
                         { $sort: { rank: 1, _id: 1 } }
                         """));
-                return mongoTemplate.aggregate(aggregation, WalletTransaction.class,PayoutRank.class).getMappedResults();
+                return mongoTemplate.aggregate(aggregation, WalletTransaction.class, UserRank.class).getMappedResults();
+    }
+
+    // 至少下注過一次的人，依餘額由高到低，同分同名次（1、2、2、4）
+    public List<UserRank> balanceRanking(){
+        Aggregation aggregation = Aggregation.newAggregation(
+                Aggregation.stage("""
+                        { $lookup: {
+                            from: "wallet_transactions",
+                            localField: "userId",
+                            foreignField: "userId",
+                            pipeline: [ { $match: { type: "BET" } }, { $limit: 1 } ],
+                            as: "bets"
+                        } }
+                        """),
+                Aggregation.stage("""
+                        { $match: { bets: { $ne: [] } } }
+                        """),
+                Aggregation.stage("""
+                        { $setWindowFields: { sortBy: { balance: -1 }, output: { rank: { $rank: {} } } } }
+                        """),
+                Aggregation.stage("""
+                        { $project: { _id: "$userId", amount: "$balance", rank: 1 } }
+                        """),
+                Aggregation.stage("""
+                        { $sort: { rank: 1, _id: 1 } }
+                        """));
+        return mongoTemplate.aggregate(aggregation, Wallet.class, UserRank.class).getMappedResults();
     }
 
     // 扣款

@@ -1,6 +1,7 @@
 package com.marksixlab.stats.controller;
 
 import com.marksixlab.common.Result;
+import com.marksixlab.stats.dto.BalanceLeaderboardResponse;
 import com.marksixlab.stats.dto.LeaderboardPeriod;
 import com.marksixlab.stats.dto.LeaderboardResponse;
 import com.marksixlab.stats.service.LeaderboardService;
@@ -32,4 +33,11 @@ public class LeaderboardController {
     ){
         return Result.ok(leaderboardService.leaderboard(period,userId, Instant.now().truncatedTo(ChronoUnit.MILLIS)));
     }
+
+    @GetMapping("/balance")
+    @Operation(summary = "富豪榜：目前積分餘額，只列出至少下注過一次的人，不會重置（不用登入；有登入會多回傳自己的名次）")
+    public Result<BalanceLeaderboardResponse> balanceLeaderboard(@AuthenticationPrincipal String userId){
+        return Result.ok(leaderboardService.balanceLeaderboard(userId));
+    }
+
 }
