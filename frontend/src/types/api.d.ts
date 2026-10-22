@@ -142,6 +142,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/leaderboard/balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 富豪榜：目前積分餘額，只列出至少下注過一次的人，不會重置（不用登入；有登入會多回傳自己的名次） */
+        get: operations["balanceLeaderboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/jackpot": {
         parameters: {
             query?: never;
@@ -624,6 +641,23 @@ export interface components {
             msg: string;
             /** @description 回應資料；沒有資料時是 null */
             data: components["schemas"]["LeaderboardResponse"];
+        };
+        BalanceLeaderboardResponse: {
+            /** @description 前 20 名（amount 是目前積分餘額）；只列出至少下注過一次的人 */
+            entries: components["schemas"]["LeaderboardEntry"][];
+            /** @description 自己的名次；沒登入或還沒下注過是 null */
+            mine?: components["schemas"]["LeaderboardEntry"];
+        };
+        ResultBalanceLeaderboardResponse: {
+            /**
+             * Format: int32
+             * @description 0 表示成功，失敗時是 5 位數錯誤碼
+             */
+            code: number;
+            /** @description 給開發看的說明，不直接顯示給使用者 */
+            msg: string;
+            /** @description 回應資料；沒有資料時是 null */
+            data: components["schemas"]["BalanceLeaderboardResponse"];
         };
         JackpotResponse: {
             /**
@@ -1123,6 +1157,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ResultLeaderboardResponse"];
+                };
+            };
+        };
+    };
+    balanceLeaderboard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultBalanceLeaderboardResponse"];
                 };
             };
         };

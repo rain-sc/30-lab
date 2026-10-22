@@ -72,7 +72,7 @@ function businessError(body: ApiResult, status: number, config?: AxiosRequestCon
 }
 
 /** 這個分頁已登出時，仍然可以送的請求：不用登入的接口（重新登入、註冊、目前期數、開獎紀錄、冷熱號碼、頭獎彩池、排行榜、遊戲規則） */
-const ALLOWED_WHEN_SIGNED_OUT = ["/auth/login", "/auth/register", "/draws/current", "/draws", "/draws/number-stats", "/jackpot", "/leaderboard", "/game/rules"];
+const ALLOWED_WHEN_SIGNED_OUT = ["/auth/login", "/auth/register", "/draws/current", "/draws", "/draws/number-stats", "/jackpot", "/leaderboard", "/leaderboard/balance", "/game/rules"];
 
 // 這個分頁已登出（被其他分頁的登入取代、或被踢下線）時，擋下其他請求、不送出去：
 // cookie 是共用的，送出去帶的是別的分頁的 session，後端會照常處理（等於這個分頁還能下注）。

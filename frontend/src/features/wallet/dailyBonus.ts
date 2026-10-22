@@ -53,6 +53,7 @@ export function useClaimDailyBonus(username: string | undefined) {
         nextResetAt: res.nextResetAt,
       });
       void queryClient.invalidateQueries({ queryKey: ["wallet-transactions"] });
+      void queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
     },
     onError: (error) => {
       if (error instanceof ApiError && error.code === ALREADY_CLAIMED) {

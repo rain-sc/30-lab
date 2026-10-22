@@ -7,12 +7,12 @@ import { useSession } from "@/features/auth/session";
 import { useNextDraw, useNow } from "@/features/draw/useNextDraw";
 import { useApiErrorText } from "@/lib/api/useApiErrorText";
 import { cn } from "@/lib/utils";
-import { TOP_N, useLeaderboard, type LeaderboardEntry, type Period } from "./api";
+import { TOP_N, useLeaderboard, type Board, type LeaderboardEntry } from "./api";
 
 const CARD = "rounded-card border border-line bg-panel";
 
 /**
- * 排行榜（設計稿 F）：今日 / 本週的中獎總額。
+ * 排行榜（設計稿 F）：今日 / 本週的中獎總額、富豪榜（目前積分餘額）。
  * 桌面：名次列表 | 我的名次 + 計算方式；手機：名次列表，我的名次固定在底部分頁上方。
  * 暱稱可能重複，列表的 key 用名次 + 索引。
  */
@@ -21,9 +21,11 @@ export function Leaderboard() {
   const errorText = useApiErrorText();
   const username = useSession((s) => s.user?.username);
   const next = useNextDraw();
-  const [period, setPeriod] = useState<Period>("DAY");
+  const [period, setPeriod] = useState<Board>("DAY");
   const query = useLeaderboard(period, username, next);
-  const data = query.data?.period === period ? query.data : undefined;
+  const data = query.data?.board === period ? query.data : undefined;
+  // 中獎榜的金額加「+」；富豪榜是餘額
+  const signed = period !== "BALANCE";
   const mine = data?.mine;
   // 自己不在前 20 名：列表下面另外顯示自己那一列
   const mineOutside = !!mine && !data?.entries.some((e) => e.me);
@@ -35,11 +37,11 @@ export function Leaderboard() {
           <h1 className="m-0 text-xl md:text-[26px]">{t("title")}</h1>
           <p className="m-0 text-xs text-muted md:text-sm">
             {t("subtitle", { period })}
-            {data && <ResetIn to={data.to} />}
+            {data?.to && <ResetIn to={data.to} />}
           </p>
         </div>
         <div role="tablist" aria-label={t("periodLabel")} className="flex gap-1 rounded-button bg-sunken p-1">
-          {(["DAY", "WEEK"] as const).map((p) => (
+          {(["DAY", "WEEK", "BALANCE"] as const).map((p) => (
             <button
               key={p}
               type="button"
@@ -77,13 +79,13 @@ export function Leaderboard() {
           ) : (
             <ol className="m-0 flex list-none flex-col p-0">
               {data.entries.map((entry, i) => (
-                <Row key={`${entry.rank}-${i}`} entry={entry} />
+                <Row key={`${entry.rank}-${i}`} entry={entry} signed={signed} />
               ))}
             </ol>
           )}
           {mineOutside && (
             <div className="mx-1.5 mt-2 border-t border-dashed border-line-strong pt-2">
-              <Row entry={mine} outside />
+              <Row entry={mine} outside signed={signed} />
             </div>
           )}
         </section>
@@ -92,9 +94,9 @@ export function Leaderboard() {
           <MineCard period={period} mine={mine} loggedIn={!!username} entries={data?.entries} />
           <section className={cn(CARD, "flex flex-col gap-2.5 px-5.5 py-5 text-[13px] leading-relaxed text-fg-soft")}>
             <h2 className="m-0 text-[15px] text-fg">{t("howTitle")}</h2>
-            <p className="m-0">{t("how1")}</p>
-            <p className="m-0">{t("how2")}</p>
-            <p className="m-0">{t("how3")}</p>
+            <p className="m-0">{t("how1", { board: period })}</p>
+            <p className="m-0">{t("how2", { board: period })}</p>
+            <p className="m-0">{t("how3", { board: period })}</p>
           </section>
         </aside>
       </div>
@@ -106,7 +108,7 @@ export function Leaderboard() {
             <span className="text-xs text-muted">{t("mine")}</span>
             <span className="font-num text-[26px] font-extrabold text-gold">#{mine.rank}</span>
             <span className="flex-1 text-xs text-muted">{mineOutside && t("outside", { top: TOP_N })}</span>
-            <Amount value={mine.amount} className="text-xl text-gold" />
+            <Amount value={mine.amount} signed={signed} className="text-xl text-gold" />
           </div>
         </div>
       )}
@@ -115,7 +117,7 @@ export function Leaderboard() {
 }
 
 /** 一列名次：前 3 名比較大，第 1 名金色；自己那一列加「我」 */
-function Row({ entry, outside = false }: { entry: LeaderboardEntry; outside?: boolean }) {
+function Row({ entry, outside = false, signed }: { entry: LeaderboardEntry; outside?: boolean; signed: boolean }) {
   const t = useTranslations("Leaderboard");
   const top = entry.rank <= 3 && !outside;
   const first = entry.rank === 1 && !outside;
@@ -153,14 +155,20 @@ function Row({ entry, outside = false }: { entry: LeaderboardEntry; outside?: bo
         {entry.me && <span className="shrink-0 rounded-full bg-gold/15 px-2 text-[11px] font-bold text-gold">{t("me")}</span>}
         {outside && <span className="hidden shrink-0 text-xs font-normal text-muted md:inline">{t("outside", { top: TOP_N })}</span>}
       </span>
-      <Amount value={entry.amount} className={cn(top ? "text-[22px] md:text-[26px]" : "text-[17px] md:text-xl", first || entry.me ? "text-gold" : "text-fg")} />
+      <Amount value={entry.amount} signed={signed} className={cn(top ? "text-[22px] md:text-[26px]" : "text-[17px] md:text-xl", first || entry.me ? "text-gold" : "text-fg")} />
     </li>
   );
 }
 
-function Amount({ value, className }: { value: number; className?: string }) {
+/** signed：中獎總額加「+」；富豪榜的餘額不加 */
+function Amount({ value, signed, className }: { value: number; signed: boolean; className?: string }) {
   const format = useFormatter();
-  return <span className={cn("font-num font-bold tabular-nums", className)}>+{format.number(value)}</span>;
+  return (
+    <span className={cn("font-num font-bold tabular-nums", className)}>
+      {signed && "+"}
+      {format.number(value)}
+    </span>
+  );
 }
 
 /** 距離重置還有多久 */
@@ -180,7 +188,7 @@ function MineCard({
   loggedIn,
   entries,
 }: {
-  period: Period;
+  period: Board;
   mine: LeaderboardEntry | undefined;
   loggedIn: boolean;
   entries: LeaderboardEntry[] | undefined;
@@ -199,6 +207,7 @@ function MineCard({
           <span className="font-num text-[64px] leading-[0.95] font-extrabold">#{mine.rank}</span>
           <span className="text-sm text-fg-soft">
             {t.rich("mineAmount", {
+              board: period,
               points: format.number(mine.amount),
               b: (chunks) => <b className="font-num text-[22px] text-gold">{chunks}</b>,
             })}
