@@ -1,15 +1,10 @@
 package com.marksixlab.betting.service;
 
-import java.time.Instant;
-import java.util.List;
-
 import com.marksixlab.betting.dto.PlaceBetRequest;
 import com.marksixlab.betting.dto.PlaceBetResponse;
+import com.marksixlab.betting.dto.RecentWin;
 import com.marksixlab.betting.dto.TicketResponse;
-import com.marksixlab.betting.model.BetType;
-import com.marksixlab.betting.model.LineResult;
-import com.marksixlab.betting.model.Ticket;
-import com.marksixlab.betting.model.TicketStatus;
+import com.marksixlab.betting.model.*;
 import com.marksixlab.betting.repository.TicketRepository;
 import com.marksixlab.common.BusinessException;
 import com.marksixlab.common.ErrorCode;
@@ -22,14 +17,24 @@ import com.marksixlab.wallet.model.WalletTransactionType;
 import com.marksixlab.wallet.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
+
+import java.time.Instant;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.Comparator;
 
 @Service
 @RequiredArgsConstructor
@@ -116,6 +121,45 @@ public class BettingService {
                 .set("status", TicketStatus.PAID)
                 .set("updatedAt", now);
         mongoTemplate.updateFirst(query, update, Ticket.class);
+    }
+
+    record WinRow(String drawNo, Instant settledAt, long payout, List<LineResult> results) {
+    }
+
+    record UserWins(@Id String userId, List<WinRow> wins) {
+    }
+
+    // 每個人最近 limit 次中獎（已派彩的注單），由新到舊；沒中過獎的人不會出現在 Map 裡
+    public Map<String, List<RecentWin>> recentWins(Collection<String> userIds, int limit) {
+        if (userIds.isEmpty()) {
+            return Map.of();
+        }
+        Aggregation aggregation = Aggregation.newAggregation(
+                Aggregation.match(Criteria.where("userId").in(userIds).and("status").is(TicketStatus.PAID)),
+                Aggregation.stage("""
+                        { $group: {
+                            _id: "$userId",
+                            wins: { $topN: {
+                                n: %d,
+                                sortBy: { settledAt: -1 },
+                                output: { drawNo: "$drawNo", settledAt: "$settledAt", payout: "$payout", results: "$results" }
+                            } }
+                        } }
+                        """.formatted(limit)));
+        return mongoTemplate.aggregate(aggregation, Ticket.class, UserWins.class)
+                .getMappedResults()
+                .stream()
+                .collect(Collectors.toMap(UserWins::userId,
+                        row -> row.wins().stream().map(BettingService::toRecentWin).toList()));
+    }
+
+    private static RecentWin toRecentWin(WinRow row) {
+        List<PrizeTier> tiers = row.results().stream()
+                .map(LineResult::tier)
+                .filter(Objects::nonNull)
+                .toList();
+        PrizeTier best = tiers.stream().min(Comparator.naturalOrder()).orElse(null);
+        return new RecentWin(row.drawNo(), row.settledAt(), row.payout(), best, tiers.size());
     }
 
     private PlaceBetResponse withBalance(Ticket ticket, String userId) {

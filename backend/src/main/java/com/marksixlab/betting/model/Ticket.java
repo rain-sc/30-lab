@@ -19,6 +19,7 @@ import java.util.List;
 @CompoundIndex(name = "userId_idempotencyKey", def = "{'userId': 1, 'idempotencyKey': 1}", unique = true)
 @CompoundIndex(name = "userId_createdAt", def = "{'userId': 1, 'createdAt': -1}")
 @CompoundIndex(name = "drawNo_status", def = "{'drawNo': 1, 'status': 1}")
+@CompoundIndex(name = "userId_status_settledAt", def = "{'userId': 1, 'status': 1, 'settledAt': -1}")
 public class Ticket {
 
     @Id

@@ -1,6 +1,8 @@
 package com.marksixlab.stats.service;
 
 import com.marksixlab.account.service.UserService;
+import com.marksixlab.betting.dto.RecentWin;
+import com.marksixlab.betting.service.BettingService;
 import com.marksixlab.stats.dto.BalanceLeaderboardResponse;
 import com.marksixlab.stats.dto.LeaderboardEntry;
 import com.marksixlab.stats.dto.LeaderboardPeriod;
@@ -23,11 +25,15 @@ import java.util.Set;
 public class LeaderboardService {
 
     private static final int TOP = 20;
+    private static final int RECENT_WINS = 5;
 
     private final WalletService walletService;
     private final UserService userService;
+    private final BettingService bettingService;
+
 
     private record Board(List<LeaderboardEntry> entries, LeaderboardEntry mine) {
+
     }
 
     public LeaderboardResponse leaderboard(LeaderboardPeriod period,String userId, Instant now){
@@ -58,15 +64,19 @@ public class LeaderboardService {
             userIds.add(mine.userId());
         }
         Map<String,String> nicknames = userService.nicknames(userIds);
+        Map<String, List<RecentWin>> recentWins = bettingService.recentWins(userIds, RECENT_WINS);
 
         List<LeaderboardEntry> entries = top.stream()
-                .map(row -> toEntry(row, nicknames, userId))
+                .map(row -> toEntry(row, nicknames, recentWins, userId))
                 .toList();
-        LeaderboardEntry mineEntry = mine == null ? null : toEntry(mine,nicknames, userId);
+        LeaderboardEntry mineEntry = mine == null ? null : toEntry(mine, nicknames, recentWins, userId);
         return new Board(entries, mineEntry);
     }
 
-    private static LeaderboardEntry toEntry(UserRank row, Map<String,String> nicknames,String userId ){
-        return new LeaderboardEntry(row.rank(),nicknames.get(row.userId()),row.amount(),row.userId().equals(userId));
+    private static LeaderboardEntry toEntry(UserRank row, Map<String,String> nicknames,
+                                            Map<String, List<RecentWin>> recentWins, String userId){
+        return new LeaderboardEntry(row.rank(), nicknames.get(row.userId()), row.amount(),
+                row.userId().equals(userId), recentWins.getOrDefault(row.userId(), List.of()));
     }
+
 }

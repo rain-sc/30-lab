@@ -2,6 +2,8 @@ package com.marksixlab.stats.service;
 
 import com.marksixlab.account.model.User;
 import com.marksixlab.account.repository.UserRepository;
+import com.marksixlab.betting.dto.RecentWin;
+import com.marksixlab.betting.model.*;
 import com.marksixlab.stats.dto.BalanceLeaderboardResponse;
 import com.marksixlab.stats.dto.LeaderboardEntry;
 import com.marksixlab.stats.dto.LeaderboardPeriod;
@@ -18,8 +20,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Instant;
-import java.util.Date;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,7 +46,40 @@ class LeaderboardServiceIntegrationTest {
         mongoTemplate.remove(new Query(), User.class);
         mongoTemplate.remove(new Query(), Wallet.class);
         mongoTemplate.remove(new Query(), WalletTransaction.class);
+        mongoTemplate.remove(new Query(), Ticket.class);
     }
+
+    @Test
+    void entriesIncludeTheLatestFiveWins() {
+        user("u-alice", "Alice");
+        user("u-bob", "Bob");
+        payout("u-alice", 40, NOW);
+        payout("u-bob", 40, NOW);
+        // Alice 中過 6 次，只回傳最新的 5 次；沒中獎和還沒派彩的注單不算
+        for (int i = 1; i <= 6; i++) {
+            ticket("u-alice", "20261021-%04d".formatted(i), TicketStatus.PAID, Instant.parse("2026-10-21T00:00:00Z").plusSeconds(300L * i),
+                    new LineResult(3, false, PrizeTier.SEVENTH, 40));
+        }
+        ticket("u-alice", "20261021-0005", TicketStatus.PAID, Instant.parse("2026-10-21T00:25:00Z"),
+                new LineResult(4, true, PrizeTier.FOURTH, 9_600),
+                new LineResult(3, false, PrizeTier.SEVENTH, 40),
+                new LineResult(1, false, null, 0));
+        ticket("u-alice", "20261021-0007", TicketStatus.LOST, Instant.parse("2026-10-21T00:35:00Z"),
+                new LineResult(2, false, null, 0));
+        ticket("u-alice", "20261021-0008", TicketStatus.PENDING, null);
+
+        LeaderboardEntry alice = leaderboardService.leaderboard(LeaderboardPeriod.DAY, "u-alice", NOW).mine();
+
+        assertThat(alice.recentWins()).extracting(RecentWin::drawNo)
+                .containsExactly("20261021-0006", "20261021-0005", "20261021-0005", "20261021-0004", "20261021-0003");
+        assertThat(alice.recentWins()).contains(new RecentWin("20261021-0005", Instant.parse("2026-10-21T00:25:00Z"), 9_640, PrizeTier.FOURTH, 2));
+        assertThat(leaderboardService.leaderboard(LeaderboardPeriod.DAY, null, NOW).entries())
+                .filteredOn(entry -> entry.nickname().equals("Bob"))
+                .singleElement()
+                .extracting(LeaderboardEntry::recentWins)
+                .isEqualTo(List.of());
+    }
+
 
     @Test
     void balanceBoardOnlyListsPlayersWhoHaveBet() {
@@ -148,6 +182,21 @@ class LeaderboardServiceIntegrationTest {
         user.setUsername(id);
         user.setNickname(nickname);
         userRepository.save(user);
+    }
+
+    private void ticket(String userId, String drawNo, TicketStatus status, Instant settledAt, LineResult... results) {
+        Ticket ticket = new Ticket();
+        ticket.setUserId(userId);
+        ticket.setDrawNo(drawNo);
+        ticket.setBetType(BetType.SINGLE);
+        ticket.setLines(Collections.nCopies(Math.max(results.length, 1), List.of(1, 2, 3, 4, 5, 6)));
+        ticket.setCost(10L * Math.max(results.length, 1));
+        ticket.setStatus(status);
+        ticket.setIdempotencyKey(UUID.randomUUID().toString());
+        ticket.setResults(results.length == 0 ? null : List.of(results));
+        ticket.setPayout(Arrays.stream(results).mapToLong(LineResult::prize).sum());
+        ticket.setSettledAt(settledAt);
+        mongoTemplate.insert(ticket);
     }
 
     private void wallet(String userId, long balance) {
