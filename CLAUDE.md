@@ -70,6 +70,7 @@
 docker compose up -d                                  # 啟動 MongoDB + Redis（需要先開 Docker Desktop）
 cd backend;  .\mvnw.cmd spring-boot:run               # 啟動後端（或在 IntelliJ 執行 main）
 cd frontend; npm run dev                              # 啟動前端
+node tools/bot-players/bots.mjs                       # （可選）80 個機器人玩家自動簽到、下注，見 tools/bot-players/README.md
 ```
 
 開發工具：後端用 **IntelliJ IDEA**，前端用 **VS Code**。
