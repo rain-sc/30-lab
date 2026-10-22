@@ -95,6 +95,7 @@ src/
 | `draw/stage/crystal.ts` | React Bits Crystalized Ball（ogl shader 搬進舞台的 three.js 場景）+ Comet Dial（SVG 改成 shader） | 攪珠台的容器：金色電光的水晶球、49 格號碼刻度環上的彗星（大廳唯一的氛圍效果） |
 
 - 能用 CSS 的用 CSS（進場、光澤、火花、脈動）；需要狀態、彈簧、進出場的用 Motion。
+- `@keyframes` 不要寫和預設值相同的 `from`（例如 `rotate: 0turn`）：CSS 壓縮會刪掉，動畫就從元素自己的值開始。要從 0 開始的旋轉用 `transform`（起點是 `none`）
 - **伺服器渲染的內容不要用 JS 動畫從透明開始**（JS 慢的話畫面會空白），進場用 CSS 動畫。
 - 會重新掛載輸入框的做法不能用來做動畫（會清掉 React Hook Form 的值），改用 Web Animations API（`element.animate`）。
 - Motion 的 `layoutId` 用畫面絕對位置計算起點，父層會移動時（例如卡片高度改變重新置中）會飛出去；這種情況改用相對父層的 `x` 位移。
@@ -202,7 +203,7 @@ src/
     可下注：電光安靜、刻度環從正上方順時針亮起（`idle.cutoff` = 離截止的進度）、上一期號碼的刻度金色；
     攪珠：彗星繞圈、電光跟著變亮；開獎：彗星甩到開出號碼的刻度、那裡閃電弧。刻度從正上方順時針 1 → 49。
     其他 React Bits 的 WebGL 元件不能直接放進頁面（會多一個 WebGL），要像這樣把 shader 搬進同一個場景
-  - `DrawStage.tsx`：動態 `import("./engine")`（three + matter 不進初始 JS），載入前顯示 `StagePreview`；effect 清除時 `dispose()` 釋放 WebGL（Activity 隱藏頁面也會執行），**每次重建都用新的 canvas**（`forceContextLoss` 後同一個 canvas 不能再用）
+  - `DrawStage.tsx`：動態 `import("./engine")`（three + matter 不進初始 JS），載入前顯示 `StagePreview`（水晶球輪廓 + 4 顆隨機號碼球繞圈，純 CSS；手機縮圖、不支援 WebGL 時也用它，後者球停住）；effect 清除時 `dispose()` 釋放 WebGL（Activity 隱藏頁面也會執行），**每次重建都用新的 canvas**（`forceContextLoss` 後同一個 canvas 不能再用）
   - 捲出畫面、切到別的分頁時暫停渲染和物理
   - **一頁只掛一個 WebGL**：桌面掛在大廳的舞台卡片；手機平常是靜態縮圖，點一下或截止到開完獎時自動放大成全畫面才掛（`MobileStage`，用 portal 放到 body，外層有 transform 時 fixed 會失效）。用 `useIsDesktop()` 決定掛哪一個，CSS 的 `hidden` 只是藏起來、元件還在
   - reduced-motion：不攪珠、不播開球、手機不自動放大，開獎一到直接擺好

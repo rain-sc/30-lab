@@ -1,61 +1,76 @@
-import { ballColor } from "@/lib/ball";
+"use client";
+
+import { useEffect, useState, type CSSProperties } from "react";
+import { Ball } from "@/components/Ball";
 import { cn } from "@/lib/utils";
 
-// 開獎舞台的靜態示意：金色光邊的水晶球裡堆著 49 顆號碼球，外圈 49 格刻度（純 CSS，不跑 WebGL；外觀對應 stage/crystal.ts）
-// 用在：3D 舞台載入完成前的佔位圖、手機版卡片上的縮圖、不支援 WebGL 時的替代畫面
+// 開獎舞台的 2D 替身：水晶球的輪廓（金色光邊 + 49 格刻度，對應 stage/crystal.ts），裡面 4 顆號碼球沿著光邊繞圈（設計稿 B：https://claude.ai/artifact/8QsQ7GWpHopGfrZCrsxvtM）
+// 用在：3D 舞台載入完成前、手機大廳卡片上的縮圖、不支援 WebGL 時（moving = false，球停住）
+// 純 CSS 動畫：伺服器渲染就會動，不用等 JS；reduced-motion 時停住
 
-const BG: Record<ReturnType<typeof ballColor>, string> = {
-  red: "bg-ball-red",
-  blue: "bg-ball-blue",
-  green: "bg-ball-green",
+/** 伺服器渲染用的固定號碼（避免 hydration 不一致），瀏覽器接手後換成隨機的 */
+const INITIAL = [8, 23, 31, 45];
+/** 4 顆球依序落後 0.38 秒，一前一後繞圈 */
+const LAG_MS = 380;
+
+const randomNumbers = () => {
+  const picked = new Set<number>();
+  while (picked.size < INITIAL.length) picked.add(1 + Math.floor(Math.random() * 49));
+  return [...picked];
 };
 
-/** 球的直徑（佔玻璃球直徑的百分比） */
-const SIZE = 8;
+export function StagePreview({
+  className,
+  moving = true,
+  caption,
+}: {
+  className?: string;
+  /** false：球停在邊上（不支援 WebGL 時，不要看起來一直在載入） */
+  moving?: boolean;
+  /** 中間的文字（例如「攪珠台準備中…」）；手機縮圖太小不放 */
+  caption?: string;
+}) {
+  const [numbers, setNumbers] = useState(INITIAL);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 掛載後才換成隨機號碼：伺服器和第一次渲染要一樣
+    setNumbers(randomNumbers());
+  }, []);
 
-/** 49 顆球堆在玻璃球底部的位置（百分比，固定不隨機，伺服器和瀏覽器算出來一樣） */
-const PILE = (() => {
-  const out: { n: number; x: number; y: number }[] = [];
-  const R = 50;
-  const gap = SIZE + 0.5;
-  for (let row = 0; out.length < 49 && row < 20; row++) {
-    const cy = 100 - 2 - SIZE / 2 - row * SIZE * 0.86;
-    const half = Math.sqrt(Math.max(0, (R - 1.5) ** 2 - (cy - R) ** 2)) - SIZE / 2 - 0.5;
-    for (let x = -half + ((row % 2) * gap) / 2; x <= half && out.length < 49; x += gap) {
-      const i = out.length;
-      out.push({ n: ((i * 17) % 49) + 1, x: R + x - SIZE / 2 + Math.sin(i * 1.7) * 0.5, y: cy - SIZE / 2 + Math.cos(i * 2.3) * 0.5 });
-    }
-  }
-  return out;
-})();
-
-/** numbers：小尺寸（手機縮圖）時不顯示號碼 */
-export function StagePreview({ className, numbers = true }: { className?: string; numbers?: boolean }) {
   return (
-    <div aria-hidden="true" className={cn("relative aspect-square", className)}>
+    <div role={caption ? "status" : undefined} aria-hidden={caption ? undefined : true} className={cn("@container relative aspect-square", className)}>
       {/* 49 格刻度：圓錐漸層畫出放射線，再用圓形遮罩只留外圈 */}
       <div className="absolute inset-0 rounded-full bg-[repeating-conic-gradient(from_-0.6deg,var(--color-line-strong)_0_1.2deg,transparent_1.2deg_7.3469deg)] mask-[radial-gradient(closest-side,transparent_95%,#000_95.5%)]" />
       <div
         className={cn(
-          "@container absolute inset-[6.75%] overflow-hidden rounded-full border border-gold/70",
+          "absolute inset-[6.75%] rounded-full border border-gold/70",
           "bg-[radial-gradient(circle_at_50%_50%,#1d2848_0,var(--color-sunken)_65%,#070a15_100%)]",
-          "shadow-[0_0_18px_rgba(244,182,63,0.45),inset_0_0_24px_rgba(244,182,63,0.22)]",
+          "shadow-[0_0_18px_rgba(244,182,63,0.4),inset_0_0_22px_rgba(244,182,63,0.18)]",
+          moving && "animate-rim-breathe motion-reduce:animate-none",
         )}
-      >
-        {PILE.map(({ n, x, y }) => (
+      />
+      {numbers.map((n, i) => (
+        // 外層繞圈，球再反方向轉回來，號碼保持正向（兩層都是 transform 動畫）
+        // 停住時（不動、reduced-motion）改用 rotate 屬性把 4 顆平均分在一圈上；播放時不套用，不然會和動畫疊加
+        <span
+          key={i}
+          aria-hidden="true"
+          className={cn("absolute inset-[6.75%]", moving ? "animate-orbit motion-reduce:rotate-(--at) motion-reduce:animate-none" : "rotate-(--at)")}
+          style={{ animationDelay: `${-i * LAG_MS}ms`, "--at": `${i * 0.25}turn` } as CSSProperties}
+        >
           <span
-            key={n}
             className={cn(
-              "absolute grid place-items-center rounded-full font-num text-[3.6cqw] font-bold text-white",
-              "shadow-[inset_-2px_-3px_4px_rgba(0,0,0,0.35),inset_1px_2px_3px_rgba(255,255,255,0.28)]",
-              BG[ballColor(n)],
+              "absolute top-[9%] left-1/2 -translate-1/2",
+              moving ? "animate-orbit-reverse motion-reduce:-rotate-(--at) motion-reduce:animate-none" : "-rotate-(--at)",
             )}
-            style={{ left: `${x}%`, top: `${y}%`, width: `${SIZE}%`, height: `${SIZE}%` }}
+            style={{ animationDelay: `${-i * LAG_MS}ms` }}
           >
-            {numbers ? n : null}
+            <Ball number={n} className="size-[13cqw] text-[6cqw]" />
           </span>
-        ))}
-      </div>
+        </span>
+      ))}
+      {caption && (
+        <span className="absolute inset-0 grid place-items-center px-[22%] text-center text-[max(12px,5cqw)] text-muted">{caption}</span>
+      )}
     </div>
   );
 }

@@ -14,7 +14,7 @@ const phaseNow = (reduced: boolean) => stagePhaseAt(feedNow(), useDrawFeed.getSt
 
 /**
  * 開獎舞台（3D）。一頁只能放一個（WebGL 場景很吃資源）。
- * - three + matter 動態載入：載入完成前顯示靜態示意圖
+ * - three + matter 動態載入：載入完成前顯示 2D 的繞圈動畫（StagePreview）
  * - 卸載或被 Activity 隱藏時（effect 清除）釋放 WebGL；回來時重建，動畫依時間接著播
  * - reduced-motion：不攪珠、不播開球動畫，開獎一到直接擺好
  */
@@ -23,6 +23,7 @@ export function DrawStage({ className, hint = true }: { className?: string; hint
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const reduced = useReducedMotion() ?? false;
+  const t = useTranslations("Stage");
 
   useEffect(() => {
     let disposed = false;
@@ -44,7 +45,7 @@ export function DrawStage({ className, hint = true }: { className?: string; hint
           onReady: () => setReady(true),
         });
       })
-      .catch(() => setFailed(true)); // 不支援 WebGL 或載入失敗：留著靜態示意圖
+      .catch(() => setFailed(true)); // 不支援 WebGL 或載入失敗：留著 2D 的攪珠台，球停住
     return () => {
       disposed = true;
       stage?.dispose();
@@ -57,7 +58,7 @@ export function DrawStage({ className, hint = true }: { className?: string; hint
     <div className={cn("relative overflow-hidden", className)}>
       {!ready && (
         <div className="absolute inset-0 grid place-items-center p-[12%]">
-          <StagePreview className="w-full" numbers={!failed} />
+          <StagePreview className="w-full" moving={!failed} caption={failed ? t("unsupported") : t("loading")} />
         </div>
       )}
       {/* canvas 由 effect 建立、放進這裡（React 不管理它的內容）；上方留給狀態標籤，結果列的球不會被蓋到 */}

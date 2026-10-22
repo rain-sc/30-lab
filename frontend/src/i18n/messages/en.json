@@ -195,7 +195,9 @@
     "mixing": "Closed · mixing",
     "drawing": "Drawing · ball {index} of 7",
     "drawn": "Drawn",
-    "hint": "Tap a ball to bounce · hold to zoom · drag to fling"
+    "hint": "Tap a ball to bounce · hold to zoom · drag to fling",
+    "loading": "Loading the draw machine…",
+    "unsupported": "This browser can’t show the 3D draw machine"
   },
   "Notice": {
     "drawNo": "Draw {drawNo} results",

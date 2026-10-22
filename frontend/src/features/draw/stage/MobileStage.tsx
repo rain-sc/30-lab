@@ -49,7 +49,7 @@ export function MobileStage({ className }: { className?: string }) {
         onClick={() => setManualOpen(true)}
         className={cn("relative shrink-0 rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold", className)}
       >
-        <StagePreview numbers={false} className="w-full" />
+        <StagePreview className="w-full" />
         <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full border border-line bg-panel px-2 py-px text-[10px] whitespace-nowrap text-fg-soft">
           {t("tapToPlay")}
         </span>

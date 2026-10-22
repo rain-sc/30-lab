@@ -195,7 +195,9 @@
     "mixing": "已截止・攪珠中",
     "drawing": "開獎中・第 {index} / 7 顆",
     "drawn": "已開獎",
-    "hint": "點一下球會彈跳・按住放大・拖動可以甩"
+    "hint": "點一下球會彈跳・按住放大・拖動可以甩",
+    "loading": "攪珠台準備中…",
+    "unsupported": "這個瀏覽器無法顯示 3D 攪珠台"
   },
   "Notice": {
     "drawNo": "第 {drawNo} 期開獎",
