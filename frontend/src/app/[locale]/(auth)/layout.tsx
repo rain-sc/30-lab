@@ -5,7 +5,7 @@ import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { BokehBalls } from "@/components/fx/BokehBalls";
 import { SpotlightCard } from "@/components/fx/SpotlightCard";
 import { LivePanel } from "@/features/draw/LivePanel";
-import { DRAW_INTERVAL_MINUTES, POINTS_PER_BET } from "@/features/draw/rules";
+import { RulesShort } from "@/features/draw/RulesShort";
 
 // 進場動畫：各區塊依序淡入上移（純 CSS，伺服器渲染的內容不會先透明）
 const FADE_UP = "animate-fade-up motion-reduce:animate-none";
@@ -38,9 +38,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         </SpotlightCard>
 
         {/* 桌面版的規則在直播面板裡，手機版放在最下面 */}
-        <p className={`m-0 w-full text-center text-xs text-muted md:hidden ${FADE_UP} [animation-delay:360ms]`}>
-          {t("rulesShort", { points: POINTS_PER_BET, minutes: DRAW_INTERVAL_MINUTES })}
-        </p>
+        <RulesShort className={`m-0 w-full text-center text-xs text-muted md:hidden ${FADE_UP} [animation-delay:360ms]`} />
       </main>
     </div>
   );

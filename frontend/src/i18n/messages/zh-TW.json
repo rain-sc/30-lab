@@ -99,7 +99,9 @@
     "logout": "登出",
     "tabTickets": "注單",
     "tabPoints": "積分紀錄",
-    "leaderboard": "排行榜"
+    "leaderboard": "排行榜",
+    "rules": "玩法",
+    "rulesLink": "玩法說明"
   },
   "Game": {
     "checking": "確認登入狀態中…",
@@ -125,7 +127,8 @@
     "placed": "本期已下注",
     "myBets": "我的注單",
     "hotCold": "冷熱號碼",
-    "hotColdNote": "最近 {count} 期 · 點號碼可加入選號"
+    "hotColdNote": "最近 {count} 期 · 點號碼可加入選號",
+    "jackpotRules": "彩池怎麼算"
   },
   "Betting": {
     "title": "選 {count} 個號碼",
@@ -150,7 +153,8 @@
     "placedEmpty": "這一期還沒有下注",
     "placedMore": "還有 {count} 注 →",
     "tooMany": "每張注單最多 {max} 注，請分開送出",
-    "slipFull": "待下注最多 {max} 注，請先確認下注"
+    "slipFull": "待下注最多 {max} 注，請先確認下注",
+    "rulesLink": "玩法說明（獎級、機率）"
   },
   "HotCold": {
     "hot": "最常開出",
@@ -161,7 +165,7 @@
     "coldAria": "{number}，{count} 期沒開，加入選號",
     "added": "已加入 {number}（{count} / {total}）",
     "already": "{number} 已經選了",
-    "full": "已經選滿 6 個號碼",
+    "full": "已經選滿 {count} 個號碼",
     "error": "無法載入冷熱號碼"
   },
   "MyBets": {
@@ -256,5 +260,47 @@
     "how1": "比期間內派彩的總額，不扣下注花費，註冊和簽到贈送不算。",
     "how2": "今日：每天早上 8 點（UTC 00:00）重置；本週：每週一早上 8 點重置。",
     "how3": "同分同名次；期間內還沒中獎的人不會上榜。"
+  },
+  "Rules": {
+    "title": "玩法說明",
+    "intro": "用虛擬積分玩的 6/49 選號遊戲，積分不能儲值、也不能兌換。",
+    "error": "無法載入遊戲規則：{reason}",
+    "retry": "重試",
+    "howTitle": "怎麼玩",
+    "step1Title": "選 {count} 個號碼",
+    "step1": "從 1–{max} 選 {count} 個號碼，或按「機選」。可以一次加好幾注到待下注。",
+    "step2Title": "確認下注",
+    "step2": "每注 {points} 積分，每張注單最多 {lines} 注。開獎前 {seconds} 秒停止下注。",
+    "step3Title": "看開獎、自動派彩",
+    "step3": "每 {minutes} 分鐘開獎一次：{count} 個正碼 + 1 個特別號碼。中獎的積分自動入帳。",
+    "prizeTitle": "獎級與中獎機率",
+    "prizeNote": "每注獨立對獎，一注只算最高的獎級",
+    "colTier": "獎級",
+    "colCondition": "中獎條件",
+    "colPrize": "每注獎金",
+    "colOdds": "機率",
+    "specialShort": "+特",
+    "condition": "中 {matched} 個{special, select, true { + 特別號碼} other {}}",
+    "poolShare": "彩池平分（目前）",
+    "anyPrize": "中任何一個獎約 <b>1 / {odds}</b>（{percent}）。所有組合共 {total} 種。",
+    "jackpotTitle": "頭獎彩池",
+    "jackpotNow": "本期目前",
+    "jackpotFloor": "保底 <b>{points}</b> 積分",
+    "jackpotRate": "每期投注額的 <b>{percent}%</b> 注入彩池，別人下注也會讓彩池變大",
+    "jackpotRollover": "沒人中頭獎：整筆彩池<b>滾存到下一期</b>，一直累積",
+    "jackpotSplit": "多人中頭獎：彩池由中獎的每一注<b>平分</b>，下一期回到保底",
+    "timelineTitle": "一期的時間（每 {minutes} 分鐘）",
+    "tlOpen": "新的一期開放下注",
+    "tlClose": "停止下注，開始攪珠",
+    "tlDraw": "開獎：依序開出 {count} 顆球（約 {seconds} 秒）",
+    "tlAfter": "開完",
+    "tlSettle": "結算、派彩；同時下一期已經開放",
+    "pointsTitle": "積分",
+    "signup": "註冊贈送",
+    "signupNote": "可以下 {count} 注",
+    "daily": "每日簽到",
+    "dailyNote": "每天早上 8 點（UTC 00:00）重置",
+    "perBet": "每注",
+    "perBetNote": "每張注單最多 {lines} 注"
   }
 }

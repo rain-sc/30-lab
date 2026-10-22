@@ -155,6 +155,9 @@ function UserMenu() {
             <span className="truncate text-xs text-muted">@{user?.username}</span>
           </div>
           <DailyBonusStatus />
+          <Link href="/rules" onClick={() => setOpen(false)} className="text-sm text-gold no-underline hover:underline">
+            {t("rulesLink")}
+          </Link>
           <LocaleSwitcher />
           <button
             type="button"

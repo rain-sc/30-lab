@@ -14,9 +14,6 @@ export type PlaceBetRequest = components["schemas"]["PlaceBetRequest"];
 export type PlaceBetResponse = components["schemas"]["PlaceBetResponse"];
 type TicketPage = components["schemas"]["PageResultTicketResponse"];
 
-/** 每張注單最多幾注（後端上限，超過回 40002） */
-export const MAX_LINES = 50;
-
 /** 錯誤碼：注數超過上限、積分不足、這一期已截止 */
 export const TOO_MANY_LINES = 40002;
 export const INSUFFICIENT_POINTS = 40902;

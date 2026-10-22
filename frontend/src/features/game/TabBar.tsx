@@ -16,7 +16,7 @@ export function TabBar() {
       aria-label={t("label")}
       className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-sunken px-1 pt-1 pb-[max(8px,env(safe-area-inset-bottom))] md:hidden"
     >
-      {GAME_NAV.map(({ href, key }) => {
+      {GAME_NAV.filter((item) => !item.desktopOnly).map(({ href, key }) => {
         const active = pathname === href;
         return (
           <Link

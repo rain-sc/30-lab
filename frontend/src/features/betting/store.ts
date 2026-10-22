@@ -6,9 +6,7 @@
 // - skipHydration：伺服器端沒有 sessionStorage，等 hydrate 完才由 GameSessionGate 讀回來，避免 hydration 不一致
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { MAX_LINES } from "./api";
-
-export const PICK_COUNT = 6;
+import { currentRules } from "@/features/draw/rules";
 
 type BettingState = {
   /** 選號盤目前選的號碼（依點選順序） */
@@ -20,17 +18,18 @@ type BettingState = {
   add: (n: number) => boolean;
   quickPick: () => void;
   clear: () => void;
-  /** 選滿 6 個時加入待下注（最多 MAX_LINES 注，和後端每張注單的上限一致） */
+  /** 選滿時加入待下注（最多 maxLinesPerTicket 注，和後端每張注單的上限一致） */
   addToPending: () => void;
   removePending: (index: number) => void;
   clearPending: () => void;
 };
 
-/** 用 crypto 亂數機選 6 個不重複的號碼 */
+/** 用 crypto 亂數機選 pickCount 個不重複的號碼 */
 function randomPick(): number[] {
-  const pool = Array.from({ length: 49 }, (_, i) => i + 1);
+  const { maxNumber, pickCount } = currentRules();
+  const pool = Array.from({ length: maxNumber }, (_, i) => i + 1);
   const buf = new Uint32Array(1);
-  return Array.from({ length: PICK_COUNT }, () => {
+  return Array.from({ length: pickCount }, () => {
     crypto.getRandomValues(buf);
     return pool.splice(buf[0] % pool.length, 1)[0];
   });
@@ -45,13 +44,13 @@ export const useBetting = create<BettingState>()(
         set(({ picked }) =>
           picked.includes(n)
             ? { picked: picked.filter((x) => x !== n) }
-            : picked.length < PICK_COUNT
+            : picked.length < currentRules().pickCount
               ? { picked: [...picked, n] }
               : {},
         ),
       add: (n) => {
         const { picked } = get();
-        if (picked.includes(n) || picked.length >= PICK_COUNT) return false;
+        if (picked.includes(n) || picked.length >= currentRules().pickCount) return false;
         set({ picked: [...picked, n] });
         return true;
       },
@@ -59,7 +58,7 @@ export const useBetting = create<BettingState>()(
       clear: () => set({ picked: [] }),
       addToPending: () =>
         set(({ picked, pending }) =>
-          picked.length === PICK_COUNT && pending.length < MAX_LINES
+          picked.length === currentRules().pickCount && pending.length < currentRules().maxLinesPerTicket
             ? { picked: [], pending: [...pending, [...picked].sort((a, b) => a - b)] }
             : {},
         ),

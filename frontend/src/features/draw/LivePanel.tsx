@@ -8,7 +8,7 @@ import { RollingDigits } from "@/components/fx/RollingDigits";
 import { cn } from "@/lib/utils";
 import { hasResult, useDrawFeed } from "./feed";
 import { JackpotAmount } from "./JackpotAmount";
-import { BETTING_CUTOFF_SECONDS, DRAW_INTERVAL_MINUTES, POINTS_PER_BET } from "./rules";
+import { useGameRules } from "./rules";
 import { useNextDraw } from "./useNextDraw";
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -32,6 +32,7 @@ const ballVariants: Variants = {
 export function LivePanel({ className }: { className?: string }) {
   const t = useTranslations("Live");
   const next = useNextDraw();
+  const rules = useGameRules();
 
   // Next 16 的 cacheComponents 離開頁面時不卸載，而是用 <Activity> 隱藏保留（例如切換語言再切回來）。
   // 再次顯示時元件不會重新掛載，開獎球的進場動畫就不會重播。
@@ -135,9 +136,9 @@ export function LivePanel({ className }: { className?: string }) {
       </div>
 
       <ul className="m-0 hidden list-none flex-wrap gap-8 border-t border-line p-0 pt-4.5 text-sm text-fg-soft md:flex">
-        <li>{t.rich("rulePerBet", { points: POINTS_PER_BET, b: bold })}</li>
-        <li>{t.rich("ruleInterval", { minutes: DRAW_INTERVAL_MINUTES, b: bold })}</li>
-        <li>{t.rich("ruleCutoff", { seconds: BETTING_CUTOFF_SECONDS, b: bold })}</li>
+        <li>{t.rich("rulePerBet", { points: rules.pointsPerBet, b: bold })}</li>
+        <li>{t.rich("ruleInterval", { minutes: rules.drawIntervalSeconds / 60, b: bold })}</li>
+        <li>{t.rich("ruleCutoff", { seconds: rules.bettingCutoffSeconds, b: bold })}</li>
       </ul>
     </section>
   );

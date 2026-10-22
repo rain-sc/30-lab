@@ -153,7 +153,7 @@ src/
 
 ## 遊戲端頁面
 
-- 路由群組 `[locale]/(game)/`：`/` 大廳、`/trends` 冷熱號碼、`/history` 開獎紀錄、`/bets` 我的注單（含積分紀錄分頁籤）、`/leaderboard` 排行榜。
+- 路由群組 `[locale]/(game)/`：`/` 大廳、`/trends` 冷熱號碼、`/history` 開獎紀錄、`/bets` 我的注單（含積分紀錄分頁籤）、`/leaderboard` 排行榜、`/rules` 玩法說明（只在桌面導覽；手機入口在選號盤的「?」、彩池卡片、使用者選單）。
   桌面用頁首導覽（冷熱號碼放在大廳最下方，不在導覽裡）；手機用底部分頁（五個都有，內容區要留出分頁和下注列的高度）。
   手機頁首很擠（logo、簽到、積分、選單）：新增東西前先確認 360px 寬不會被撐寬（`document.documentElement.scrollWidth`）
 - **要登入**：版面裡的 `GameSessionGate` 打 `GET /me`，未登入導向 `/login`（不帶原因），被踢掉帶 `replaced`，連不上顯示重試。
@@ -167,6 +167,7 @@ src/
   - `40903` 已截止 → `reloadCurrentDraw()`；`40902` 積分不足 → 重新抓錢包；每張最多 50 注（`MAX_LINES`，待下注滿了不能再加）
 - **積分**：`GET /api/wallet`（`wallet/api.ts` 的 `useWallet`）；載入失敗時頁首變成重試按鈕
   - **畫面上的積分用 `useBalance`**：= 錢包餘額 − 還沒播完開獎動畫那幾期的 `payout`（派彩在開獎後約 1 秒就完成，比動畫早 20 幾秒，不能先漲）
+- **遊戲規則**（`features/draw/rules.ts`，`GET /api/game/rules`）：每注積分、每期間隔、截止秒數、每張上限、每注幾個號碼、號碼範圍、獎金、彩池規則、贈送積分。**不要再寫死這些數字**：React 用 `useGameRules()`，非 React（選號 store）用 `currentRules()`；回應前是 `DEFAULT_RULES`，「玩法說明」頁用 `useGameRulesQuery()` 等真的資料
 - **排行榜**（`features/leaderboard`，設計稿 F）：`GET /api/leaderboard?period=DAY|WEEK`；queryKey 帶期間、帳號、`revealedDrawAt`，**動畫播完才抓**（`latestRevealed` 為 false 時不抓）；倒數到 `to` 時重抓；暱稱會重複，不能當 key
 - **每日簽到**（`wallet/dailyBonus.ts`、`DailyBonusButton`，頁首積分旁邊）：每個 UTC 日一次；成功用回應的 `balance` 更新錢包快取；`40904` 當成「已簽到」（不顯示錯誤，重新抓狀態和積分）；到 `nextResetAt` 自動重抓，跨日後按鈕恢復。手機頁首只在沒簽到時顯示禮物圖示（放文字會把頁面撐寬），已簽到的狀態在使用者選單裡
 - **我的注單 / 積分紀錄**（`/bets`，分頁籤切換）：`GET /api/tickets`、`GET /api/wallet/transactions`，都分頁

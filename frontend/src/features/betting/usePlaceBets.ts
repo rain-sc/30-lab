@@ -5,12 +5,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useSession } from "@/features/auth/session";
 import { reloadCurrentDraw } from "@/features/draw/feed";
-import { POINTS_PER_BET } from "@/features/draw/rules";
+import { useGameRules } from "@/features/draw/rules";
 import { useNextDraw } from "@/features/draw/useNextDraw";
 import { useBalance, type Wallet } from "@/features/wallet/api";
 import { ApiError, NETWORK_ERROR } from "@/lib/api/client";
 import { useApiErrorText } from "@/lib/api/useApiErrorText";
-import { BETTING_CLOSED, INSUFFICIENT_POINTS, MAX_LINES, placeBet } from "./api";
+import { BETTING_CLOSED, INSUFFICIENT_POINTS, placeBet } from "./api";
 import { useBetting } from "./store";
 
 export type PlaceFeedback = { tone: "success" | "error"; text: string } | null;
@@ -75,7 +75,8 @@ export function usePlaceBets() {
     },
   });
 
-  const cost = pending.length * POINTS_PER_BET;
+  const { pointsPerBet, maxLinesPerTicket } = useGameRules();
+  const cost = pending.length * pointsPerBet;
   const closed = next?.closed ?? false;
   const disabled = !next || !username || pending.length === 0 || closed || mutation.isPending;
 
@@ -83,7 +84,7 @@ export function usePlaceBets() {
     if (!next || !username || pending.length === 0 || mutation.isPending) return;
     // 送出前先在前端擋掉明顯會失敗的情況（後端一樣會檢查）
     if (closed) return setFeedback({ tone: "error", text: t("closed") });
-    if (pending.length > MAX_LINES) return setFeedback({ tone: "error", text: t("tooMany", { max: MAX_LINES }) });
+    if (pending.length > maxLinesPerTicket) return setFeedback({ tone: "error", text: t("tooMany", { max: maxLinesPerTicket }) });
     if (balance !== null && balance < cost) return setFeedback({ tone: "error", text: t("insufficient") });
 
     const signature = `${next.drawNo}|${JSON.stringify(pending)}`;

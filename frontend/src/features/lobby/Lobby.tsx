@@ -151,11 +151,17 @@ function CountdownCard({ next, className }: { next: NextDraw | null; className?:
 
 function JackpotCard({ className }: { className?: string }) {
   const t = useTranslations("Live");
+  const tl = useTranslations("Lobby");
   return (
     <section className={cn(CARD, "flex-col justify-center gap-2 px-5.5 py-3.5 xl:gap-2.5 xl:py-4.5", className)}>
       <StatLabel>{t("jackpot")}</StatLabel>
       <JackpotAmount className="font-num text-[44px] leading-[0.95] font-bold text-gold tabular-nums xl:text-[56px]" />
-      <span className="text-[13px] text-muted">{t("points")}</span>
+      <span className="flex items-baseline justify-between gap-3 text-[13px] text-muted">
+        {t("points")}
+        <Link href="/rules" className="text-gold no-underline hover:underline">
+          {tl("jackpotRules")}
+        </Link>
+      </span>
     </section>
   );
 }

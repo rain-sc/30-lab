@@ -3,13 +3,9 @@
 import { useTranslations } from "next-intl";
 import { RollingDigits } from "@/components/fx/RollingDigits";
 import { cn } from "@/lib/utils";
-import { BETTING_CUTOFF_SECONDS, DRAW_INTERVAL_MINUTES } from "./rules";
 import type { NextDraw } from "./useNextDraw";
 
 const pad = (n: number) => String(n).padStart(2, "0");
-
-/** 截止下注在進度條上的位置（開獎前 15 秒 → 95%） */
-const CUTOFF_AT = 1 - BETTING_CUTOFF_SECONDS / (DRAW_INTERVAL_MINUTES * 60);
 
 /** 大字倒數：每秒滾動；截止後變紅並輕微脈動 */
 export function CountdownDigits({ next, className }: { next: NextDraw | null; className?: string }) {
@@ -35,7 +31,7 @@ export function CountdownDigits({ next, className }: { next: NextDraw | null; cl
   );
 }
 
-/** 這一期的進度條：金色是已經過的時間，紅色刻度是截止下注 */
+/** 這一期的進度條：金色是已經過的時間，紅色刻度是截止下注（用這一期實際的開放 / 截止 / 開獎時間算） */
 export function DrawProgress({
   next,
   showLabels = true,
@@ -55,12 +51,12 @@ export function DrawProgress({
           className={cn("h-full rounded-full transition-[width] duration-1000 ease-linear", next?.closed ? "bg-live" : "bg-gold")}
           style={{ width: `${(next?.progress ?? 0) * 100}%` }}
         />
-        <span className="absolute -top-1 h-3.5 w-0.5 bg-live-text" style={{ left: `${CUTOFF_AT * 100}%` }} />
+        {next && <span className="absolute -top-1 h-3.5 w-0.5 bg-live-text" style={{ left: `${next.cutoffProgress * 100}%` }} />}
       </div>
       {showLabels && (
         <div className={cn("flex justify-between text-xs text-muted", labelsClassName)}>
           <span>{t("open")}</span>
-          <span>{t("cutoffAt", { seconds: BETTING_CUTOFF_SECONDS })}</span>
+          {next && <span>{t("cutoffAt", { seconds: next.cutoffSeconds })}</span>}
         </div>
       )}
     </div>

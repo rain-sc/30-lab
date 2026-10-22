@@ -99,7 +99,9 @@
     "logout": "Sign out",
     "tabTickets": "Tickets",
     "tabPoints": "Points history",
-    "leaderboard": "Leaderboard"
+    "leaderboard": "Leaderboard",
+    "rules": "How to play",
+    "rulesLink": "How to play"
   },
   "Game": {
     "checking": "Checking sign-in…",
@@ -125,7 +127,8 @@
     "placed": "This draw",
     "myBets": "My tickets",
     "hotCold": "Hot & cold numbers",
-    "hotColdNote": "Last {count} draws · tap a number to pick it"
+    "hotColdNote": "Last {count} draws · tap a number to pick it",
+    "jackpotRules": "How the pool works"
   },
   "Betting": {
     "title": "Pick {count} numbers",
@@ -150,7 +153,8 @@
     "placedEmpty": "No tickets for this draw yet",
     "placedMore": "{count} more {count, plural, one {ticket} other {tickets}} →",
     "tooMany": "Up to {max} tickets per slip. Please split them",
-    "slipFull": "The slip holds up to {max} tickets. Place them first"
+    "slipFull": "The slip holds up to {max} tickets. Place them first",
+    "rulesLink": "How to play (prizes & odds)"
   },
   "HotCold": {
     "hot": "Most drawn",
@@ -161,7 +165,7 @@
     "coldAria": "{number}, absent for {count} draws, pick it",
     "added": "Added {number} ({count} / {total})",
     "already": "{number} is already picked",
-    "full": "You already picked 6 numbers",
+    "full": "You already picked {count} numbers",
     "error": "Couldn’t load hot & cold numbers"
   },
   "MyBets": {
@@ -256,5 +260,47 @@
     "how1": "Ranked by total payouts in the period. Bets are not subtracted; sign-up and daily bonuses don’t count.",
     "how2": "Today resets daily at 00:00 UTC; this week resets every Monday at 00:00 UTC.",
     "how3": "Ties share a rank. Players without a win in the period are not listed."
+  },
+  "Rules": {
+    "title": "How to play",
+    "intro": "A 6/49 number game played with virtual points. Points can’t be bought or cashed out.",
+    "error": "Couldn’t load the game rules: {reason}",
+    "retry": "Retry",
+    "howTitle": "How to play",
+    "step1Title": "Pick {count} numbers",
+    "step1": "Choose {count} numbers from 1–{max}, or tap “Quick pick”. Add several tickets to the slip at once.",
+    "step2Title": "Place your bets",
+    "step2": "{points} points per ticket, up to {lines} tickets per slip. Betting closes {seconds}s before the draw.",
+    "step3Title": "Watch the draw, get paid",
+    "step3": "A draw every {minutes} minutes: {count} main numbers + 1 special number. Winnings are paid automatically.",
+    "prizeTitle": "Prizes and odds",
+    "prizeNote": "Each ticket is checked on its own and wins only its highest prize",
+    "colTier": "Prize",
+    "colCondition": "To win",
+    "colPrize": "Per ticket",
+    "colOdds": "Odds",
+    "specialShort": "+S",
+    "condition": "{matched} numbers{special, select, true { + special} other {}}",
+    "poolShare": "Shared jackpot (now)",
+    "anyPrize": "Odds of winning any prize: about <b>1 in {odds}</b> ({percent}). {total} possible combinations.",
+    "jackpotTitle": "Jackpot pool",
+    "jackpotNow": "this draw so far",
+    "jackpotFloor": "Guaranteed minimum of <b>{points}</b> points",
+    "jackpotRate": "<b>{percent}%</b> of each draw’s bets goes into the pool, so other players’ bets grow it too",
+    "jackpotRollover": "No jackpot winner: the whole pool <b>rolls over</b> to the next draw",
+    "jackpotSplit": "Several winners: the pool is <b>split</b> between the winning tickets; the next draw starts from the minimum",
+    "timelineTitle": "One draw (every {minutes} minutes)",
+    "tlOpen": "A new draw opens for betting",
+    "tlClose": "Betting closes, the balls start mixing",
+    "tlDraw": "Draw: {count} balls come out one by one (about {seconds}s)",
+    "tlAfter": "After",
+    "tlSettle": "Settlement and payouts; the next draw is already open",
+    "pointsTitle": "Points",
+    "signup": "Sign-up bonus",
+    "signupNote": "enough for {count} tickets",
+    "daily": "Daily bonus",
+    "dailyNote": "resets at 00:00 UTC",
+    "perBet": "Per ticket",
+    "perBetNote": "up to {lines} tickets per slip"
   }
 }

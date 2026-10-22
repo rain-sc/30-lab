@@ -159,6 +159,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/game/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 遊戲規則：每注積分、時間、獎級與中獎組合數、頭獎彩池規則（不用登入） */
+        get: operations["rules"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/draws": {
         parameters: {
             query?: never;
@@ -632,6 +649,114 @@ export interface components {
             /** @description 回應資料；沒有資料時是 null */
             data: components["schemas"]["JackpotResponse"];
         };
+        GameRulesResponse: {
+            /**
+             * Format: int32
+             * @description 號碼範圍 1 ~ maxNumber
+             * @example 49
+             */
+            maxNumber: number;
+            /**
+             * Format: int32
+             * @description 每注選幾個號碼
+             * @example 6
+             */
+            pickCount: number;
+            /**
+             * Format: int64
+             * @description 每注幾積分
+             * @example 10
+             */
+            pointsPerBet: number;
+            /**
+             * Format: int32
+             * @description 一張注單最多幾注
+             * @example 50
+             */
+            maxLinesPerTicket: number;
+            /**
+             * Format: int64
+             * @description 幾秒開獎一期
+             * @example 300
+             */
+            drawIntervalSeconds: number;
+            /**
+             * Format: int64
+             * @description 開獎前幾秒停止下注
+             * @example 15
+             */
+            bettingCutoffSeconds: number;
+            /**
+             * Format: int64
+             * @description 一注所有可能的選法 C(maxNumber, pickCount)
+             * @example 13983816
+             */
+            totalCombinations: number;
+            /** @description 獎級，由頭獎到七獎 */
+            prizes: components["schemas"]["PrizeRule"][];
+            jackpot: components["schemas"]["JackpotRule"];
+            /**
+             * Format: int64
+             * @description 註冊贈送的積分
+             * @example 10000
+             */
+            signupBonus: number;
+            /**
+             * Format: int64
+             * @description 每日簽到贈送的積分
+             * @example 1000
+             */
+            dailyBonus: number;
+        };
+        JackpotRule: {
+            /**
+             * Format: int64
+             * @description 頭獎彩池保底
+             * @example 1000000
+             */
+            floor: number;
+            /**
+             * Format: int64
+             * @description 每期投注額注入彩池的百分比
+             * @example 20
+             */
+            ratePercent: number;
+        };
+        PrizeRule: {
+            /** @enum {string} */
+            tier: "FIRST" | "SECOND" | "THIRD" | "FOURTH" | "FIFTH" | "SIXTH" | "SEVENTH";
+            /**
+             * Format: int32
+             * @description 要中幾個正碼
+             * @example 5
+             */
+            matched: number;
+            /** @description 要不要中特別號碼 */
+            specialHit: boolean;
+            /**
+             * Format: int64
+             * @description 每注固定獎金；頭獎是彩池平分，所以是 null
+             * @example 500000
+             */
+            prize?: number;
+            /**
+             * Format: int64
+             * @description 一注會中這個獎級的組合數；機率 = winningCombinations / totalCombinations
+             * @example 6
+             */
+            winningCombinations: number;
+        };
+        ResultGameRulesResponse: {
+            /**
+             * Format: int32
+             * @description 0 表示成功，失敗時是 5 位數錯誤碼
+             */
+            code: number;
+            /** @description 給開發看的說明，不直接顯示給使用者 */
+            msg: string;
+            /** @description 回應資料；沒有資料時是 null */
+            data: components["schemas"]["GameRulesResponse"];
+        };
         DrawResponse: {
             /**
              * @description 期數號 (UTC 日期 + 當天第幾期)
@@ -1018,6 +1143,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ResultJackpotResponse"];
+                };
+            };
+        };
+    };
+    rules: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultGameRulesResponse"];
                 };
             };
         };

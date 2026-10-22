@@ -5,8 +5,9 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { Ball } from "@/components/Ball";
 import { Button } from "@/components/ui/Button";
-import { PICK_COUNT, useBetting } from "@/features/betting/store";
+import { useBetting } from "@/features/betting/store";
 import { fetchNumberStats, toHotCold } from "./hotColdStats";
+import { useGameRules } from "./rules";
 import type { NextDraw } from "./useNextDraw";
 
 /**
@@ -32,14 +33,15 @@ export function HotCold({ next }: { next: NextDraw | null }) {
   const { data, isError, refetch } = useHotCold(next);
   const add = useBetting((s) => s.add);
   const picked = useBetting((s) => s.picked);
+  const { pickCount } = useGameRules();
   const [message, setMessage] = useState("");
 
   const pick = (n: number) => {
     if (picked.includes(n)) setMessage(t("already", { number: n }));
-    else if (picked.length >= PICK_COUNT) setMessage(t("full"));
+    else if (picked.length >= pickCount) setMessage(t("full", { count: pickCount }));
     else {
       add(n);
-      setMessage(t("added", { number: n, count: picked.length + 1, total: PICK_COUNT }));
+      setMessage(t("added", { number: n, count: picked.length + 1, total: pickCount }));
     }
   };
 

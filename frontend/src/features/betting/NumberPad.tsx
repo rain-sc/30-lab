@@ -3,8 +3,9 @@
 import { useTranslations } from "next-intl";
 import { ballColor } from "@/lib/ball";
 import { cn } from "@/lib/utils";
-import { MAX_LINES } from "./api";
-import { PICK_COUNT, useBetting } from "./store";
+import { useGameRules } from "@/features/draw/rules";
+import { Link } from "@/i18n/navigation";
+import { useBetting } from "./store";
 
 const RING: Record<ReturnType<typeof ballColor>, string> = {
   red: "border-ball-red",
@@ -17,7 +18,6 @@ const FILL: Record<ReturnType<typeof ballColor>, string> = {
   green: "bg-ball-green",
 };
 
-const NUMBERS = Array.from({ length: 49 }, (_, i) => i + 1);
 
 /**
  * 選號盤：1–49 選 6 個。沒選的是波色外框，選了填滿波色並加金色外圈；選滿後其他號碼變淡。
@@ -30,15 +30,26 @@ export function NumberPad({ hot = [] }: { hot?: number[] }) {
   const quickPick = useBetting((s) => s.quickPick);
   const clear = useBetting((s) => s.clear);
   const addToPending = useBetting((s) => s.addToPending);
-  const full = picked.length >= PICK_COUNT;
-  // 待下注已滿（每張注單最多 MAX_LINES 注）：不能再加，先送出
-  const slipFull = useBetting((s) => s.pending.length >= MAX_LINES);
+  const { maxNumber, pickCount, maxLinesPerTicket } = useGameRules();
+  const full = picked.length >= pickCount;
+  // 待下注已滿（每張注單最多 maxLinesPerTicket 注）：不能再加，先送出
+  const slipFull = useBetting((s) => s.pending.length >= maxLinesPerTicket);
   const canAdd = full && !slipFull;
 
   return (
     <div className="flex flex-col gap-3.5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-        <h2 className="m-0 text-[17px]">{t("title", { count: PICK_COUNT })}</h2>
+        <h2 className="m-0 flex items-center gap-2 text-[17px]">
+          {t("title", { count: pickCount })}
+          <Link
+            href="/rules"
+            aria-label={t("rulesLink")}
+            title={t("rulesLink")}
+            className="grid size-6 place-items-center rounded-full border border-line-strong text-xs font-bold text-muted no-underline hover:border-gold hover:text-gold"
+          >
+            ?
+          </Link>
+        </h2>
         <div className="flex items-center gap-3.5">
           {hot.length > 0 && (
             <span className="inline-flex items-center gap-1.5 text-xs text-muted">
@@ -49,7 +60,7 @@ export function NumberPad({ hot = [] }: { hot?: number[] }) {
           <span aria-live="polite" className="text-sm text-muted">
             {t.rich("pickedCount", {
               count: picked.length,
-              total: PICK_COUNT,
+              total: pickCount,
               b: (chunks) => <b className="font-num text-[22px] text-gold tabular-nums">{chunks}</b>,
             })}
           </span>
@@ -57,7 +68,7 @@ export function NumberPad({ hot = [] }: { hot?: number[] }) {
       </div>
 
       <div role="group" aria-label={t("padLabel")} className="grid grid-cols-7 gap-1.5 md:gap-2">
-        {NUMBERS.map((n) => {
+        {Array.from({ length: maxNumber }, (_, i) => i + 1).map((n) => {
           const on = picked.includes(n);
           const isHot = hot.includes(n);
           const color = ballColor(n);
@@ -98,7 +109,7 @@ export function NumberPad({ hot = [] }: { hot?: number[] }) {
           type="button"
           onClick={addToPending}
           disabled={!canAdd}
-          title={slipFull ? t("slipFull", { max: MAX_LINES }) : undefined}
+          title={slipFull ? t("slipFull", { max: maxLinesPerTicket }) : undefined}
           className={cn(
             "h-11 rounded-button font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold",
             canAdd ? "bg-gold text-gold-ink hover:bg-gold-bright" : "cursor-not-allowed bg-line text-muted",

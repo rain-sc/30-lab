@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import { feedNow, hasResult, useDrawFeed } from "./feed";
-import { INTERVAL_MS } from "./schedule";
+import { intervalMs } from "./schedule";
 import { revealedAt } from "./stage/timeline";
 
 // 每秒通知一次；snapshot 取到「秒」，同一秒內回傳相同的值，React 不會重複渲染
@@ -40,6 +40,10 @@ export type NextDraw = {
   progress: number;
   /** 已截止（開獎前 15 秒），不能再下注 */
   closed: boolean;
+  /** 截止下注在這一期的位置（0–1），進度條的刻度用 */
+  cutoffProgress: number;
+  /** 開獎前幾秒截止 */
+  cutoffSeconds: number;
 };
 
 /**
@@ -61,11 +65,13 @@ export function useNextDraw(): NextDraw | null {
     drawNo: current.drawNo,
     drawAt,
     lastDrawNo: previous?.drawNo ?? null,
-    revealedDrawAt: now >= revealedAt(lastDrawAt) ? lastDrawAt : lastDrawAt - INTERVAL_MS,
+    revealedDrawAt: now >= revealedAt(lastDrawAt) ? lastDrawAt : lastDrawAt - intervalMs(),
     latestRevealed: now >= revealedAt(lastDrawAt),
     remainingSeconds: Math.max(0, Math.round((drawAt - now) / 1000)),
     progress: Math.min(1, Math.max(0, (now - openAt) / (drawAt - openAt))),
     // 已開獎但新的一期還沒到（推播差幾毫秒）也算截止
     closed: current.status !== "OPEN" || hasResult(current) || now >= closeAt,
+    cutoffProgress: (closeAt - openAt) / (drawAt - openAt),
+    cutoffSeconds: Math.round((drawAt - closeAt) / 1000),
   };
 }
