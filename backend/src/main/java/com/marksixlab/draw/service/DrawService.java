@@ -109,6 +109,10 @@ public class DrawService {
         }
     }
 
+    public boolean exists(String drawNo) {
+        return drawRepository.findByDrawNo(drawNo).isPresent();
+    }
+
     public Optional<Draw> nextToSettle() {
         return drawRepository.findFirstByStatusOrderByDrawAtAsc(DrawStatus.DRAWN);
     }

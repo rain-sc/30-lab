@@ -16,6 +16,40 @@
 
 ---
 
+## 2026-10-22（後端：每期的獎級統計、中獎名單）
+- 【修改】`DrawResponse`（`GET /api/draws`、`GET /api/draws/current` 的 `current` / `previous`、WebSocket 的 `draw`）多了 `prizeSummary`，**`SETTLED` 之後才有**（之前不會出現在 JSON 裡，跟 `poolAmount` 一樣）
+  ```json
+  "prizeSummary": {
+    "winnerCount": 13, "totalPayout": 1160,
+    "tiers": [ { "tier": "FIRST",   "lines": 0,  "prize": 0 },
+               { "tier": "SECOND",  "lines": 0,  "prize": 500000 },
+               { "tier": "THIRD",   "lines": 0,  "prize": 50000 },
+               { "tier": "FOURTH",  "lines": 0,  "prize": 9600 },
+               { "tier": "FIFTH",   "lines": 0,  "prize": 640 },
+               { "tier": "SIXTH",   "lines": 1,  "prize": 320 },
+               { "tier": "SEVENTH", "lines": 21, "prize": 40 } ] }
+  ```
+  - `tiers`：**固定 7 筆**，由頭獎到七獎；`lines` 這期這個獎級中了幾注（全部玩家加起來），`prize` 每注獎金
+  - 頭獎的 `prize` 是平分後的每注金額；**沒人中頭獎是 `0`**（彩池滾到下期，金額看 `poolAmount`）
+  - `winnerCount`：中獎人數（同一個人中好幾注只算一次）；`totalPayout`：這期總派彩
+  - 結算當下就算好存起來，之後不會再變；舊的期數已經全部補上，開獎紀錄從頭到尾都有
+- 【新增】`GET /api/draws/{drawNo}/winners`（**不用登入**；有登入會標出自己）：這期的中獎名單
+  ```json
+  { "drawNo": "20261022-0104", "winnerCount": 13,
+    "winners": [ { "nickname": "阿興", "payout": 360, "bestTier": "SEVENTH", "winningLines": 9, "me": false },
+                 { "nickname": "阿珍", "payout": 320, "bestTier": "SIXTH",   "winningLines": 1, "me": false } ] }
+  ```
+  - 一筆 = **一個玩家**（這期有好幾張中獎注單會合併）：`payout` 總獎金、`bestTier` 最高獎級、`winningLines` 共中幾注
+  - 排序：獎金由高到低 → 獎級高的在前 → 順序固定；**最多列 50 人**，`winnerCount` 是全部人數（例如「共 120 人中獎，以下列出前 50 名」）
+  - 期數存在但還沒結算、或沒人中獎：`winnerCount: 0`、`winners: []`
+  - 期數不存在 → `40400`
+- 已用 8088 驗證：0104 期 `prizeSummary` 13 人、1,160 積分（六獎 1 注 + 七獎 21 注）；`winners` 13 人、獎金加總 1,160，跟 `prizeSummary` 一致；`20991231-0001` → `40400`
+- 【待前端】
+  1. 重新 `npm run gen:api`
+  2. 開獎紀錄每一期顯示獎級統計（例如表格：獎級 / 中獎注數 / 每注獎金，加上「共 N 人中獎、派彩 X」）；開獎通知、上期結果也可以用 `previous.prizeSummary`
+  3. 點開某一期時呼叫 `GET /api/draws/{drawNo}/winners` 顯示中獎名單，自己那一列標亮；名單只在點開時抓，結算後不會再變，可以快取
+  4. ⚠️ 跟中獎結果一樣：**開獎動畫播完前**不要顯示這期的 `prizeSummary`、也不要去抓 `winners`，不然會提前暴露
+
 ## 2026-10-22（前端：排行榜最近 5 次中獎）
 - 【已完成】回覆後端「排行榜加上最近 5 次中獎」那筆的【待前端】：
   - 排行榜每一列（今日 / 本週 / 富豪榜都有）可以點開，列出那個人最近 5 次中獎：最高獎級、中幾注、獎金、期數、時間（本地時區）；一次只展開一列，鍵盤 Enter / 空白鍵也能開關；沒中過獎顯示「還沒中過獎」

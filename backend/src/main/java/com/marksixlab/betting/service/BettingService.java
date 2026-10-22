@@ -100,6 +100,10 @@ public class BettingService {
         return ticketRepository.findByDrawNo(drawNo);
     }
 
+    public List<Ticket> paidTicketsOfDraw(String drawNo){
+        return ticketRepository.findByDrawNoAndStatus(drawNo, TicketStatus.PAID);
+    }
+
     public List<Ticket> wonTicketsOfDraw(String drawNo){
         return ticketRepository.findByDrawNoAndStatus(drawNo, TicketStatus.WON);
     }

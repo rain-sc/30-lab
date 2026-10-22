@@ -16,7 +16,7 @@ MongoDB，資料庫名 `marksixlab`。**草稿**：階段 0 逐個集合討論�
 | `users` | 帳戶 | `username`、`passwordHash`、`nickname`、`roles`、`enabled` | `username` |
 | `wallets` | 積分餘額（每人一個） | `userId`、`balance` | `userId` |
 | `wallet_transactions` | 積分流水 | `userId`、`type`、`amount`、`balanceAfter`、`refId` | `type + refId`（唯一）、`userId + createdAt`（我的流水）、`type + createdAt`（排行榜：某段時間的派彩） |
-| `draws` | 期數 | `drawNo`、`status`、`openAt`、`closeAt`、`drawAt`、`numbers`、`specialNumber`、`drawnAt`；結算後加 `poolAmount`、`jackpotWinners`、`jackpotRollover`、`settledAt` | `drawNo` |
+| `draws` | 期數 | `drawNo`、`status`、`openAt`、`closeAt`、`drawAt`、`numbers`、`specialNumber`、`drawnAt`；結算後加 `poolAmount`、`jackpotWinners`、`jackpotRollover`、`prizeSummary`（各獎級注數與每注獎金、中獎人數、總派彩）、`settledAt` | `drawNo` |
 | `tickets` | 注單 | `userId`、`drawNo`、`betType`、`lines`、`cost`、`status`、`idempotencyKey`；結算後加 `results`（每注 `matched`、`specialHit`、`tier`、`prize`）、`payout`、`settledAt` | `userId + idempotencyKey` |
 
 ## 設計重點
@@ -49,7 +49,9 @@ MongoDB，資料庫名 `marksixlab`。**草稿**：階段 0 逐個集合討論�
   1. 判獎：條件更新 `PENDING` → `WON` / `LOST`，寫入 `results`、`payout`
   2. 派彩：每張 `WON` 的注單加積分 + 寫 `PAYOUT` 流水（`type + refId` 唯一索引擋住重複派彩）
   3. 條件更新 `WON` → `PAID`
-  4. **最後**才把期數 `DRAWN` → `SETTLED`；中途當機的話，下一秒會重跑這一期，做過的步驟自動跳過
+  4. **最後**才把期數 `DRAWN` → `SETTLED`（同時寫入 `prizeSummary`）；中途當機的話，下一秒會重跑這一期，做過的步驟自動跳過
+- **獎級統計 `prizeSummary`**：結算時用每一注重新判獎統計出來，存在期數上，之後不會再變；這個功能上線前結算的期數，由啟動時的 `PrizeSummaryBackfill` 補算（條件更新，只補還沒有的，可以重複執行）
+- **中獎名單**不另外存：`GET /api/draws/{drawNo}/winners` 讀這期 `PAID` 的注單（`drawNo + status` 索引），依玩家合併
 
 ## 待討論
 
