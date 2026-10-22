@@ -210,6 +210,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/draws/{drawNo}/winners": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 這期的中獎名單：獎金由高到低，最多 50 人（不用登入；有登入會標出自己） */
+        get: operations["winners"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/draws/number-stats": {
         parameters: {
             query?: never;
@@ -864,6 +881,8 @@ export interface components {
              * @example 0
              */
             jackpotWinners?: number;
+            /** @description 獎級統計（各獎級幾注、每注獎金、中獎人數、總派彩）;結算後才有 */
+            prizeSummary?: components["schemas"]["PrizeSummary"];
         };
         PageResultDrawResponse: {
             list: components["schemas"]["DrawResponse"][];
@@ -883,6 +902,22 @@ export interface components {
              */
             size: number;
         };
+        PrizeSummary: {
+            /**
+             * Format: int32
+             * @description 中獎人數（同一個人中好幾注只算一次）
+             * @example 25
+             */
+            winnerCount: number;
+            /**
+             * Format: int64
+             * @description 這期總派彩
+             * @example 48320
+             */
+            totalPayout: number;
+            /** @description 各獎級，由頭獎到七獎，固定 7 筆 */
+            tiers: components["schemas"]["TierWinners"][];
+        };
         ResultPageResultDrawResponse: {
             /**
              * Format: int32
@@ -893,6 +928,71 @@ export interface components {
             msg: string;
             /** @description 回應資料；沒有資料時是 null */
             data: components["schemas"]["PageResultDrawResponse"];
+        };
+        TierWinners: {
+            /** @enum {string} */
+            tier: "FIRST" | "SECOND" | "THIRD" | "FOURTH" | "FIFTH" | "SIXTH" | "SEVENTH";
+            /**
+             * Format: int32
+             * @description 這個獎級中了幾注
+             * @example 2
+             */
+            lines: number;
+            /**
+             * Format: int64
+             * @description 每注獎金；頭獎是平分後的金額，沒人中頭獎是 0
+             * @example 9600
+             */
+            prize: number;
+        };
+        DrawWinner: {
+            /**
+             * @description 暱稱（可能重複）
+             * @example 阿正
+             */
+            nickname: string;
+            /**
+             * Format: int64
+             * @description 這個人在這期的總獎金（可能是好幾張注單加起來）
+             * @example 12200
+             */
+            payout: number;
+            /**
+             * @description 這個人在這期中到的最高獎級
+             * @enum {string}
+             */
+            bestTier: "FIRST" | "SECOND" | "THIRD" | "FOURTH" | "FIFTH" | "SIXTH" | "SEVENTH";
+            /**
+             * Format: int32
+             * @description 這個人在這期總共中了幾注
+             * @example 16
+             */
+            winningLines: number;
+            /** @description 是不是目前登入的自己 */
+            me: boolean;
+        };
+        DrawWinnersResponse: {
+            /** @example 20261022-0087 */
+            drawNo: string;
+            /**
+             * Format: int32
+             * @description 這期中獎的總人數（winners 最多只列 50 人）
+             * @example 25
+             */
+            winnerCount: number;
+            /** @description 中獎名單：獎金由高到低，最多 50 人；還沒結算或沒人中獎是空陣列 */
+            winners: components["schemas"]["DrawWinner"][];
+        };
+        ResultDrawWinnersResponse: {
+            /**
+             * Format: int32
+             * @description 0 表示成功，失敗時是 5 位數錯誤碼
+             */
+            code: number;
+            /** @description 給開發看的說明，不直接顯示給使用者 */
+            msg: string;
+            /** @description 回應資料；沒有資料時是 null */
+            data: components["schemas"]["DrawWinnersResponse"];
         };
         NumberStat: {
             /**
@@ -1271,6 +1371,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ResultPageResultDrawResponse"];
+                };
+            };
+        };
+    };
+    winners: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                drawNo: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultDrawWinnersResponse"];
                 };
             };
         };

@@ -218,7 +218,20 @@
     "retry": "重試",
     "empty": "還沒有開獎紀錄",
     "jackpotWon": "頭獎 {count} 注中・彩池 {points}",
-    "rolledOver": "彩池 {points}・無人中頭獎"
+    "rolledOver": "彩池 {points}・無人中頭獎",
+    "winnerCount": "{count, plural, =0 {沒人中獎} other {# 人中獎}}",
+    "settling": "結算中，稍後再看",
+    "summary": "共 <b>{count}</b> 人中獎・派彩 <b>{points}</b> 積分",
+    "colTier": "獎級",
+    "colLines": "中獎注數",
+    "colPrize": "每注獎金",
+    "rolled": "滾存",
+    "winnersTitle": "中獎名單",
+    "winnersTop": "共 {total} 人，列出前 {shown} 名",
+    "winnersError": "無法載入中獎名單：{reason}",
+    "noWinners": "這期沒有人中獎",
+    "me": "我",
+    "lines": "中 {count} 注"
   },
   "Points": {
     "error": "無法載入積分紀錄：{reason}",
@@ -262,7 +275,7 @@
     "how1": "{board, select, BALANCE {富豪榜比目前的積分餘額，只列出至少下注過一次的人。} other {中獎榜比期間內派彩的總額，不扣下注花費，註冊和簽到贈送不算。}}",
     "how2": "{board, select, BALANCE {富豪榜不會重置，餘額隨下注、派彩、簽到變動。} other {今日：每天早上 8 點（UTC 00:00）重置；本週：每週一早上 8 點重置。}}",
     "how3": "{board, select, BALANCE {同分同名次；沒下注過的帳號不會上榜。} other {同分同名次；期間內還沒中獎的人不會上榜。}}",
-    "recentTitle": "最近 5 次中獎（不分期間）",
+    "recentTitle": "{count, plural, =0 {最近中獎} other {最近 # 次中獎}}（不分期間）",
     "recentEmpty": "還沒中過獎",
     "recentLines": "中 {count} 注"
   },

@@ -170,7 +170,7 @@ src/
 - **積分**：`GET /api/wallet`（`wallet/api.ts` 的 `useWallet`）；載入失敗時頁首變成重試按鈕
   - **畫面上的積分用 `useBalance`**：= 錢包餘額 − 還沒播完開獎動畫那幾期的 `payout`（派彩在開獎後約 1 秒就完成，比動畫早 20 幾秒，不能先漲）
 - **遊戲規則**（`features/draw/rules.ts`，`GET /api/game/rules`）：每注積分、每期間隔、截止秒數、每張上限、每注幾個號碼、號碼範圍、獎金、彩池規則、贈送積分。**不要再寫死這些數字**：React 用 `useGameRules()`，非 React（選號 store）用 `currentRules()`；回應前是 `DEFAULT_RULES`，「玩法說明」頁用 `useGameRulesQuery()` 等真的資料
-- **排行榜**（`features/leaderboard`，設計稿 F）：今日 / 本週中獎榜 `GET /api/leaderboard?period=DAY|WEEK`、富豪榜 `GET /api/leaderboard/balance`（餘額，沒有期間、不會重置；兩種回應在 `fetchBoard` 統一格式）；下注、簽到成功後 invalidate `["leaderboard"]`；queryKey 帶期間、帳號、`revealedDrawAt`，**動畫播完才抓**（`latestRevealed` 為 false 時不抓）；倒數到 `to` 時重抓；暱稱會重複，不能當 key；每一列點開看 `recentWins`（最近 5 次中獎，不分期間，一次只展開一列）
+- **排行榜**（`features/leaderboard`，設計稿 F）：今日 / 本週中獎榜 `GET /api/leaderboard?period=DAY|WEEK`、富豪榜 `GET /api/leaderboard/balance`（餘額，沒有期間、不會重置；兩種回應在 `fetchBoard` 統一格式）；下注、簽到成功後 invalidate `["leaderboard"]`；queryKey 帶期間、帳號、`revealedDrawAt`，**動畫播完才抓**（`latestRevealed` 為 false 時不抓）；倒數到 `to` 時重抓；暱稱會重複，不能當 key；每一列點開看 `recentWins`（最近的中獎，最多 10 次、不分期間；標題的次數依陣列長度，不寫死；一次只展開一列）
 - **每日簽到**（`wallet/dailyBonus.ts`、`DailyBonusButton`，頁首積分旁邊）：每個 UTC 日一次；成功用回應的 `balance` 更新錢包快取；`40904` 當成「已簽到」（不顯示錯誤，重新抓狀態和積分）；到 `nextResetAt` 自動重抓，跨日後按鈕恢復。手機頁首只在沒簽到時顯示禮物圖示（放文字會把頁面撐寬），已簽到的狀態在使用者選單裡
 - **我的注單 / 積分紀錄**（`/bets`，分頁籤切換）：`GET /api/tickets`、`GET /api/wallet/transactions`，都分頁
   - 每注的獎級、獎金用後端的 `results`（和 `lines` 一一對應，`tier` 沒中獎時不存在）、注單的 `payout`；獎級名稱在 `Tier` 翻譯
@@ -189,6 +189,7 @@ src/
 - **開獎紀錄**（`GET /api/draws`，`useDrawHistory`）：大廳近期開獎、開獎紀錄頁（分頁）
 - **冷熱號碼**（`GET /api/draws/number-stats?window=100`，`draw/HotCold.tsx` 的 `useHotCold`）：熱門用 `count + specialCount` 排序、冷門用 `missed`；queryKey 帶 `revealedDrawAt`，**動畫播完才抓**，`latestRevealed` 為 false（動畫播放中）時不抓、沿用上一份
   - 結算後每期有 `poolAmount`、`jackpotWinners`，開獎紀錄顯示「彩池・有沒有人中頭獎」
+  - 結算後每期也有 `prizeSummary`（7 個獎級的注數、每注獎金，中獎人數、總派彩）：開獎紀錄頁每一期可以點開（`DrawDetail`），統計表 + 中獎名單（`GET /api/draws/{drawNo}/winners`，點開才抓、一直快取）；沒有 `prizeSummary`（還沒結算）時不抓名單，避免快取到空的
   - queryKey 帶 `revealedDrawAt`：新的一期公布時自動重抓；列表濾掉還沒公布的期數（不劇透）
   - 期數號可能不連續（後端停機期間沒有期數），不要用期數號推算前後期
   - 拿到的號碼也記進 `useDrawFeed` 的 `results`

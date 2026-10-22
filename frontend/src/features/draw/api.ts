@@ -11,3 +11,11 @@ export const MAX_PAGE_SIZE = 100;
 export function fetchDraws(page: number, size: number) {
   return api.get<DrawPage>("/draws", { params: { page, size }, redirectOnUnauthorized: false });
 }
+
+export type PrizeSummary = components["schemas"]["PrizeSummary"];
+export type DrawWinners = components["schemas"]["DrawWinnersResponse"];
+
+/** 這期的中獎名單：一筆 = 一個玩家（多張注單合併），獎金高的在前，最多 50 人；有登入會標出自己（me） */
+export function fetchWinners(drawNo: string) {
+  return api.get<DrawWinners>(`/draws/${encodeURIComponent(drawNo)}/winners`, { redirectOnUnauthorized: false });
+}

@@ -15,7 +15,7 @@ const CARD = "rounded-card border border-line bg-panel";
  * 排行榜（設計稿 F）：今日 / 本週的中獎總額、富豪榜（目前積分餘額）。
  * 桌面：名次列表 | 我的名次 + 計算方式；手機：名次列表，我的名次固定在底部分頁上方。
  * 暱稱可能重複，列表的 key 用名次 + 索引。
- * 每一列可以點開，看那個人最近 5 次中獎（不分期間）；一次只展開一列。
+ * 每一列可以點開，看那個人最近的中獎（最多 10 次、不分期間；筆數依 recentWins 的長度）；一次只展開一列。
  */
 export function Leaderboard() {
   const t = useTranslations("Leaderboard");
@@ -125,7 +125,7 @@ export function Leaderboard() {
   );
 }
 
-/** 一列名次：前 3 名比較大，第 1 名金色；自己那一列加「我」。點一下展開最近 5 次中獎 */
+/** 一列名次：前 3 名比較大，第 1 名金色；自己那一列加「我」。點一下展開最近的中獎 */
 function Row({
   entry,
   outside = false,
@@ -219,14 +219,14 @@ function Chevron({ open }: { open: boolean }) {
   );
 }
 
-/** 最近 5 次中獎：獎級、中幾注、獎金；下一行期數和時間（本地時區） */
+/** 最近的中獎（最多 10 次）：獎級、中幾注、獎金；下一行期數和時間（本地時區） */
 function RecentWins({ wins }: { wins: RecentWin[] }) {
   const t = useTranslations("Leaderboard");
   const tt = useTranslations("Tier");
   const format = useFormatter();
   return (
     <section className="flex flex-col gap-1.5">
-      <h3 className="m-0 text-xs font-medium text-muted">{t("recentTitle")}</h3>
+      <h3 className="m-0 text-xs font-medium text-muted">{t("recentTitle", { count: wins.length })}</h3>
       {wins.length === 0 ? (
         <p className="m-0 text-sm text-fg-soft">{t("recentEmpty")}</p>
       ) : (

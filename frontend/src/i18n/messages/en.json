@@ -218,7 +218,20 @@
     "retry": "Retry",
     "empty": "No draws yet",
     "jackpotWon": "Jackpot won ×{count} · pool {points}",
-    "rolledOver": "Pool {points} · no jackpot winner"
+    "rolledOver": "Pool {points} · no jackpot winner",
+    "winnerCount": "{count, plural, =0 {No winners} one {# winner} other {# winners}}",
+    "settling": "Settling — check back shortly",
+    "summary": "<b>{count}</b> {count, plural, one {winner} other {winners}} · <b>{points}</b> points paid",
+    "colTier": "Prize",
+    "colLines": "Winning lines",
+    "colPrize": "Per line",
+    "rolled": "Rolled over",
+    "winnersTitle": "Winners",
+    "winnersTop": "Top {shown} of {total}",
+    "winnersError": "Couldn’t load the winners: {reason}",
+    "noWinners": "No winners this draw",
+    "me": "Me",
+    "lines": "{count, plural, one {# winning line} other {# winning lines}}"
   },
   "Points": {
     "error": "Couldn’t load points history: {reason}",
@@ -262,7 +275,7 @@
     "how1": "{board, select, BALANCE {The richest board ranks current balances, listing only players who have bet at least once.} other {Winnings boards rank total payouts in the period. Bets are not subtracted; sign-up and daily bonuses don’t count.}}",
     "how2": "{board, select, BALANCE {The richest board never resets; balances change with bets, payouts and bonuses.} other {Today resets daily at 00:00 UTC; this week resets every Monday at 00:00 UTC.}}",
     "how3": "{board, select, BALANCE {Ties share a rank. Accounts that have never bet are not listed.} other {Ties share a rank. Players without a win in the period are not listed.}}",
-    "recentTitle": "Last 5 wins (all time)",
+    "recentTitle": "{count, plural, =0 {Recent wins} one {Last win} other {Last # wins}} (all time)",
     "recentEmpty": "No wins yet",
     "recentLines": "{count, plural, one {# winning line} other {# winning lines}}"
   },
