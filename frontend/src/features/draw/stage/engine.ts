@@ -291,18 +291,37 @@ export function createStage({ canvas, container, getPhase, reducedMotion, onRead
   };
   pilePositions(49).forEach(([x, y], i) => addBody(balls[i], x, y));
 
-  // 吹氣攪珠：只有靠近底部的球會被吹起來，重力再把它拉回去
-  // 重力每步加約 0.28 px/step，上升高度 h ≈ v² / 0.56 px：v 8–13 → 約 30–85% 的玻璃球高度
-  const BLOW_ZONE = GLOBE.cy - GLOBE.r + GLOBE.r * 2 * 0.45;
+  // 吹氣攪珠：底部中央一股往上的氣流（力，不是直接改速度），像真的攪珠機
+  // - 氣流在中間最強、往兩側遞減（高斯），越往上越弱：球從中間噴上去、往兩側散開、沿玻璃壁落回底部，再被吹起來
+  // - 氣流中心慢慢左右擺、每顆球的風力有起伏，循環不會太規律
+  // - 截止時約 0.9 秒內慢慢加強
+  // 參數用 Node 跑 matter 模擬調過：平均速度和舊的「直接給往上的速度」差不多，頂部偶爾碰到，一半左右的時間球在下半部翻滾
+  const AIR = { lift: 4.2, width: GLOBE.r * 0.38, fadeFrom: 0.5, fadeTo: 1, side: 0.8, rampMs: 900 };
+  let air = 0;
+  let airT = 0;
+  const smoothstep = (a: number, b: number, v: number) => {
+    const q = Math.min(1, Math.max(0, (v - a) / (b - a)));
+    return q * q * (3 - 2 * q);
+  };
   const stirStep = () => {
-    for (const { body } of balls) {
-      if (!body) continue;
-      const y = -body.position.y / S;
-      if (y > BLOW_ZONE || Math.random() > 0.045) continue;
-      const v = 8 + Math.pow(Math.random(), 1.2) * 5;
-      Body.setVelocity(body, { x: body.velocity.x * 0.5 + (Math.random() - 0.5) * 4, y: -v });
-      Body.setAngularVelocity(body, (Math.random() - 0.5) * 0.4);
-    }
+    air = Math.min(1, air + STEP / AIR.rampMs);
+    airT += STEP / 1000;
+    const center = Math.sin(airT * 0.9) * 1.6 + Math.sin(airT * 2.3 + 1) * 0.6;
+    balls.forEach(({ body }, i) => {
+      if (!body) return;
+      const x = body.position.x / S;
+      const h = (-body.position.y / S - (GLOBE.cy - GLOBE.r)) / (2 * GLOBE.r); // 0 底部 → 1 頂部
+      const dx = x - center;
+      const jet = Math.exp(-((dx / AIR.width) ** 2)) * (1 - smoothstep(AIR.fadeFrom, AIR.fadeTo, h));
+      const gust = 0.65 + 0.35 * Math.sin(airT * 6.1 + i * 1.7) + 0.2 * Math.sin(airT * 13.7 + i * 4.3);
+      const g = body.mass * engine.gravity.y * engine.gravity.scale; // 這顆球受的重力
+      const up = g * jet * AIR.lift * gust * air;
+      const out = (g * AIR.side * jet * Math.sign(dx || 1) * Math.min(1, Math.abs(dx) / 2) + g * 0.25 * Math.sin(airT * 3.3 + i * 2.1)) * air;
+      Body.applyForce(body, body.position, { x: out, y: -up });
+    });
+  };
+  const stopAir = () => {
+    air = 0;
   };
   const clampSpeeds = () => {
     for (const { body } of balls) {
@@ -519,6 +538,7 @@ export function createStage({ canvas, container, getPhase, reducedMotion, onRead
 
     // 物理：固定步長，一幀最多補 4 步
     const stirring = isStirring();
+    if (!stirring) stopAir(); // 下次截止時氣流重新慢慢加強
     acc += dt;
     let steps = 0;
     while (acc >= STEP && steps < 4) {
