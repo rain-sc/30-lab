@@ -16,6 +16,44 @@
 
 ---
 
+## 2026-10-22（後端：遊戲規則）
+- 【新增】`GET /api/game/rules`（**不用登入**）：遊戲規則的數字，全部來自後端設定，跟實際下注、派彩用的是同一份
+  ```json
+  { "maxNumber": 49, "pickCount": 6, "pointsPerBet": 10, "maxLinesPerTicket": 50,
+    "drawIntervalSeconds": 300, "bettingCutoffSeconds": 15, "totalCombinations": 13983816,
+    "prizes": [
+      { "tier": "FIRST",   "matched": 6, "specialHit": false, "prize": null,   "winningCombinations": 1 },
+      { "tier": "SECOND",  "matched": 5, "specialHit": true,  "prize": 500000, "winningCombinations": 6 },
+      { "tier": "THIRD",   "matched": 5, "specialHit": false, "prize": 50000,  "winningCombinations": 252 },
+      { "tier": "FOURTH",  "matched": 4, "specialHit": true,  "prize": 9600,   "winningCombinations": 630 },
+      { "tier": "FIFTH",   "matched": 4, "specialHit": false, "prize": 640,    "winningCombinations": 12915 },
+      { "tier": "SIXTH",   "matched": 3, "specialHit": true,  "prize": 320,    "winningCombinations": 17220 },
+      { "tier": "SEVENTH", "matched": 3, "specialHit": false, "prize": 40,     "winningCombinations": 229600 } ],
+    "jackpot": { "floor": 1000000, "ratePercent": 20 },
+    "signupBonus": 10000, "dailyBonus": 1000 }
+  ```
+  - `prizes`：由頭獎到七獎；`matched` 要中幾個正碼、`specialHit` 要不要中特別號碼（頭獎是 `false`：中 6 個正碼就不可能再中特別號碼）
+  - `prize`：每注固定獎金；**頭獎是 `null`**（彩池平分，金額看 `GET /api/jackpot`）
+  - **機率 = `winningCombinations / totalCombinations`**：例如三獎 252 / 13,983,816 ≈ 1 / 55,491。給整數，前端自己格式化成「1 / 55,491」或百分比
+  - 中任何獎：所有 `winningCombinations` 加總 = 260,624，約 1 / 54（1.86%）
+  - 時間都是**秒**；規則文字（「中 5 個 + 特別號碼」）和獎級名稱請前端 i18n
+  - 數字只會在後端改設定、重啟時變動，前端進站抓一次、快取起來即可
+- 【待前端】
+  1. 重新 `npm run gen:api`
+  2. `features/draw/rules.ts` 的常數（`POINTS_PER_BET`、`DRAW_INTERVAL_MINUTES`、`BETTING_CUTOFF_SECONDS`）和 `MAX_LINES` 改成從這支 API 讀（檔案開頭的註解有預留這件事）
+  3. 「玩法說明」：獎級表（條件、獎金、機率）、頭獎彩池規則（保底 `jackpot.floor`、投注額 `jackpot.ratePercent`% 注入、沒人中滾存、多人平分）、每注積分、截止下注時間、註冊和每日簽到贈送；放的位置由前端決定（例如選號盤旁的「?」、獨立頁面）
+  4. `/api/game/rules` 加進「已登出也能送」的清單
+
+## 2026-10-21（前端：排行榜）
+- 【已完成】回覆後端「排行榜」那筆的【待前端】：
+  - 新頁面 `/leaderboard`（設計稿 F）：今日 / 本週切換、「X 小時後重置」（倒數到 `to`）、名次 / 暱稱 / 中獎總額；前 3 名放大、第 1 名金色；自己那一列標亮；自己不在前 20 名時在列表最下面另外顯示 `mine`
+  - 桌面：右邊「我的名次」卡片（含「距離第 20 名還差 N 積分」）和計算方式說明；手機：「我的名次」固定在底部分頁上方
+  - 入口：桌面頁首導覽、手機底部分頁（從 4 個變 5 個）
+  - 重新抓：進頁面、切換期間、開獎動畫播完時（queryKey 帶 `revealedDrawAt`；動畫播放中打開頁面先不抓）、倒數到 `to` 時
+  - 暱稱不當 key（用 `rank` + 索引）；`/api/leaderboard` 加進「已登出也能送」的清單
+- 已用真的後端驗證：今日 / 本週的名次和 API 一致；沒中獎的帳號顯示「今天還沒中獎」；攔截回應模擬前 20 名已滿、暱稱重複、同分（7、7、12、12、12）、自己第 26 名 → 顯示正確、「還差 80 積分」正確；整個開獎過程中只在動畫播完那一秒抓一次
+- 順手修正：上一版的手機頁首在「還沒簽到」時會比螢幕寬（簽到按鈕的「+1,000」文字），整頁被撐寬；改成只放禮物圖示 + 金色小點，390px、360px 的五個遊戲頁面都確認沒有橫向捲動
+
 ## 2026-10-21（後端：排行榜）
 - 規則（已寫進 [game-rules.md](game-rules.md)）：比**中獎總額**（期間內派彩加總，不扣下注、不含註冊和簽到贈送）；**今日**、**本週**兩個榜，UTC 計算，本週從週一 00:00 開始；以**派彩時間**歸屬期間
 - 【新增】`GET /api/leaderboard?period=DAY`（**不用登入**；有登入會多回傳自己的名次）
@@ -34,7 +72,7 @@
   - `to`：也是下次重置的時間，可以顯示「X 小時後重置」
   - cookie 失效（被踢、過期）時不會 401，當成沒登入處理，`mine` 是 `null`
 - 已用 8088 驗證：今日、本週都是「小雨 120、Rain 40」；副本另外驗證了登入後 `me` / `mine`、亂碼 cookie、不存在的 `period`
-- 【待前端】
+- 【已完成】（前端 2026-10-21，見上方前端那筆）
   1. 重新 `npm run gen:api`
   2. 排行榜頁 / 區塊：今日、本週切換；顯示名次、暱稱、中獎總額；自己那一列標亮；自己不在前 20 名時，在最下面另外顯示 `mine`
   3. 什麼時候重新抓：進頁面、切換期間、收到 `SETTLED` 時（**等開獎動畫播完再抓**，跟中獎結果一樣不要提前暴露）；倒數到 `to` 時也重抓一次

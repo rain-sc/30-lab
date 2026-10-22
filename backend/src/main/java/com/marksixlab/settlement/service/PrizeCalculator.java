@@ -26,6 +26,11 @@ public class PrizeCalculator {
         return Math.max(prizeProperties.jackpotFloor(), previousRollover + contribution);
     }
 
+    // 固定獎金；頭獎是彩池平分，沒有固定金額，回傳 null
+    public Long fixedPrize(PrizeTier tier){
+        return tier == PrizeTier.FIRST ? null : prizeOf(tier, 0);
+    }
+
     private long prizeOf(PrizeTier tier, long jackpotShare){
         if(tier == null){
             return 0;
