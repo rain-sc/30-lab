@@ -612,6 +612,8 @@ export interface components {
             amount: number;
             /** @description 是不是目前登入的自己 */
             me: boolean;
+            /** @description 最近 5 次中獎（已派彩的注單），由新到舊；不分排行榜的期間，沒中過獎是空陣列 */
+            recentWins: components["schemas"]["RecentWin"][];
         };
         LeaderboardResponse: {
             /** @enum {string} */
@@ -630,6 +632,35 @@ export interface components {
             entries: components["schemas"]["LeaderboardEntry"][];
             /** @description 自己的名次; 沒登入或期間內還沒中獎是 null */
             mine?: components["schemas"]["LeaderboardEntry"];
+        };
+        RecentWin: {
+            /**
+             * @description 期數號
+             * @example 20261022-0055
+             */
+            drawNo: string;
+            /**
+             * Format: date-time
+             * @description 中獎（結算）時間
+             */
+            settledAt: string;
+            /**
+             * Format: int64
+             * @description 這張注單的總獎金
+             * @example 360
+             */
+            payout: number;
+            /**
+             * @description 這張注單裡最高的獎級
+             * @enum {string}
+             */
+            bestTier: "FIRST" | "SECOND" | "THIRD" | "FOURTH" | "FIFTH" | "SIXTH" | "SEVENTH";
+            /**
+             * Format: int32
+             * @description 這張注單中了幾注
+             * @example 2
+             */
+            winningLines: number;
         };
         ResultLeaderboardResponse: {
             /**

@@ -259,7 +259,10 @@
     "howTitle": "怎麼計算",
     "how1": "{board, select, BALANCE {富豪榜比目前的積分餘額，只列出至少下注過一次的人。} other {中獎榜比期間內派彩的總額，不扣下注花費，註冊和簽到贈送不算。}}",
     "how2": "{board, select, BALANCE {富豪榜不會重置，餘額隨下注、派彩、簽到變動。} other {今日：每天早上 8 點（UTC 00:00）重置；本週：每週一早上 8 點重置。}}",
-    "how3": "{board, select, BALANCE {同分同名次；沒下注過的帳號不會上榜。} other {同分同名次；期間內還沒中獎的人不會上榜。}}"
+    "how3": "{board, select, BALANCE {同分同名次；沒下注過的帳號不會上榜。} other {同分同名次；期間內還沒中獎的人不會上榜。}}",
+    "recentTitle": "最近 5 次中獎（不分期間）",
+    "recentEmpty": "還沒中過獎",
+    "recentLines": "中 {count} 注"
   },
   "Rules": {
     "title": "玩法說明",

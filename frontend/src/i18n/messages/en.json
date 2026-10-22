@@ -259,7 +259,10 @@
     "howTitle": "How it works",
     "how1": "{board, select, BALANCE {The richest board ranks current balances, listing only players who have bet at least once.} other {Winnings boards rank total payouts in the period. Bets are not subtracted; sign-up and daily bonuses don’t count.}}",
     "how2": "{board, select, BALANCE {The richest board never resets; balances change with bets, payouts and bonuses.} other {Today resets daily at 00:00 UTC; this week resets every Monday at 00:00 UTC.}}",
-    "how3": "{board, select, BALANCE {Ties share a rank. Accounts that have never bet are not listed.} other {Ties share a rank. Players without a win in the period are not listed.}}"
+    "how3": "{board, select, BALANCE {Ties share a rank. Accounts that have never bet are not listed.} other {Ties share a rank. Players without a win in the period are not listed.}}",
+    "recentTitle": "Last 5 wins (all time)",
+    "recentEmpty": "No wins yet",
+    "recentLines": "{count, plural, one {# winning line} other {# winning lines}}"
   },
   "Rules": {
     "title": "How to play",

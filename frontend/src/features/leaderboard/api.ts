@@ -13,6 +13,8 @@ import type { components } from "@/types/api";
 type WinningsBoard = components["schemas"]["LeaderboardResponse"];
 type BalanceBoard = components["schemas"]["BalanceLeaderboardResponse"];
 export type LeaderboardEntry = components["schemas"]["LeaderboardEntry"];
+/** 最近一次中獎（一張中獎的注單）；每個人最多 5 筆、由新到舊、不分排行榜期間 */
+export type RecentWin = components["schemas"]["RecentWin"];
 /** 今日、本週中獎榜，富豪榜 */
 export type Board = WinningsBoard["period"] | "BALANCE";
 /** 兩種榜統一的格式：富豪榜沒有 to（不會重置） */
