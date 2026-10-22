@@ -25,7 +25,7 @@ import java.util.Set;
 public class LeaderboardService {
 
     private static final int TOP = 20;
-    private static final int RECENT_WINS = 5;
+    private static final int RECENT_WINS = 10;
 
     private final WalletService walletService;
     private final UserService userService;
