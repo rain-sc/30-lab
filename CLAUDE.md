@@ -89,6 +89,6 @@ cd frontend; npm run dev                              # 啟動前端
 
 ## 目前進度
 
-**階段 1：遊戲主流程**。後端的帳戶、開獎、錢包、下注、結算（判獎、派彩、頭獎彩池）模組已完成，從註冊、下注到開獎派彩整條流程已打通；前後端交接見 [docs/api-changelog.md](docs/api-changelog.md)。
+**階段 1：遊戲主流程**。後端的帳戶、開獎、錢包、下注、結算（判獎、派彩、頭獎彩池）模組已完成，從註冊、下注到開獎派彩整條流程已打通；另外有冷熱號碼、每日簽到、中獎排行榜（今日 / 本週）、遊戲規則（獎級、中獎組合數）的 API；前後端交接見 [docs/api-changelog.md](docs/api-changelog.md)。
 開獎攪珠動畫方案已確定，見 [docs/draw-animation.md](docs/draw-animation.md)（含後端需要配合的事項）。
 前端：遊戲端主流程已全部接上後端（登入 / 註冊、期數與開獎推播、3D 開獎舞台、開獎紀錄、下注、我的注單、積分與積分紀錄、結算派彩、頭獎彩池），已經沒有示例資料；細節見 [frontend/CLAUDE.md](frontend/CLAUDE.md)。

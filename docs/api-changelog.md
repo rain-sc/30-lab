@@ -38,6 +38,7 @@
   - 中任何獎：所有 `winningCombinations` 加總 = 260,624，約 1 / 54（1.86%）
   - 時間都是**秒**；規則文字（「中 5 個 + 特別號碼」）和獎級名稱請前端 i18n
   - 數字只會在後端改設定、重啟時變動，前端進站抓一次、快取起來即可
+  - ⚠️ 第一次 commit 時漏了把路徑加進「不用登入」的清單（沒登入會收到 `40100`），已補上；`openapi.json` 也是補上之後才從 8088 匯出的，已確認不登入呼叫是 200
 - 【待前端】
   1. 重新 `npm run gen:api`
   2. `features/draw/rules.ts` 的常數（`POINTS_PER_BET`、`DRAW_INTERVAL_MINUTES`、`BETTING_CUTOFF_SECONDS`）和 `MAX_LINES` 改成從這支 API 讀（檔案開頭的註解有預留這件事）
