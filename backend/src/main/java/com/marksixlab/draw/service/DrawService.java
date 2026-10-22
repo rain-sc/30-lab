@@ -8,6 +8,7 @@ import com.marksixlab.draw.dto.CurrentDrawResponse;
 import com.marksixlab.draw.dto.DrawResponse;
 import com.marksixlab.draw.model.Draw;
 import com.marksixlab.draw.model.DrawStatus;
+import com.marksixlab.draw.model.PrizeSummary;
 import com.marksixlab.draw.repository.DrawRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
@@ -115,31 +116,46 @@ public class DrawService {
     public DrawSlot slotAt(Instant now) {
         return drawSchedule.slotAt(now);
     }
-    
+
     public long previousRollover(Instant drawAt) {
         return drawRepository.findFirstByStatusAndDrawAtBeforeOrderByDrawAtDesc(DrawStatus.SETTLED, drawAt)
                 .map(Draw::getJackpotRollover)
                 .orElse(0L);
     }
 
-    public Draw markSettled(String drawNo, long poolAmount, int jackpotWinners, long jackpotRollover, Instant now) {
+    public Draw markSettled(String drawNo, long poolAmount, int jackpotWinners, long jackpotRollover,
+                            PrizeSummary prizeSummary, Instant now) {
         Query query = Query.query(Criteria.where("drawNo").is(drawNo).and("status").is(DrawStatus.DRAWN));
         Update update = new Update()
                 .set("status", DrawStatus.SETTLED)
                 .set("poolAmount", poolAmount)
                 .set("jackpotWinners", jackpotWinners)
                 .set("jackpotRollover", jackpotRollover)
+                .set("prizeSummary", prizeSummary)
                 .set("settledAt", now)
                 .set("updatedAt", now);
         return mongoTemplate.findAndModify(query, update, FindAndModifyOptions.options().returnNew(true), Draw.class);
     }
 
+    // 已結算、但還沒有獎級統計的期數（獎級統計上線前結算的）
+    public List<Draw> settledWithoutPrizeSummary() {
+        return drawRepository.findByStatusAndPrizeSummaryIsNull(DrawStatus.SETTLED);
+    }
+
+    // 補上獎級統計；已經有了就不覆蓋，回傳這次有沒有寫入
+    public boolean savePrizeSummary(String drawNo, PrizeSummary prizeSummary) {
+        Query query = Query.query(Criteria.where("drawNo").is(drawNo)
+                .and("status").is(DrawStatus.SETTLED)
+                .and("prizeSummary").is(null));
+        Update update = new Update().set("prizeSummary", prizeSummary);
+        return mongoTemplate.updateFirst(query, update, Draw.class).getModifiedCount() > 0;
+    }
 
     public CurrentDrawResponse current(Instant now){
         DrawSlot slot = drawSchedule.slotAt(now);
         DrawResponse current = drawRepository.findByDrawNo(slot.drawNo())
                 .map(DrawResponse::from)
-                .orElseGet(() -> new DrawResponse(slot.drawNo(),DrawStatus.OPEN,slot.openAt(),slot.closeAt(),slot.drawAt(),null,null,null,null));
+                .orElseGet(() -> new DrawResponse(slot.drawNo(),DrawStatus.OPEN,slot.openAt(),slot.closeAt(),slot.drawAt(),null,null,null,null,null));
         DrawResponse previous = drawRepository
                 .findFirstByStatusInOrderByDrawAtDesc(List.of(DrawStatus.DRAWN,DrawStatus.SETTLED))
                 .map(DrawResponse::from)

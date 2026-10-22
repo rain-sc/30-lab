@@ -3,6 +3,7 @@ package com.marksixlab.draw.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.marksixlab.draw.model.Draw;
 import com.marksixlab.draw.model.DrawStatus;
+import com.marksixlab.draw.model.PrizeSummary;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
@@ -37,10 +38,13 @@ public record DrawResponse(
         Long poolAmount,
 
         @Schema(description = "中頭獎的注數(0 = 沒人中, 彩池滾到下期);結算後才有", example = "0")
-        Integer jackpotWinners
+        Integer jackpotWinners,
+
+        @Schema(description = "獎級統計（各獎級幾注、每注獎金、中獎人數、總派彩）;結算後才有")
+        PrizeSummary prizeSummary
 
 ) {
     public static DrawResponse from(Draw draw){
-        return new DrawResponse(draw.getDrawNo(),draw.getStatus(),draw.getOpenAt(),draw.getCloseAt(),draw.getDrawAt(),draw.getNumbers(),draw.getSpecialNumber(),draw.getPoolAmount(),draw.getJackpotWinners());
+        return new DrawResponse(draw.getDrawNo(),draw.getStatus(),draw.getOpenAt(),draw.getCloseAt(),draw.getDrawAt(),draw.getNumbers(),draw.getSpecialNumber(),draw.getPoolAmount(),draw.getJackpotWinners(), draw.getPrizeSummary());
     }
 }

@@ -9,6 +9,8 @@ import com.marksixlab.betting.repository.TicketRepository;
 import com.marksixlab.betting.service.BettingService;
 import com.marksixlab.draw.model.Draw;
 import com.marksixlab.draw.model.DrawStatus;
+import com.marksixlab.draw.model.PrizeSummary;
+import com.marksixlab.draw.model.TierWinners;
 import com.marksixlab.draw.repository.DrawRepository;
 import com.marksixlab.settlement.dto.JackpotResponse;
 import com.marksixlab.wallet.model.Wallet;
@@ -21,7 +23,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Instant;
@@ -172,6 +176,44 @@ class SettlementServiceIntegrationTest {
         bet("u7", NO_WIN, NO_WIN, NO_WIN);
 
         assertThat(settlementService.currentJackpot(BET_TIME)).isEqualTo(new JackpotResponse(DRAW_NO, 1_500_010));
+    }
+
+    @Test
+    void settlementStoresPrizeSummary() {
+        saveDraw("20261020-0036", Instant.parse("2026-10-20T03:00:00Z"), DrawStatus.SETTLED, 1_000_001L);
+        List<Integer> seventh = List.of(1, 2, 3, 8, 9, 10);
+        bet("u1", JACKPOT, seventh, NO_WIN);
+        bet("u2", JACKPOT, seventh, seventh);
+        bet("u3", NO_WIN);
+        saveDraw(DRAW_NO, DRAW_AT, DrawStatus.DRAWN, null);
+
+        Draw settled = settlementService.settleNext(SETTLE_TIME).orElseThrow();
+
+        // 彩池 1,000,001 + 7 注 × 10 × 20% = 1,000,015，兩注平分：每注 500,007
+        assertThat(settled.getPrizeSummary()).isEqualTo(new PrizeSummary(2, 1_000_014 + 120, List.of(
+                new TierWinners(PrizeTier.FIRST, 2, 500_007),
+                new TierWinners(PrizeTier.SECOND, 0, 500_000),
+                new TierWinners(PrizeTier.THIRD, 0, 50_000),
+                new TierWinners(PrizeTier.FOURTH, 0, 9_600),
+                new TierWinners(PrizeTier.FIFTH, 0, 640),
+                new TierWinners(PrizeTier.SIXTH, 0, 320),
+                new TierWinners(PrizeTier.SEVENTH, 3, 40))));
+    }
+
+    @Test
+    void backfillFillsOldSettledDrawsOnce() {
+        bet("u1", JACKPOT, List.of(1, 2, 3, 4, 7, 8));
+        bet("u2", List.of(1, 2, 3, 8, 9, 10));
+        saveDraw(DRAW_NO, DRAW_AT, DrawStatus.DRAWN, null);
+        PrizeSummary expected = settlementService.settleNext(SETTLE_TIME).orElseThrow().getPrizeSummary();
+        // 模擬這個功能上線前結算的期數：沒有獎級統計
+        mongoTemplate.updateFirst(Query.query(Criteria.where("drawNo").is(DRAW_NO)), new Update().unset("prizeSummary"), Draw.class);
+
+        assertThat(settlementService.backfillPrizeSummaries()).isEqualTo(1);
+        assertThat(drawRepository.findByDrawNo(DRAW_NO).orElseThrow().getPrizeSummary()).isEqualTo(expected);
+        assertThat(expected.winnerCount()).isEqualTo(2);
+        assertThat(expected.totalPayout()).isEqualTo(1_000_000 + 9_600 + 40);
+        assertThat(settlementService.backfillPrizeSummaries()).isZero();
     }
 
     @SafeVarargs

@@ -8,6 +8,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 public interface DrawRepository extends MongoRepository<Draw,String> {
@@ -22,4 +23,8 @@ public interface DrawRepository extends MongoRepository<Draw,String> {
     Optional<Draw> findFirstByStatusAndDrawAtBeforeOrderByDrawAtDesc(DrawStatus status, Instant drawAt);
 
     long countByStatusIn(Collection<DrawStatus> statuses);
+
+    List<Draw> findByStatusAndPrizeSummaryIsNull(DrawStatus status);
+
+
 }

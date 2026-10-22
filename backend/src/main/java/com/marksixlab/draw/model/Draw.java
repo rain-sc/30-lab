@@ -45,6 +45,8 @@ public class Draw {
 
     private Long jackpotRollover;
 
+    private PrizeSummary prizeSummary;
+
     private Instant settledAt;
 
     @CreatedDate
