@@ -17,6 +17,7 @@ import { register as registerAccount } from "./api";
 import { REGISTER_VIOLATIONS, RULE_PARAMS, registerSchema, type RegisterValues } from "./schemas";
 import { applyFieldViolations } from "./serverErrors";
 import { useErrorText } from "./useErrorText";
+import { AgreeField } from "./AgreeField";
 
 const USERNAME_TAKEN = 40901;
 
@@ -39,10 +40,12 @@ export function RegisterForm() {
   } = useForm<RegisterValues>({
     resolver: zodResolver(registerSchema),
     mode: "onTouched",
+    defaultValues: { agree: false },
   });
 
-  const onSubmit = async ({ confirmPassword, ...values }: RegisterValues) => {
+  const onSubmit = async ({ confirmPassword, agree, ...values }: RegisterValues) => {
     void confirmPassword; // 只在前端比對，不送給後端
+    void agree; // 同意勾選只在前端檢查
     setFormError(null);
     try {
       // 註冊成功後端會直接登入（設好 cookie）
@@ -99,6 +102,8 @@ export function RegisterForm() {
       <Field id="confirmPassword" shakeSignal={shakeSignal} label={t("fields.confirmPassword")} error={errorText(errors.confirmPassword)}>
         {(aria) => <PasswordInput {...aria} autoComplete="new-password" {...register("confirmPassword")} />}
       </Field>
+
+      <AgreeField shakeSignal={shakeSignal} error={errorText(errors.agree)} {...register("agree")} />
 
       {formError && <FormAlert>{formError}</FormAlert>}
 

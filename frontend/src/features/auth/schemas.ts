@@ -37,6 +37,8 @@ export const registerSchema = z
       .min(PASSWORD_LENGTH.min, err("passwordLength"))
       .max(PASSWORD_LENGTH.max, err("passwordLength")),
     confirmPassword: z.string().min(1, err("confirmRequired")),
+    // 年滿 18 歲、了解只用虛擬積分、讀過免責聲明（只在前端檢查，不送給後端）
+    agree: z.boolean().refine((v) => v, err("agreeRequired")),
   })
   .refine((v) => v.password === v.confirmPassword, {
     ...err("passwordMismatch"),

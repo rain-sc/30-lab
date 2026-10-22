@@ -1,7 +1,7 @@
 {
   "Metadata": {
-    "title": "Mark Six Lab",
-    "description": "用虛擬積分遊玩的六合彩模擬遊戲"
+    "title": "49 Lab",
+    "description": "用虛擬積分玩的 6/49 選號遊戲（個人學習作品，不涉及真錢）"
   },
   "LocaleSwitcher": {
     "label": "語言"
@@ -33,7 +33,6 @@
     "pageTitle": "登入 / 註冊",
     "cardLabel": "登入或註冊",
     "tabsLabel": "選擇登入或註冊",
-    "footnote": "虛擬積分，不能儲值或兌換",
     "rulesShort": "每注 {points} 積分 · 每 {minutes} 分鐘開獎",
     "login": {
       "tab": "登入",
@@ -64,7 +63,8 @@
       "passwordLength": "密碼需要 {passwordMin}–{passwordMax} 個字元",
       "confirmRequired": "請再輸入一次密碼",
       "passwordMismatch": "兩次輸入的密碼不一樣",
-      "usernameTaken": "這個帳號已經有人使用，換一個試試"
+      "usernameTaken": "這個帳號已經有人使用，換一個試試",
+      "agreeRequired": "請先勾選同意"
     },
     "reason": {
       "expired": "登入已過期，請重新登入",
@@ -320,5 +320,39 @@
     "dailyNote": "每天早上 8 點（UTC 00:00）重置",
     "perBet": "每注",
     "perBetNote": "每張注單最多 {lines} 注"
+  },
+  "Legal": {
+    "noticeTitle": "個人學習作品，只用虛擬積分，不涉及真錢。",
+    "noticeBody": "積分不能購買、兌換或轉讓；開獎號碼由本站隨機產生，與香港賽馬會及其六合彩無關。",
+    "learnMore": "了解更多",
+    "chipVirtual": "虛擬積分",
+    "chipNoTopUp": "不能儲值",
+    "chipNoCashOut": "不能兌換",
+    "chipAdults": "18+",
+    "footer": "虛擬積分遊戲・不涉及真錢・與香港賽馬會無關",
+    "aboutLink": "關於與免責聲明",
+    "privacyLink": "私隱",
+    "agree": "我已年滿 18 歲，並了解這是只用虛擬積分的遊戲，已閱讀<about>關於與免責聲明</about>和<privacy>私隱聲明</privacy>。",
+    "newTab": "（在新分頁開啟）",
+    "pageTitle": "關於與免責聲明",
+    "title": "關於 49 Lab",
+    "hero1": "這是個人的學習與作品集專案，不是商業服務。",
+    "hero2": "只使用<b>虛擬積分</b>：不能購買、儲值、兌換現金或獎品，也不能轉給別人。",
+    "hero3": "開獎號碼由本站隨機產生，<b>與香港賽馬會、香港六合彩沒有任何關係</b>。",
+    "playTitle": "玩法",
+    "play": "參考常見的 6/49 選號規則：從 1–49 選 6 個號碼，定時開獎。詳細規則見<rules>玩法說明</rules>。",
+    "ageTitle": "年齡",
+    "age": "本站適合 18 歲以上的使用者。",
+    "riskTitle": "真實賭博有風險",
+    "risk": "如果你或身邊的人受賭博問題困擾，可以聯絡平和基金資助的戒賭輔導熱線：",
+    "hotlineLabel": "戒賭輔導熱線",
+    "privacyTitle": "私隱",
+    "privacyCollect": "收集：帳號、暱稱、密碼（只存雜湊，不存原文）、下注和積分紀錄。",
+    "privacyUse": "用途：登入、遊戲運作、排行榜（排行榜只顯示暱稱）。",
+    "privacyCookie": "Cookie：只用一個登入用的 cookie 和語言設定，沒有廣告或追蹤。",
+    "privacyShare": "不會出售或提供給第三方。想刪除帳號或查詢資料，請聯絡：",
+    "trademarkTitle": "商標",
+    "trademark": "「六合彩」「Mark Six」為香港賽馬會的商標，本站只用來說明玩法的來源，與其沒有任何關係，也未獲其授權或認可。",
+    "back": "回到首頁"
   }
 }

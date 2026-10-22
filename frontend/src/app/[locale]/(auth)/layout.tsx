@@ -6,6 +6,7 @@ import { BokehBalls } from "@/components/fx/BokehBalls";
 import { SpotlightCard } from "@/components/fx/SpotlightCard";
 import { LivePanel } from "@/features/draw/LivePanel";
 import { RulesShort } from "@/features/draw/RulesShort";
+import { LegalNotice } from "@/features/legal/LegalNotice";
 
 // 進場動畫：各區塊依序淡入上移（純 CSS，伺服器渲染的內容不會先透明）
 const FADE_UP = "animate-fade-up motion-reduce:animate-none";
@@ -34,7 +35,8 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           className={`mx-auto flex w-full max-w-105 flex-[1_1_360px] flex-col gap-4.5 rounded-card border border-line bg-panel p-5 shadow-[0_30px_80px_rgba(0,0,0,0.35)] md:gap-5.5 md:p-8 lg:mx-0 ${FADE_UP} [animation-delay:240ms]`}
         >
           {children}
-          <p className="m-0 text-center text-[13px] leading-relaxed text-muted">{t("footnote")}</p>
+          {/* 免責聲明：每個人進來都會看到（公開給別人玩，見 /about） */}
+          <LegalNotice />
         </SpotlightCard>
 
         {/* 桌面版的規則在直播面板裡，手機版放在最下面 */}

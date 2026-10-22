@@ -1,7 +1,7 @@
 {
   "Metadata": {
-    "title": "Mark Six Lab",
-    "description": "A Mark Six lottery simulator played with virtual points"
+    "title": "49 Lab",
+    "description": "A 6/49 number game played with virtual points (a personal learning project, no real money)"
   },
   "LocaleSwitcher": {
     "label": "Language"
@@ -33,7 +33,6 @@
     "pageTitle": "Sign in / Sign up",
     "cardLabel": "Sign in or sign up",
     "tabsLabel": "Choose sign in or sign up",
-    "footnote": "Virtual points only. They can't be bought or cashed out.",
     "rulesShort": "{points} points per bet · A draw every {minutes} minutes",
     "login": {
       "tab": "Sign in",
@@ -64,7 +63,8 @@
       "passwordLength": "Password must be {passwordMin}–{passwordMax} characters",
       "confirmRequired": "Enter your password again",
       "passwordMismatch": "The passwords don't match",
-      "usernameTaken": "This username is already taken. Try another one."
+      "usernameTaken": "This username is already taken. Try another one.",
+      "agreeRequired": "Please tick the box to agree"
     },
     "reason": {
       "expired": "Your session has expired. Please sign in again.",
@@ -320,5 +320,39 @@
     "dailyNote": "resets at 00:00 UTC",
     "perBet": "Per ticket",
     "perBetNote": "up to {lines} tickets per slip"
+  },
+  "Legal": {
+    "noticeTitle": "A personal learning project played with virtual points — no real money.",
+    "noticeBody": "Points can’t be bought, cashed out or transferred. Numbers are drawn at random by this site, which is not affiliated with the Hong Kong Jockey Club or its Mark Six lottery.",
+    "learnMore": "Learn more",
+    "chipVirtual": "Virtual points",
+    "chipNoTopUp": "No top-ups",
+    "chipNoCashOut": "No cash-outs",
+    "chipAdults": "18+",
+    "footer": "A virtual-points game · No real money · Not affiliated with the Hong Kong Jockey Club",
+    "aboutLink": "About & disclaimer",
+    "privacyLink": "Privacy",
+    "agree": "I’m 18 or older and understand this game uses virtual points only. I’ve read the <about>About & disclaimer</about> and <privacy>Privacy notice</privacy>.",
+    "newTab": " (opens in a new tab)",
+    "pageTitle": "About & disclaimer",
+    "title": "About 49 Lab",
+    "hero1": "This is a personal learning and portfolio project, not a commercial service.",
+    "hero2": "It uses <b>virtual points</b> only: they can’t be bought, topped up, cashed out or exchanged for prizes, and can’t be transferred.",
+    "hero3": "Numbers are drawn at random by this site, which <b>has no connection with the Hong Kong Jockey Club or Hong Kong’s Mark Six</b>.",
+    "playTitle": "How it works",
+    "play": "Based on common 6/49 rules: pick 6 numbers from 1–49, with draws on a fixed schedule. See <rules>How to play</rules> for details.",
+    "ageTitle": "Age",
+    "age": "This site is intended for users aged 18 or over.",
+    "riskTitle": "Real gambling has risks",
+    "risk": "If gambling is causing problems for you or someone you know, the Ping Wo Fund’s gambling counselling hotline can help:",
+    "hotlineLabel": "Gambling counselling hotline",
+    "privacyTitle": "Privacy",
+    "privacyCollect": "What we collect: username, nickname, password (stored only as a hash), and your bets and points history.",
+    "privacyUse": "What it’s for: signing in, running the game, and the leaderboard (which shows nicknames only).",
+    "privacyCookie": "Cookies: one sign-in cookie and your language setting. No ads or tracking.",
+    "privacyShare": "Your data is never sold or shared with third parties. To delete your account or ask about your data, contact:",
+    "trademarkTitle": "Trademarks",
+    "trademark": "“Mark Six” and “六合彩” are trademarks of the Hong Kong Jockey Club. They’re mentioned here only to describe where the rules come from; this site is not affiliated with, authorised or endorsed by the Club.",
+    "back": "Back to home"
   }
 }

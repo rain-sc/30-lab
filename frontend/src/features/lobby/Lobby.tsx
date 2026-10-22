@@ -43,7 +43,7 @@ export function Lobby() {
 
   return (
     <>
-      <div className="mx-auto flex w-full max-w-8xl flex-col gap-3 px-4 pt-3 pb-44 md:gap-5 md:px-10 md:pt-6 md:pb-10">
+      <div className="mx-auto flex w-full max-w-8xl flex-col gap-3 px-4 pt-3 pb-4 md:gap-5 md:px-10 md:pt-6 md:pb-10">
         <DrawFeedError />
         <div className={cn("hidden md:block", FADE_UP)}>
           <DrawStatus next={next} />

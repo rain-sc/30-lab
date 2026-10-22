@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- Mark Six Lab：金色的「6」號碼球（和頁面左上角的 BrandLogo 一致） -->
+  <!-- 49 Lab：金色的「49」號碼球（和頁面左上角的 BrandLogo 一致） -->
   <defs>
     <radialGradient id="ball" cx="35%" cy="30%" r="75%">
       <stop offset="0" stop-color="#FFE3A3"/>
@@ -9,9 +9,7 @@
   </defs>
   <!-- 球；深金色外框讓淺色分頁列上也看得清楚 -->
   <circle cx="32" cy="32" r="30" fill="url(#ball)" stroke="#8A5E12" stroke-width="2"/>
-  <!-- 「6」用路徑畫（SVG favicon 載入不了網頁字體）：下方的圈 + 往右上彎的筆畫 -->
-  <g fill="none" stroke="#2A1C03" stroke-width="7" stroke-linecap="round">
-    <ellipse cx="32" cy="39" rx="8" ry="9"/>
-    <path d="M24 39 C24 25 28.5 17.5 39 16.5"/>
-  </g>
+  <!-- 「49」：SVG favicon 載入不了網頁字體，用系統的粗體窄字，橫向壓窄一點像 Barlow Condensed -->
+  <text x="32" y="44" text-anchor="middle" transform="translate(32 0) scale(0.86 1) translate(-32 0)"
+        font-family="'Arial Narrow', 'Arial Black', Arial, sans-serif" font-weight="900" font-size="32" letter-spacing="-1" fill="#2A1C03">49</text>
 </svg>

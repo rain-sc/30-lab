@@ -4,7 +4,7 @@ import "./globals.css";
 
 // 完全對不上任何路由時顯示（不在 [locale] 底下，拿不到語系，所以中英並列）
 export const metadata: Metadata = {
-  title: "404 | Mark Six Lab",
+  title: "404 | 49 Lab",
 };
 
 export default function GlobalNotFound() {

@@ -144,6 +144,17 @@ src/
 - WebSocket 直連 `NEXT_PUBLIC_WS_URL`（預設 `ws://localhost:8088/ws`）。
 - 時間是 UTC ISO 字串，顯示時轉本地時區；倒數以**後端給的時間點**為準，不要只靠前端計時。
 
+## 品牌與免責聲明（公開給別人玩）
+
+- 對外的品牌是 **49 Lab**（`BrandLogo`：金色「49」球 + 「49 LAB」、`icon.svg`、`apple-icon.png`、`Metadata.title`）。
+  **畫面上不要用「六合彩」「Mark Six」當名稱**（香港賽馬會的商標），只能在 `/about` 的商標聲明、免責文字裡描述性地提到。repo、程式裡的名稱不用改
+- 「虛擬積分、不涉及真錢、與香港賽馬會無關」放在每個人一定會看到的地方（設計稿 https://claude.ai/artifact/FsPcpgogpww4UbGjo5f7jq ）：
+  - 登入頁表單卡片下方：`LegalNotice`
+  - 遊戲端每一頁的頁尾：`SiteFooter`（在 `(game)/layout`；手機大廳頁尾後面多留「待下注」列的高度）
+  - 註冊：`AgreeField` 同意勾選（18 歲以上、只用虛擬積分、讀過免責和私隱聲明），只在前端檢查、不送給後端；連結開新分頁，免得填好的欄位不見
+  - `/about`（不用登入）：重點、玩法、年齡、戒賭輔導熱線 1834 633（平和基金）、私隱（`#privacy`，聯絡電郵在 `features/legal/contact.ts`）、商標聲明
+- 不要加：購買積分、積分換獎品或現金、積分轉帳、賭博網站的廣告或連結（積分有了價值就可能變成賭博）
+
 ## 介面原則
 
 - 響應式、手機優先。
