@@ -21,8 +21,8 @@ export function GameHeader() {
 
   return (
     // sticky：捲動時也看得到積分（下注扣款、派彩的數字滾動）
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-line bg-stage/85 px-4 py-3 backdrop-blur-md md:px-10 md:py-4">
-      <div className="flex items-center gap-9">
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-line bg-stage/85 px-4 py-3 backdrop-blur-md md:px-10 md:py-4">
+      <div className="flex min-w-0 items-center gap-9">
         <BrandLogo />
         <nav aria-label={t("label")} className="hidden gap-1 text-[15px] md:flex">
           {GAME_NAV.filter((item) => !item.mobileOnly).map(({ href, key }) => {
@@ -43,7 +43,8 @@ export function GameHeader() {
           })}
         </nav>
       </div>
-      <div className="flex items-center gap-3 md:gap-4">
+      {/* 手機頁首很擠：間距縮小，右邊不收縮（積分、按鈕要完整），左邊的 logo 讓位 */}
+      <div className="flex shrink-0 items-center gap-2 md:gap-4">
         <DailyBonusButton />
         <BalancePill />
         <UserMenu />

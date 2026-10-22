@@ -98,7 +98,8 @@
     "menu": "Account menu",
     "logout": "Sign out",
     "tabTickets": "Tickets",
-    "tabPoints": "Points history"
+    "tabPoints": "Points history",
+    "leaderboard": "Leaderboard"
   },
   "Game": {
     "checking": "Checking sign-in…",
@@ -232,5 +233,28 @@
     "FIFTH": "5th prize",
     "SIXTH": "6th prize",
     "SEVENTH": "7th prize"
+  },
+  "Leaderboard": {
+    "title": "Leaderboard",
+    "periodLabel": "Period",
+    "period": "{period, select, DAY {Today} other {This week}}",
+    "subtitle": "Total winnings {period, select, DAY {today} other {this week}}",
+    "resetIn": "resets in {days, plural, =0 {{hours, plural, =0 {{minutes}m} other {#h {minutes}m}}} other {#d {hours}h}}",
+    "ranking": "Ranking",
+    "empty": "No winners {period, select, DAY {today} other {this week}} yet",
+    "error": "Couldn’t load the leaderboard: {reason}",
+    "retry": "Retry",
+    "me": "Me",
+    "outside": "Not in the top {top}",
+    "mine": "My rank",
+    "mineTitle": "My rank ({period, select, DAY {today} other {this week}})",
+    "mineAmount": "Total winnings <b>{points}</b> points",
+    "gap": "{points} points behind #{top}",
+    "mineNone": "No wins {period, select, DAY {today} other {this week}} yet. Win to get on the board",
+    "mineLogin": "Sign in to see your rank",
+    "howTitle": "How it works",
+    "how1": "Ranked by total payouts in the period. Bets are not subtracted; sign-up and daily bonuses don’t count.",
+    "how2": "Today resets daily at 00:00 UTC; this week resets every Monday at 00:00 UTC.",
+    "how3": "Ties share a rank. Players without a win in the period are not listed."
   }
 }

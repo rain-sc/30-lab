@@ -125,6 +125,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/leaderboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 中獎排行榜：今日（DAY）或本週（WEEK），UTC 計算（不用登入；有登入會多回傳自己的名次） */
+        get: operations["leaderboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/jackpot": {
         parameters: {
             query?: never;
@@ -541,6 +558,56 @@ export interface components {
             /** @description 回應資料；沒有資料時是 null */
             data: components["schemas"]["PageResultTicketResponse"];
         };
+        LeaderboardEntry: {
+            /**
+             * Format: int32
+             * @description 名次，同分同名次（1、2、2、4）
+             * @example 1
+             */
+            rank: number;
+            /**
+             * @description 暱稱(可能重複)
+             * @example 小雨
+             */
+            nickname: string;
+            /**
+             * Format: int64
+             * @description 期間內的中獎總額
+             * @example 9640
+             */
+            amount: number;
+            /** @description 是不是目前登入的自己 */
+            me: boolean;
+        };
+        LeaderboardResponse: {
+            /** @enum {string} */
+            period: "DAY" | "WEEK";
+            /**
+             * Format: date-time
+             * @description 統計開始時間(含)
+             */
+            from: string;
+            /**
+             * Format: date-time
+             * @description 統計結束時間（不含），也是下次重置的時間
+             */
+            to: string;
+            /** @description 前 20 名，期間內沒有中獎的人不會上榜 */
+            entries: components["schemas"]["LeaderboardEntry"][];
+            /** @description 自己的名次; 沒登入或期間內還沒中獎是 null */
+            mine?: components["schemas"]["LeaderboardEntry"];
+        };
+        ResultLeaderboardResponse: {
+            /**
+             * Format: int32
+             * @description 0 表示成功，失敗時是 5 位數錯誤碼
+             */
+            code: number;
+            /** @description 給開發看的說明，不直接顯示給使用者 */
+            msg: string;
+            /** @description 回應資料；沒有資料時是 null */
+            data: components["schemas"]["LeaderboardResponse"];
+        };
         JackpotResponse: {
             /**
              * @description 目前這期的期數號
@@ -909,6 +976,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ResultPageResultWalletTransactionResponse"];
+                };
+            };
+        };
+    };
+    leaderboard: {
+        parameters: {
+            query?: {
+                period?: "DAY" | "WEEK";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ResultLeaderboardResponse"];
                 };
             };
         };

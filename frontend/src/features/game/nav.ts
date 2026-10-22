@@ -5,6 +5,7 @@ export const GAME_NAV = [
   { href: "/trends", key: "trends", mobileOnly: true },
   { href: "/history", key: "history", mobileOnly: false },
   { href: "/bets", key: "bets", mobileOnly: false },
+  { href: "/leaderboard", key: "leaderboard", mobileOnly: false },
 ] as const;
 
 export type GameNavKey = (typeof GAME_NAV)[number]["key"];

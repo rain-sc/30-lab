@@ -15,6 +15,12 @@ const PATHS: Record<GameNavKey, React.ReactNode> = {
     </>
   ),
   history: <path d="M4 19V9M10 19V5M16 19v-7M22 19H2" />,
+  leaderboard: (
+    <>
+      <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z" />
+      <path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4" />
+    </>
+  ),
   bets: (
     <>
       <path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" />

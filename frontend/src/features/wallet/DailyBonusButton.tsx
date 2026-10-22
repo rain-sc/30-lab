@@ -21,6 +21,7 @@ export function useResetCountdown(nextResetAt: string | undefined) {
  * 頁首的簽到按鈕（積分旁邊）
  * - 還沒簽到：「簽到 +1,000」（金色）
  * - 已簽到：桌面顯示「已簽到 · X 小時 Y 分後」；手機頁首放不下，不顯示（使用者選單裡有）
+ * - 手機頁首只放禮物圖示 + 金色小點（文字放不下，會把頁面撐寬）
  */
 export function DailyBonusButton() {
   const t = useTranslations("Wallet");
@@ -57,7 +58,7 @@ export function DailyBonusButton() {
       aria-label={t("dailyClaimLabel", { points })}
       title={failed ? errorText(claim.error) : undefined}
       className={cn(
-        "inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] font-bold transition-colors md:h-9",
+        "relative inline-flex h-9 items-center gap-1.5 rounded-full border px-2.5 text-[13px] font-bold transition-colors sm:px-3",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold disabled:opacity-60",
         failed ? "border-danger/50 text-danger" : "border-gold/60 bg-gold/10 text-gold hover:bg-gold/20",
       )}
@@ -65,8 +66,9 @@ export function DailyBonusButton() {
       <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M4 11h16v9H4zM3 7h18v4H3zM12 7v13M12 7c-2-3-6-3-6 0M12 7c2-3 6-3 6 0" />
       </svg>
+      {/* 手機頁首放不下文字：只有禮物圖示 + 金色小點（說明在 aria-label） */}
       <span className="hidden sm:inline">{t("dailyClaim", { points })}</span>
-      <span className="sm:hidden">+{points}</span>
+      <span aria-hidden="true" className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full border-2 border-stage bg-gold sm:hidden" />
     </button>
   );
 }
