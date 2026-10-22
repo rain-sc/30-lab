@@ -1,7 +1,7 @@
 import { ballColor } from "@/lib/ball";
 import { cn } from "@/lib/utils";
 
-// 開獎舞台的靜態示意：玻璃球裡堆著 49 顆號碼球（純 CSS，不跑 WebGL）
+// 開獎舞台的靜態示意：金色光邊的水晶球裡堆著 49 顆號碼球，外圈 49 格刻度（純 CSS，不跑 WebGL；外觀對應 stage/crystal.ts）
 // 用在：3D 舞台載入完成前的佔位圖、手機版卡片上的縮圖、不支援 WebGL 時的替代畫面
 
 const BG: Record<ReturnType<typeof ballColor>, string> = {
@@ -32,28 +32,30 @@ const PILE = (() => {
 /** numbers：小尺寸（手機縮圖）時不顯示號碼 */
 export function StagePreview({ className, numbers = true }: { className?: string; numbers?: boolean }) {
   return (
-    <div
-      aria-hidden="true"
-      className={cn(
-        "@container relative aspect-square overflow-hidden rounded-full border border-white/15",
-        "bg-[radial-gradient(circle_at_34%_24%,rgba(255,255,255,0.14)_0,rgba(255,255,255,0.03)_32%,rgba(11,16,32,0.25)_70%)]",
-        "shadow-[inset_0_0_50px_rgba(140,165,255,0.10),0_24px_50px_rgba(0,0,0,0.35)]",
-        className,
-      )}
-    >
-      {PILE.map(({ n, x, y }) => (
-        <span
-          key={n}
-          className={cn(
-            "absolute grid place-items-center rounded-full font-num text-[3.6cqw] font-bold text-white",
-            "shadow-[inset_-2px_-3px_4px_rgba(0,0,0,0.35),inset_1px_2px_3px_rgba(255,255,255,0.28)]",
-            BG[ballColor(n)],
-          )}
-          style={{ left: `${x}%`, top: `${y}%`, width: `${SIZE}%`, height: `${SIZE}%` }}
-        >
-          {numbers ? n : null}
-        </span>
-      ))}
+    <div aria-hidden="true" className={cn("relative aspect-square", className)}>
+      {/* 49 格刻度：圓錐漸層畫出放射線，再用圓形遮罩只留外圈 */}
+      <div className="absolute inset-0 rounded-full bg-[repeating-conic-gradient(from_-0.6deg,var(--color-line-strong)_0_1.2deg,transparent_1.2deg_7.3469deg)] mask-[radial-gradient(closest-side,transparent_95%,#000_95.5%)]" />
+      <div
+        className={cn(
+          "@container absolute inset-[6.75%] overflow-hidden rounded-full border border-gold/70",
+          "bg-[radial-gradient(circle_at_50%_50%,#1d2848_0,var(--color-sunken)_65%,#070a15_100%)]",
+          "shadow-[0_0_18px_rgba(244,182,63,0.45),inset_0_0_24px_rgba(244,182,63,0.22)]",
+        )}
+      >
+        {PILE.map(({ n, x, y }) => (
+          <span
+            key={n}
+            className={cn(
+              "absolute grid place-items-center rounded-full font-num text-[3.6cqw] font-bold text-white",
+              "shadow-[inset_-2px_-3px_4px_rgba(0,0,0,0.35),inset_1px_2px_3px_rgba(255,255,255,0.28)]",
+              BG[ballColor(n)],
+            )}
+            style={{ left: `${x}%`, top: `${y}%`, width: `${SIZE}%`, height: `${SIZE}%` }}
+          >
+            {numbers ? n : null}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

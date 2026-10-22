@@ -13,8 +13,11 @@ export const REVEAL_MS = 6 * T.interval + BALL_ANIM_MS;
 const WAIT_RESULT_MS = 60_000;
 
 export type StagePhase =
-  /** 可下注：球堆可以互動；結果列擺著上一期的 7 顆球（numbers 是 null：還沒開過獎，結果列空著） */
-  | { kind: "idle"; drawAt: number; numbers: number[] | null }
+  /**
+   * 可下注：球堆可以互動；結果列擺著上一期的 7 顆球（numbers 是 null：還沒開過獎，結果列空著）。
+   * cutoff：目前這期從開放到截止下注的進度 0–1（刻度環亮起的長度）
+   */
+  | { kind: "idle"; drawAt: number; numbers: number[] | null; cutoff: number }
   /** 已截止、或開獎了但號碼還沒收到：吹氣攪珠，結果列清空 */
   | { kind: "mixing"; drawAt: number; remainMs: number }
   /** 開獎中：第 active 顆正在飛（t = 這顆已經播了幾毫秒），前 revealed 顆已經擺好 */
@@ -36,12 +39,14 @@ const sevenOf = (d: Draw & { numbers: number[]; specialNumber: number }) => [...
  * reduced：使用者關閉動畫時，開獎一到直接全部擺好。
  */
 export function stagePhaseAt(now: number, { current, previous }: StageInput, reduced = false): StagePhase {
-  if (!current) return { kind: "idle", drawAt: 0, numbers: null };
+  if (!current) return { kind: "idle", drawAt: 0, numbers: null, cutoff: 0 };
   const openAt = Date.parse(current.openAt);
+  const closeAt = Date.parse(current.closeAt);
   const drawAt = Date.parse(current.drawAt);
+  const cutoff = Math.min(1, Math.max(0, (now - openAt) / Math.max(1, closeAt - openAt)));
 
   // 目前這期已截止（或過了開獎時間還沒收到號碼）→ 攪珠等開獎
-  if (!hasResult(current) && now >= Date.parse(current.closeAt)) {
+  if (!hasResult(current) && now >= closeAt) {
     return { kind: "mixing", drawAt, remainMs: Math.max(0, drawAt - now) };
   }
 
@@ -50,12 +55,12 @@ export function stagePhaseAt(now: number, { current, previous }: StageInput, red
   // 新的一期開始了，但上一期的號碼還沒收到（推播晚到）→ 繼續攪珠等
   const waiting = !hasResult(current) && (!shown || Date.parse(shown.drawAt) < openAt) && now < openAt + WAIT_RESULT_MS;
   if (waiting) return { kind: "mixing", drawAt: openAt, remainMs: 0 };
-  if (!shown || !hasResult(shown)) return { kind: "idle", drawAt: 0, numbers: null };
+  if (!shown || !hasResult(shown)) return { kind: "idle", drawAt: 0, numbers: null, cutoff };
 
   const shownAt = Date.parse(shown.drawAt);
   const numbers = sevenOf(shown);
   const elapsed = reduced ? Infinity : now - shownAt;
-  if (elapsed >= REVEAL_MS) return { kind: "idle", drawAt: shownAt, numbers };
+  if (elapsed >= REVEAL_MS) return { kind: "idle", drawAt: shownAt, numbers, cutoff };
 
   let revealed = 0;
   let active: { index: number; t: number } | null = null;

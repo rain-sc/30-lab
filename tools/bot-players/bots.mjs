@@ -10,6 +10,8 @@ const PASSWORD = process.env.BOT_PASSWORD ?? 'bot-password-2026';
 const PREFIX = 'bot_';
 const COOKIE_NAME = 'msl_token';
 const POLL_MS = 2_000;
+// QUIET=1：只顯示每期的開始和總結，不顯示每一筆下注
+const QUIET = process.env.QUIET === '1';
 
 // 暱稱：依編號固定分配，重新啟動腳本時同一個機器人還是同一個名字
 const NICKNAMES = [
@@ -27,10 +29,12 @@ const NICKNAMES = [
 
 // 玩家類型：比例、每期下注機率、每次注數範圍
 const PERSONAS = [
-  { name: 'casual', share: 0.5, playChance: 0.35, lines: [1, 3] },
-  { name: 'regular', share: 0.35, playChance: 0.6, lines: [2, 8] },
-  { name: 'whale', share: 0.15, playChance: 0.8, lines: [8, 20] },
+  { name: 'casual', share: 0.15, playChance: 0.65, lines: [5, 10] },
+  { name: 'regular', share: 0.35, playChance: 0.6, lines: [10, 20] },
+  { name: 'whale', share: 0.5, playChance: 0.8, lines: [20, 30] },
 ];
+const PERSONA_LABELS = { casual: '休閒', regular: '常客', whale: '大戶' };
+const STYLE_LABELS = { random: '隨機選號', lucky: '幸運號碼', birthday: '生日號碼' };
 
 const bots = [];
 let rules = { pointsPerBet: 10, maxLinesPerTicket: 50 };
@@ -117,6 +121,7 @@ async function placeBet(bot, drawNo, summary) {
   const count = Math.min(wanted, affordable, rules.maxLinesPerTicket);
   if (count < 1) {
     summary.skipped++;
+    logBet(bot, `積分不足（剩 ${bot.balance.toLocaleString()}），這期不下注`);
     return;
   }
 
@@ -131,10 +136,13 @@ async function placeBet(bot, drawNo, summary) {
     summary.tickets++;
     summary.lines += count;
     summary.points += res.data.ticket.cost;
+    const trimmed = count < wanted ? `（想下 ${wanted} 注，積分只夠 ${count} 注）` : '';
+    logBet(bot, `下注 ${count} 注 −${res.data.ticket.cost.toLocaleString()} → 餘額 ${bot.balance.toLocaleString()}${trimmed}`);
     return;
   }
   if (res.code === 40902 || res.code === 40903) {
     summary.skipped++; // 積分不足、已截止：真人也會遇到，略過就好
+    logBet(bot, res.code === 40902 ? '積分不足，略過' : '已截止，略過');
     if (res.code === 40902) {
       await refreshBalance(bot);
     }
@@ -302,6 +310,13 @@ function mulberry32(seed) {
 
 function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+// 例：11:26:03   阿明（bot_001・大戶・生日號碼）下注 23 注 −230 → 餘額 9,770
+function logBet(bot, msg) {
+  if (!QUIET) {
+    log(`  ${bot.nickname}（${bot.username}・${PERSONA_LABELS[bot.persona.name]}・${STYLE_LABELS[bot.style]}）${msg}`);
+  }
 }
 
 function log(msg) {

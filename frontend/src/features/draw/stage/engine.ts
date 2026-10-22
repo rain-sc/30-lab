@@ -1,4 +1,5 @@
 // 開獎舞台：three.js 渲染 + matter.js 2D 物理（從 docs/prototypes/draw-stage.html 搬過來）
+// - 容器（水晶球 + 號碼刻度環）在 crystal.ts
 // - 49 顆號碼球堆在玻璃球底部；可下注時可以點（彈跳）、按住（放大看號碼）、拖動甩球
 // - 截止後吹氣攪珠；開獎時開出的那顆球從球堆彈出、飛到上方結果列、沿軌道滾到位置
 // - 階段（含開獎號碼）每一幀向外部要（getPhase，見 timeline.ts 的 stagePhaseAt），重新整理、切回分頁都會接著播
@@ -13,6 +14,7 @@
 import Matter from "matter-js";
 import * as THREE from "three";
 import { ballColor, type BallColor } from "@/lib/ball";
+import { createCrystal, type CrystalState } from "./crystal";
 import { BALL_ANIM_MS, T, type StagePhase } from "./timeline";
 
 const { Engine, Bodies, Body, Composite, Constraint } = Matter;
@@ -28,7 +30,7 @@ const HEX: Record<BallColor, [body: string, ink: string]> = {
   green: ["#1f9d57", "#0a4d29"],
 };
 
-// 玻璃球（扭蛋機造型）
+// 玻璃球（物理邊界：球撞的圓）
 const GLOBE = { cy: -1.2, r: 9.4, seg: 48 };
 const halfWidthAt = (y: number) => Math.sqrt(Math.max(0, GLOBE.r * GLOBE.r - (y - GLOBE.cy) ** 2));
 const OUTLINE: [number, number][] = Array.from({ length: GLOBE.seg }, (_, k) => {
@@ -41,8 +43,8 @@ const ROW_Y = 11.6;
 const SLOT_X = [-8.1, -5.85, -3.6, -1.35, 0.9, 3.15, 6.9];
 const ENTRY_X = 8.9;
 
-// 相機要框住的範圍
-const VIEW = { xMin: -10.2, xMax: 10.2, yMin: -13, yMax: 13.2 };
+// 相機要框住的範圍（含外圈的號碼刻度環）
+const VIEW = { xMin: -11.1, xMax: 11.1, yMin: -12.4, yMax: 13 };
 
 type Mode = "physics" | "draw" | "slot";
 type Pose = { x: number; y: number; q: THREE.Quaternion };
@@ -95,7 +97,10 @@ export function createStage({ canvas, container, getPhase, reducedMotion, onRead
     camera.position.set(0, cy + 2, d);
     camera.lookAt(0, cy, 0);
     camera.updateProjectionMatrix();
+    // 電光的線寬、微塵大小用像素算：每個場景單位（z ≈ 0）在畫面上幾個 CSS 像素
+    crystal?.setPixelScale(h / (2 * d * half), renderer.getPixelRatio());
   };
+  let crystal: ReturnType<typeof createCrystal> | null = null;
   const resizeObserver = new ResizeObserver(fitCamera);
   resizeObserver.observe(container);
 
@@ -113,85 +118,55 @@ export function createStage({ canvas, container, getPhase, reducedMotion, onRead
   warm.position.set(9, 4, 12);
   scene.add(warm);
 
-  // 玻璃球：背板、前面的反光、弧形高光、上下兩圈邊框
-  const back = new THREE.Mesh(
-    new THREE.CircleGeometry(GLOBE.r, 64),
-    new THREE.MeshPhongMaterial({ color: 0x24365f, transparent: true, opacity: 0.6 }),
-  );
-  back.position.set(0, GLOBE.cy, -1.04);
-  back.receiveShadow = true;
-  scene.add(back);
+  // 容器：金色電光的水晶球 + 號碼刻度環（crystal.ts）
+  crystal = createCrystal(scene, { cy: GLOBE.cy, r: GLOBE.r, reducedMotion });
 
-  const front = new THREE.Mesh(
-    new THREE.CircleGeometry(GLOBE.r, 64),
-    new THREE.MeshPhongMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.05,
-      shininess: 150,
-      specular: 0xffffff,
-      depthWrite: false,
-    }),
+  // 結果列：sunken 色的膠囊凹槽、7 個球座（特別號碼的是金色）、特別號碼前面的「+」
+  const trayShape = (() => {
+    const w = 20.2;
+    const h = 2.3;
+    const r = h / 2;
+    const s = new THREE.Shape();
+    s.moveTo(-w / 2 + r, -r);
+    s.lineTo(w / 2 - r, -r);
+    s.absarc(w / 2 - r, 0, r, -Math.PI / 2, Math.PI / 2, false);
+    s.lineTo(-w / 2 + r, r);
+    s.absarc(-w / 2 + r, 0, r, Math.PI / 2, Math.PI * 1.5, false);
+    return s;
+  })();
+  const tray = new THREE.Mesh(new THREE.ShapeGeometry(trayShape, 24), new THREE.MeshStandardMaterial({ color: 0x0e1428, roughness: 1 }));
+  tray.position.set(0, ROW_Y, -1.2);
+  tray.receiveShadow = true;
+  scene.add(tray);
+  const trayEdge = new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(trayShape.getPoints(48).map((p) => new THREE.Vector3(p.x, p.y, 0))),
+    new THREE.LineBasicMaterial({ color: 0x26304d }),
   );
-  front.position.set(0, GLOBE.cy, 1.06);
-  scene.add(front);
-
-  const arc = (r: number, a0: number, a1: number, z: number) =>
-    new THREE.CatmullRomCurve3(
-      Array.from({ length: 24 }, (_, i) => {
-        const a = a0 + ((a1 - a0) * i) / 23;
-        return new THREE.Vector3(r * Math.cos(a), GLOBE.cy + r * Math.sin(a), z);
-      }),
+  trayEdge.position.set(0, ROW_Y, -1.15);
+  scene.add(trayEdge);
+  SLOT_X.forEach((x, i) => {
+    const special = i === 6;
+    const socket = new THREE.Mesh(
+      new THREE.RingGeometry(R + 0.06, R + 0.13, 64),
+      new THREE.MeshBasicMaterial({ color: special ? 0xf4b63f : 0x2f3a5c, transparent: special, opacity: special ? 0.6 : 1 }),
     );
-  const glint = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.22, depthWrite: false });
-  scene.add(new THREE.Mesh(new THREE.TubeGeometry(arc(GLOBE.r - 0.9, 1.95, 2.75, 1.1), 48, 0.16, 8, false), glint));
-  scene.add(new THREE.Mesh(new THREE.TubeGeometry(arc(GLOBE.r - 0.9, 2.9, 3.05, 1.1), 12, 0.16, 8, false), glint));
-
-  const rimMat = new THREE.MeshPhongMaterial({ color: 0xcfe0ff, transparent: true, opacity: 0.6, shininess: 120 });
-  for (const z of [-1.05, 1.05]) {
-    const curve = new THREE.CatmullRomCurve3(
-      OUTLINE.map(([x, y]) => new THREE.Vector3(x, y, z)),
-      true,
-    );
-    scene.add(new THREE.Mesh(new THREE.TubeGeometry(curve, 240, 0.08, 8, true), rimMat));
-  }
-
-  // 上方的金屬蓋、下方的底座
-  const metal = new THREE.MeshPhongMaterial({ color: 0xc9962f, shininess: 70, specular: 0x6a5530 });
-  const cap = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 2.2, 0.9, 40), metal);
-  cap.position.set(0, GLOBE.cy + GLOBE.r + 0.25, 0);
-  cap.castShadow = true;
-  scene.add(cap);
-  const collar = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 3.0, 0.7, 48), metal);
-  collar.position.set(0, GLOBE.cy - GLOBE.r - 0.1, 0);
-  scene.add(collar);
-  const stand = new THREE.Mesh(new THREE.CylinderGeometry(3.6, 5.6, 1.6, 48), metal);
-  stand.position.set(0, GLOBE.cy - GLOBE.r - 1.2, 0);
-  stand.receiveShadow = true;
-  scene.add(stand);
-
-  // 結果列的軌道 + 特別號碼前面的「+」
-  const rail = new THREE.Mesh(
-    new THREE.BoxGeometry(19.8, 0.26, 2.4),
-    new THREE.MeshPhongMaterial({ color: 0x2b3c66, shininess: 40 }),
-  );
-  rail.position.set(0, ROW_Y - R - 0.13, 0);
-  rail.receiveShadow = true;
-  scene.add(rail);
+    socket.position.set(x, ROW_Y, -1.1);
+    scene.add(socket);
+  });
 
   const plusTex = (() => {
     const c = document.createElement("canvas");
     c.width = c.height = 64;
     const g = c.getContext("2d")!;
-    g.fillStyle = "#9ba7c4";
-    g.fillRect(28, 12, 8, 40);
-    g.fillRect(12, 28, 40, 8);
+    g.fillStyle = "#a3adc6";
+    g.fillRect(29, 14, 6, 36);
+    g.fillRect(14, 29, 36, 6);
     const t = new THREE.CanvasTexture(c);
     t.colorSpace = THREE.SRGBColorSpace;
     return t;
   })();
   const plus = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.9, 0.9),
+    new THREE.PlaneGeometry(0.8, 0.8),
     new THREE.MeshBasicMaterial({ map: plusTex, transparent: true }),
   );
   plus.position.set((SLOT_X[5] + SLOT_X[6]) / 2, ROW_Y, 0);
@@ -518,6 +493,16 @@ export function createStage({ canvas, container, getPhase, reducedMotion, onRead
     }
   };
 
+  // 容器的狀態：刻度環亮起的號碼 = 結果列上已經擺好（或正在飛）的球
+  const crystalState = (): CrystalState => {
+    if (phase.kind === "mixing") return { kind: "mixing" };
+    if (phase.kind === "idle") return { kind: "idle", cutoff: phase.cutoff, lit: phase.numbers ?? [] };
+    const { numbers, revealed, active } = phase;
+    const lit = numbers.slice(0, revealed);
+    if (active) lit.push(numbers[active.index]);
+    return { kind: "drawing", current: active ? numbers[active.index] : null, lit };
+  };
+
   // ---------- 主迴圈 ----------
   let raf = 0;
   let last = performance.now();
@@ -579,6 +564,7 @@ export function createStage({ canvas, container, getPhase, reducedMotion, onRead
       }
     }
 
+    crystal?.update(dt / 1000, crystalState());
     renderer.render(scene, camera);
     if (!ready) {
       ready = true;
@@ -623,10 +609,11 @@ export function createStage({ canvas, container, getPhase, reducedMotion, onRead
       canvas.removeEventListener("pointercancel", onPointerUp);
       Composite.clear(world, false);
       Engine.clear(engine);
+      crystal?.dispose();
       scene.traverse((obj) => {
-        if (!(obj instanceof THREE.Mesh)) return;
+        if (!(obj instanceof THREE.Mesh || obj instanceof THREE.Line)) return;
         obj.geometry.dispose();
-        const material = obj.material as THREE.MeshPhongMaterial | THREE.MeshBasicMaterial;
+        const material = obj.material as THREE.MeshBasicMaterial;
         material.map?.dispose();
         material.dispose();
       });

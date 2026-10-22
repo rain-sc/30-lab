@@ -3,6 +3,8 @@
 // 期數資料（後端）：GET /api/draws/current + WebSocket /topic/draws
 // - 全站一份（[locale]/layout 的 DrawFeed 啟動），大廳、舞台、登入頁的直播面板都從這裡讀
 // - 時鐘：用回應的 serverTime 算出和本機的差距，倒數和開獎動畫都用校正後的時間（feedNow）
+//   每個樣本都因為網路延遲偏小（SETTLED 的 serverTime 是結算開始時，實測晚到 0.5 秒以上），
+//   所以只採用比較大的樣本，時間不會倒退（倒退的話開獎動畫會跳回去重播）；差超過 CLOCK_RESET_MS 才當成本機時鐘被調過
 // - 推播可能晚到、可能補送過期的事件（後端重啟），所以不假設「收到的就是目前這期」：
 //   所有收到的期數依 drawNo 存起來，「目前這期」= 開獎時間最晚的那期，「上一期」= 有號碼的期數裡最晚的那期
 // - 收到的開獎號碼存在 localStorage：我的注單、開獎通知標出中了哪幾個（結算模組完成前由前端對）
@@ -22,6 +24,8 @@ export type DrawResult = { numbers: number[]; special: number; drawAt: number };
 const MAX_RESULTS = 300;
 /** 最多保留幾期的期數資料（只用來找目前 / 上一期） */
 const MAX_DRAWS = 12;
+/** 時差的新樣本比目前小這麼多，才當成本機時鐘被調過、重新校正（毫秒） */
+const CLOCK_RESET_MS = 5000;
 
 type FeedState = {
   status: "loading" | "ready" | "error";
@@ -29,8 +33,8 @@ type FeedState = {
   draws: Record<string, Draw>;
   current: Draw | null;
   previous: Draw | null;
-  /** 伺服器時間 − 本機時間（毫秒） */
-  offset: number;
+  /** 伺服器時間 − 本機時間（毫秒）；還沒收到任何回應是 null */
+  offset: number | null;
   results: Record<string, DrawResult>;
   setError: () => void;
   applyCurrent: (res: CurrentDrawResponse) => void;
@@ -45,6 +49,12 @@ type FeedState = {
 const at = (iso: string) => Date.parse(iso);
 export const hasResult = (d: Draw | null | undefined): d is Draw & { numbers: number[]; specialNumber: number } =>
   !!d?.numbers && d.specialNumber !== undefined;
+
+/** 新的時差樣本：比較大才採用（延遲比較小），除非差太多（本機時鐘被調過） */
+function nextOffset(prev: number | null, serverTime: string) {
+  const sample = at(serverTime) - Date.now();
+  return prev === null || sample > prev || sample < prev - CLOCK_RESET_MS ? sample : prev;
+}
 
 /** 加入期數，重新算出目前 / 上一期；同時記下開獎號碼 */
 function merge(state: FeedState, incoming: Draw[], serverTime: string): Partial<FeedState> {
@@ -68,7 +78,7 @@ function merge(state: FeedState, incoming: Draw[], serverTime: string): Partial<
     draws: kept,
     current: sorted[0] ?? null,
     previous: sorted.find(hasResult) ?? null,
-    offset: at(serverTime) - Date.now(),
+    offset: nextOffset(state.offset, serverTime),
     results: keptResults,
   };
 }
@@ -80,7 +90,7 @@ export const useDrawFeed = create<FeedState>()(
       draws: {},
       current: null,
       previous: null,
-      offset: 0,
+      offset: null,
       results: {},
       setError: () => set((s) => (s.current ? {} : { status: "error" })),
       applyCurrent: (res) =>
@@ -109,7 +119,7 @@ export const useDrawFeed = create<FeedState>()(
 );
 
 /** 校正過的現在時間（毫秒） */
-export const feedNow = () => Date.now() + useDrawFeed.getState().offset;
+export const feedNow = () => Date.now() + (useDrawFeed.getState().offset ?? 0);
 
 /** 某一期的開獎結果；前端沒收到（開獎時不在線上）是 undefined */
 export const useDrawResult = (drawNo: string | null | undefined) =>

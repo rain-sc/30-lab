@@ -92,6 +92,7 @@ src/
 | `LivePanel` 的 `AnimatePresence` | — | 開獎球依序掉落、換期時滾走換新 |
 | `animate-fade-up` + `animation-delay` | React Bits Animated Content | 頁面區塊依序進場（純 CSS） |
 | `fx/BokehBalls` | React Bits Particles（圓點換成號碼球、CSS blur 做景深） | 登入頁背景：模糊漂浮的號碼球 + 滑鼠視差（**這頁唯一的背景氛圍效果**） |
+| `draw/stage/crystal.ts` | React Bits Crystalized Ball（ogl shader 搬進舞台的 three.js 場景）+ Comet Dial（SVG 改成 shader） | 攪珠台的容器：金色電光的水晶球、49 格號碼刻度環上的彗星（大廳唯一的氛圍效果） |
 
 - 能用 CSS 的用 CSS（進場、光澤、火花、脈動）；需要狀態、彈簧、進出場的用 Motion。
 - **伺服器渲染的內容不要用 JS 動畫從透明開始**（JS 慢的話畫面會空白），進場用 CSS 動畫。
@@ -177,6 +178,7 @@ src/
 - **期數資料**（`features/draw/feed.ts`，[locale]/layout 的 `DrawFeed` 啟動，登入頁也用）：`GET /api/draws/current` + `/topic/draws` 推播
   - 推播 `OPENED` / `CLOSED` / `DRAWN` / `SETTLED`；**收到 `SETTLED`（派彩已完成）→ invalidate 注單、錢包、積分紀錄、彩池、開獎紀錄**（`DrawFeed`）
   - 時鐘用 `serverTime` 校正：時間一律用 `feedNow()` / `useNow()`，不要直接 `Date.now()`
+    - 時差只採用比較大的樣本（網路延遲只會讓樣本偏小；`SETTLED` 實測晚到 0.5 秒以上）：時間倒退的話，開獎動畫會跳回去重播第一顆球
   - 期數依 `drawNo` 存：「目前這期」= 開獎時間最晚的、「上一期」= 有號碼的期數裡最晚的（後端重啟會補送過期事件，不能假設收到的就是目前這期）
   - 號碼開獎前**欄位不存在**（不是 null），用 `hasResult()` 判斷；`numbers` 是開出順序，顯示時自己排序
   - 收到的開獎號碼存在 localStorage（`useDrawFeed` 的 `results`），對獎、開獎紀錄用
@@ -196,6 +198,10 @@ src/
   - `timeline.ts`：純函數 `stagePhaseAt(現在時間, { current, previous })` → 可下注 / 攪珠（截止後，或推播晚到還沒收到號碼）/ 開獎中（第幾顆、播了多久），號碼帶在階段資料裡。動畫進度完全由時間算出，重新整理、切回分頁都接著播；引擎每一幀呼叫 `getPhase()`
   - `engine.ts`：three.js + matter.js（原型 `docs/prototypes/draw-stage.html` 改寫成 TS），**用純 three.js，不用 React Three Fiber**（原型的邏輯幾乎原封不動）。
     three r186 的差異：光照強度乘 π、`SRGBColorSpace`、`PCFSoftShadowMap` 已移除
+  - `crystal.ts`：容器的外觀（設計稿 https://claude.ai/artifact/SmoCs9XGLjyjWFY3UC5Q3p ），物理邊界還是 `engine.ts` 的圓。
+    可下注：電光安靜、刻度環從正上方順時針亮起（`idle.cutoff` = 離截止的進度）、上一期號碼的刻度金色；
+    攪珠：彗星繞圈、電光跟著變亮；開獎：彗星甩到開出號碼的刻度、那裡閃電弧。刻度從正上方順時針 1 → 49。
+    其他 React Bits 的 WebGL 元件不能直接放進頁面（會多一個 WebGL），要像這樣把 shader 搬進同一個場景
   - `DrawStage.tsx`：動態 `import("./engine")`（three + matter 不進初始 JS），載入前顯示 `StagePreview`；effect 清除時 `dispose()` 釋放 WebGL（Activity 隱藏頁面也會執行），**每次重建都用新的 canvas**（`forceContextLoss` 後同一個 canvas 不能再用）
   - 捲出畫面、切到別的分頁時暫停渲染和物理
   - **一頁只掛一個 WebGL**：桌面掛在大廳的舞台卡片；手機平常是靜態縮圖，點一下或截止到開完獎時自動放大成全畫面才掛（`MobileStage`，用 portal 放到 body，外層有 transform 時 fixed 會失效）。用 `useIsDesktop()` 決定掛哪一個，CSS 的 `hidden` 只是藏起來、元件還在
