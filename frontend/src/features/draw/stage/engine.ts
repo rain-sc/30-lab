@@ -293,7 +293,7 @@ export function createStage({ canvas, container, getPhase, reducedMotion, maxNum
 
   // 攪珠：滾筒 + 擋板（攪珠物理比較頁選的 B：https://claude.ai/artifact/PGhFzKqvsCYbJvZjCaP6Th）
   // - 截止後整個玻璃球（牆）繞球心慢慢轉，4 片透明擋板從玻璃外面伸進來，把球帶上去、到高處掉下來；球的動作全部來自碰撞
-  // - 擋板只在攪珠、開獎時出現：可下注時沒有擋板、滾筒不轉，點球、甩球不受影響
+  // - 擋板只在攪珠、開獎時存在，而且**畫面上不顯示**（只有物理）：看起來像球自己在滾筒裡翻滾；可下注時沒有擋板、滾筒不轉，點球、甩球不受影響
   //   擋板不能直接出現（會和球堆重疊、把球炸開），而是從玻璃外面慢慢伸進來（extendMs），球被自然地推開；開完獎縮回去再移除
   // - 牆的摩擦力只在轉動時調高（帶得動球），可下注時維持原本的滑度
   // - 牆和擋板每一步用 setPosition / setAngle（updateVelocity）移動，碰撞時才有正確的速度
@@ -342,29 +342,6 @@ export function createStage({ canvas, container, getPhase, reducedMotion, maxNum
     }
     placeFins();
   };
-  // 擋板的畫面：很淡的玻璃片 + 淡色邊框，透明度跟著伸出的程度（extend）變化
-  const finGeo = new THREE.BoxGeometry(DRUM.fin, DRUM.finThick, 1.8);
-  const finEdgeGeo = new THREE.EdgesGeometry(finGeo);
-  const finViews = fins.map(() => {
-    const glass = new THREE.Mesh(finGeo, new THREE.MeshBasicMaterial({ color: 0xcfe0ff, transparent: true, opacity: 0, depthWrite: false }));
-    const edge = new THREE.LineSegments(finEdgeGeo, new THREE.LineBasicMaterial({ color: 0xdfe8ff, transparent: true, opacity: 0 }));
-    glass.add(edge);
-    glass.visible = false;
-    scene.add(glass);
-    return { glass, edge };
-  });
-  const drawFins = () => {
-    fins.forEach((fin, i) => {
-      const { glass, edge } = finViews[i];
-      glass.visible = finsInWorld;
-      if (!finsInWorld) return;
-      glass.position.set(fin.body.position.x / S, -fin.body.position.y / S, 0);
-      glass.rotation.z = -fin.body.angle;
-      (glass.material as THREE.MeshBasicMaterial).opacity = 0.1 * extend;
-      (edge.material as THREE.LineBasicMaterial).opacity = 0.45 * extend;
-    });
-  };
-
   /** 保險：被擠出玻璃（滾筒、擋板夾到）的球放回裡面 */
   const containBalls = () => {
     const max = (GLOBE.r - R - 0.1) * S;
@@ -604,7 +581,6 @@ export function createStage({ canvas, container, getPhase, reducedMotion, maxNum
       steps++;
     }
     if (steps === 4) acc = 0;
-    drawFins();
 
     for (const ball of balls) {
       const m = ball.mesh;
