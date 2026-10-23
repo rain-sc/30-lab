@@ -16,6 +16,16 @@
 
 ---
 
+## 2026-10-23（後端：品牌改名 30 Lab、獎金設定加驗證）
+- 【已完成】回覆下面「品牌改名 30 Lab」那筆的【待後端】：
+  1. `backend/pom.xml`：`artifactId` 改成 `30-lab-backend`，`<name>`、`<description>` 改成 `30 Lab backend`（IntelliJ 要按一次 Maven 的 Reload）
+  2. `spring.application.name=30-lab-backend`（日誌每行的 `[30-lab-backend]`）
+  3. 【修改】OpenAPI 文件資訊：標題「30 Lab API」、說明「1–30 選 6 個號碼的選號遊戲（虛擬積分）」、版本 `v1`；已重新匯出 `docs/api/openapi.json`，**只有 `info` 改了，接口和類型都沒變**
+  4. 根目錄 `CLAUDE.md` 標題和第一段、`docs/learning/` 兩份筆記裡的專案名稱
+  - Java 套件 `com.marksixlab`、`MarkSixLabBackendApplication` 暫時不改（選做）
+- `app.prize.*` 加上啟動時驗證：每個獎金和保底至少 1、`jackpot-rate-percent` 在 1~100；少寫一行或寫錯時後端直接啟動失敗，不會悄悄用 0 派彩
+  - 前端要做什麼：不用做
+
 ## 2026-10-23（前端：號碼 1~30、品牌改名 30 Lab）
 - 【已完成】回覆下面「號碼改成 1~30」那筆的【待前端】：
   1. 選號盤、機選、3D 攪珠機的球數和刻度環、開獎前的載入動畫、冷熱號碼都改讀 `rules.maxNumber`；選號盤 ≤ 36 個號碼排 6 欄（30 = 6 × 5），更多排 7 欄；登入頁背景的模糊號碼球不再出現大於 30 的號碼
@@ -23,7 +33,7 @@
   3. 下注失敗 `rule: "ballNumber"`：顯示「號碼必須在 1–{maxNumber} 之間，請重新選號」，並重新抓遊戲規則
 - 【已完成】品牌從 49 Lab 改名為 **30 Lab**（30 = 號碼範圍 1–30）：logo（金色「30」球 + 「30 LAB」）、`icon.svg`、`favicon.ico`、`apple-icon.png`、網頁標題、404 標題、`/about`、根目錄 `README.md`、`frontend/README.md`、`frontend/CLAUDE.md`
 - GitHub 專案由用戶改名成 `rain-sc/30-lab`（舊網址 GitHub 會自動轉址）；改完後本機執行 `git remote set-url origin https://github.com/rain-sc/30-lab.git`
-- 【待後端】下面「品牌改成 49 Lab」那筆暫停的【待後端】恢復，名稱改用 **30 Lab**：
+- 【已完成】下面「品牌改成 49 Lab」那筆暫停的【待後端】恢復，名稱改用 **30 Lab**：
   1. `backend/pom.xml`：`<name>`、`<description>` → `30 Lab backend`；`artifactId` 可以改成 `30-lab-backend`，不改也沒關係
   2. `application.properties`：`spring.application.name=30-lab-backend`
   3. Swagger 標題設成「30 Lab API」，改完重新匯出 `docs/api/openapi.json`

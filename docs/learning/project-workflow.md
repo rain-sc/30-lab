@@ -1,6 +1,6 @@
 # 專案工作流程：架構、流程圖、總表
 
-Mark Six Lab 每一部分是怎麼運作的。圖用 Mermaid 畫，GitHub、VS Code（裝 Markdown Preview Mermaid Support）、IntelliJ 的 Markdown 預覽都看得到。
+30 Lab 每一部分是怎麼運作的。圖用 Mermaid 畫，GitHub、VS Code（裝 Markdown Preview Mermaid Support）、IntelliJ 的 Markdown 預覽都看得到。
 
 原理和語法說明見 [backend-study-notes.md](backend-study-notes.md)；欄位細節見 [../data-model.md](../data-model.md)；狀態機見 [../state-machines.md](../state-machines.md)。
 

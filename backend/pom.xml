@@ -9,10 +9,10 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.marksixlab</groupId>
-	<artifactId>mark-six-lab-backend</artifactId>
+	<artifactId>30-lab-backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>mark-six-lab-backend</name>
-	<description>Mark Six Lab backend</description>
+	<name>30 Lab backend</name>
+	<description>30 Lab backend</description>
 	<url/>
 	<licenses>
 		<license/>

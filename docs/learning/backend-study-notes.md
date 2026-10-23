@@ -1,6 +1,6 @@
 # 後端學習筆記：從 NestJS + PostgreSQL 到 Spring Boot + MongoDB
 
-寫給「熟悉前端、寫過 NestJS + PostgreSQL」的自己。每一節都用這個專案（Mark Six Lab）實際寫過的程式碼當例子，檔案路徑都是 `backend/src/main/java/com/marksixlab/` 底下。
+寫給「熟悉前端、寫過 NestJS + PostgreSQL」的自己。每一節都用這個專案（30 Lab）實際寫過的程式碼當例子，檔案路徑都是 `backend/src/main/java/com/marksixlab/` 底下。
 
 配合 [project-workflow.md](project-workflow.md)（架構圖、流程圖、API 總表）一起看。
 

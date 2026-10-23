@@ -1,6 +1,6 @@
-# Mark Six Lab
+# 30 Lab
 
-六合彩模擬遊戲：用**虛擬積分**遊玩的 6/49 選號網頁遊戲。個人學習與面試作品，不涉及真錢。
+用**虛擬積分**遊玩、1–30 選 6 個號碼的選號網頁遊戲（玩法參考香港六合彩）。個人學習與面試作品，不涉及真錢。
 前端 Next.js（`frontend/`）+ 後端 Java + Spring Boot（`backend/`），單一 Git 倉庫（monorepo）。
 
 > 這份文件是前端、後端兩個對話的**共同約定**。在 `backend/` 或 `frontend/` 啟動 Claude Code 時，會同時讀到這份和子目錄的 `CLAUDE.md`。
