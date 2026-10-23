@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
+import { LocalTime } from "@/components/LocalTime";
 import { Button } from "@/components/ui/Button";
 import { useSession } from "@/features/auth/session";
 import { useNextDraw, useNow } from "@/features/draw/useNextDraw";
@@ -243,7 +244,7 @@ function RecentWins({ wins }: { wins: RecentWin[] }) {
                 <span className="truncate text-xs text-muted">
                   <span className="font-num text-[13px]">#{w.drawNo}</span>
                   {" · "}
-                  {format.dateTime(new Date(w.settledAt), { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}
+                  <LocalTime value={w.settledAt} month="numeric" day="numeric" hour="2-digit" minute="2-digit" />
                 </span>
               </span>
               <span className="shrink-0 font-num text-lg font-bold text-gold tabular-nums">+{format.number(w.payout)}</span>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Ball } from "@/components/Ball";
+import { LocalTime } from "@/components/LocalTime";
 import { Button } from "@/components/ui/Button";
 import { useSession } from "@/features/auth/session";
 import { useDrawFeed } from "@/features/draw/feed";
@@ -156,7 +157,7 @@ function TicketCard({ ticket }: { ticket: Ticket }) {
         })}
       </ul>
       <div className="flex justify-between gap-3 text-xs text-muted">
-        <time dateTime={ticket.createdAt}>{format.dateTime(new Date(ticket.createdAt), { dateStyle: "short", timeStyle: "short" })}</time>
+        <LocalTime value={ticket.createdAt} dateStyle="short" timeStyle="short" />
         <span>{t("cost", { count: ticket.lines.length, points: format.number(ticket.cost) })}</span>
       </div>
     </li>

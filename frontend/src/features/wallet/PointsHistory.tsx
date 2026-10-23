@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
+import { LocalTime } from "@/components/LocalTime";
 import { Button } from "@/components/ui/Button";
 import { useSession } from "@/features/auth/session";
 import { useApiErrorText } from "@/lib/api/useApiErrorText";
@@ -45,9 +46,7 @@ export function PointsHistory() {
           >
             <div className="flex min-w-0 flex-col gap-0.5">
               <span className="font-medium">{t("type", { type: tx.type })}</span>
-              <time dateTime={tx.createdAt} className="text-xs text-muted">
-                {format.dateTime(new Date(tx.createdAt), { dateStyle: "short", timeStyle: "short" })}
-              </time>
+              <LocalTime value={tx.createdAt} className="text-xs text-muted" dateStyle="short" timeStyle="short" />
             </div>
             <div className="flex flex-col items-end gap-0.5">
               <span className={cn("font-num text-lg font-bold tabular-nums", tx.amount > 0 ? "text-gold" : "text-fg-soft")}>

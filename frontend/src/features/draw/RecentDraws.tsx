@@ -2,6 +2,7 @@
 
 import { useId, useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
+import { LocalTime } from "@/components/LocalTime";
 import { Button } from "@/components/ui/Button";
 import { useApiErrorText } from "@/lib/api/useApiErrorText";
 import { cn } from "@/lib/utils";
@@ -157,9 +158,7 @@ function DrawSummary({ draw: d }: { draw: Draw }) {
     <>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
         <span className="font-num text-[17px] tabular-nums">{d.drawNo}</span>
-        <time dateTime={d.drawAt} className="text-sm text-muted">
-          {format.dateTime(new Date(d.drawAt), { hour: "2-digit", minute: "2-digit" })}
-        </time>
+        <LocalTime value={d.drawAt} className="text-sm text-muted" hour="2-digit" minute="2-digit" />
         {/* 結算後才有：這期的頭獎彩池、中頭獎的注數（0 = 沒人中，滾到下一期）、中獎人數 */}
         {d.poolAmount !== undefined && (
           <span className={cn("text-xs", d.jackpotWinners ? "font-bold text-gold" : "text-muted")}>
