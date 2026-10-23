@@ -50,13 +50,13 @@ class LeaderboardServiceIntegrationTest {
     }
 
     @Test
-    void entriesIncludeTheLatestFiveWins() {
+    void entriesIncludeTheLatestTenWins() {
         user("u-alice", "Alice");
         user("u-bob", "Bob");
         payout("u-alice", 40, NOW);
         payout("u-bob", 40, NOW);
-        // Alice 中過 6 次，只回傳最新的 5 次；沒中獎和還沒派彩的注單不算
-        for (int i = 1; i <= 6; i++) {
+        // Alice 中過 12 次（0001~0011 各一次，0005 多一張四獎），只回傳最新的 10 次；沒中獎和還沒派彩的注單不算
+        for (int i = 1; i <= 11; i++) {
             ticket("u-alice", "20261021-%04d".formatted(i), TicketStatus.PAID, Instant.parse("2026-10-21T00:00:00Z").plusSeconds(300L * i),
                     new LineResult(3, false, PrizeTier.SEVENTH, 40));
         }
@@ -64,14 +64,16 @@ class LeaderboardServiceIntegrationTest {
                 new LineResult(4, true, PrizeTier.FOURTH, 9_600),
                 new LineResult(3, false, PrizeTier.SEVENTH, 40),
                 new LineResult(1, false, null, 0));
-        ticket("u-alice", "20261021-0007", TicketStatus.LOST, Instant.parse("2026-10-21T00:35:00Z"),
+        ticket("u-alice", "20261021-0012", TicketStatus.LOST, Instant.parse("2026-10-21T01:00:00Z"),
                 new LineResult(2, false, null, 0));
-        ticket("u-alice", "20261021-0008", TicketStatus.PENDING, null);
+        ticket("u-alice", "20261021-0013", TicketStatus.PENDING, null);
 
         LeaderboardEntry alice = leaderboardService.leaderboard(LeaderboardPeriod.DAY, "u-alice", NOW).mine();
 
-        assertThat(alice.recentWins()).extracting(RecentWin::drawNo)
-                .containsExactly("20261021-0006", "20261021-0005", "20261021-0005", "20261021-0004", "20261021-0003");
+        assertThat(alice.recentWins()).extracting(RecentWin::drawNo).containsExactly(
+                "20261021-0011", "20261021-0010", "20261021-0009", "20261021-0008", "20261021-0007",
+                "20261021-0006", "20261021-0005", "20261021-0005", "20261021-0004", "20261021-0003");
+
         assertThat(alice.recentWins()).contains(new RecentWin("20261021-0005", Instant.parse("2026-10-21T00:25:00Z"), 9_640, PrizeTier.FOURTH, 2));
         assertThat(leaderboardService.leaderboard(LeaderboardPeriod.DAY, null, NOW).entries())
                 .filteredOn(entry -> entry.nickname().equals("Bob"))

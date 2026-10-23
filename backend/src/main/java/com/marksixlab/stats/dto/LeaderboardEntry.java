@@ -20,7 +20,7 @@ public record LeaderboardEntry(
         @Schema(description = "是不是目前登入的自己", requiredMode = REQUIRED)
         boolean me,
 
-        @Schema(description = "最近 5 次中獎（已派彩的注單），由新到舊；不分排行榜的期間，沒中過獎是空陣列", requiredMode = REQUIRED)
+        @Schema(description = "最近 10 次中獎（已派彩的注單），由新到舊；不分排行榜的期間，沒中過獎是空陣列", requiredMode = REQUIRED)
         List<RecentWin> recentWins
 ) {
 

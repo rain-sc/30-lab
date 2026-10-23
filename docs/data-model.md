@@ -41,7 +41,7 @@ MongoDB，資料庫名 `marksixlab`。**草稿**：階段 0 逐個集合討論�
 - **定時任務**：每秒「對帳」一次，補做該做的事（建立目前這期、過了截止時間就 `CLOSED`、過了開獎時間就開獎），狀態變更一律用條件更新，重複執行安全。
 
 - **頭獎彩池**（規則見 [game-rules.md](game-rules.md)）：結算時記在 `draws`
-  - `poolAmount`：本期彩池 = max(1,000,000, 上期 `jackpotRollover` + 本期投注額 × 20%)
+  - `poolAmount`：本期彩池 = max(保底 `app.prize.jackpot-floor`（目前 200,000）, 上期 `jackpotRollover` + 本期投注額 × 20%)
   - `jackpotWinners`：中頭獎的**注數**（按注平分，不是按人）
   - `jackpotRollover`：滾到下期的金額 = 沒人中時整個彩池，有人中時是平分後除不盡的零頭
   - 本期的估計彩池不存，查詢時用同一個公式即時算（`GET /api/jackpot`）

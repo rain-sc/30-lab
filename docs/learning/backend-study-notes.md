@@ -181,7 +181,7 @@ return switch (matched) {
 ## 4. 設定：application.properties、@ConfigurationProperties、Profile
 
 ```properties
-app.prize.jackpot-floor=1000000
+app.prize.jackpot-floor=200000
 app.game.draw-interval=5m          # 自動轉成 Duration
 app.auth.jwt-secret=${JWT_SECRET:dev-only-...}   # 環境變數優先，冒號後面是預設值
 ```
@@ -194,6 +194,15 @@ public record PrizeProperties(long jackpotFloor, long jackpotRatePercent, ...) {
 - 主程式加 `@ConfigurationPropertiesScan` 就會自動綁定
 - **好處**：設定有型別、可以直接注入；單元測試時可以直接 `new PrizeProperties(...)`
 - **Profile**：`application-test.properties` 只在 `@ActiveProfiles("test")` 時生效，覆蓋同名設定（測試用 `marksixlab_test` 資料庫、關掉排程）
+- **測試要固定遊戲規則**：球數、獎金在 `application-test.properties` 寫死一份（49 球、舊獎金），測試裡算死的數字才不會因為調整遊戲平衡而壞掉（≈ Jest 用 `.env.test`，不吃正式的 `.env`）
+- ⚠️ 設定檔**少一行不會報錯**：`long` / `int` 欄位拿到 0、物件拿到 `null`，程式照跑、數字默默算錯（≈ `configService.get()` 拿到 `undefined`）
+- **啟動時就檢查設定**：類別加 `@Validated`，欄位加 `@Min` / `@Max`，設定不合理時**後端直接啟動失敗**（fail fast，≈ `ConfigModule` 的 Joi / zod schema）
+  ```java
+  @Validated
+  @ConfigurationProperties(prefix = "app.game")
+  public record GameProperties(Duration drawInterval, Duration bettingCutoff, long pointsPerBet,
+          @Min(7) @Max(99) int maxNumber) { }   // 至少 7 個號碼（6 個正碼 + 特別號碼）
+  ```
 - ⚠️ IntelliJ 的 `.properties` 檔編碼要設成 UTF-8（或打開 native-to-ascii），不然中文註解會變 `???`
 
 ---
@@ -227,14 +236,37 @@ public record PrizeProperties(long jackpotFloor, long jackpotRatePercent, ...) {
 public record PlaceBetRequest(
     @NotBlank String drawNo,
     @NotBlank @Size(max = 64) String idempotencyKey,
-    @NotEmpty List<@NotNull @Size(min = 6, max = 6) List<@NotNull @Min(1) @Max(49) Integer>> lines) {
+    @NotEmpty List<@NotNull @Size(min = 6, max = 6) List<@NotNull @BallNumber Integer>> lines) {
 
     @JsonIgnore @AssertTrue
     public boolean isNumbersDistinct() { ... }   // 跨欄位的自訂規則
 }
 ```
 - 註解可以加在**泛型參數**上，驗證到陣列裡每一個元素
-- `rule` 名稱來自註解（`size`、`min`、`assertTrue`），前端依此翻譯
+- `rule` 名稱來自註解（`size`、`notNull`、`assertTrue`、`ballNumber`），前端依此翻譯
+
+### 自訂驗證註解（上限從設定讀）
+註解的參數必須是**編譯時常數**，`@Max(gameProperties.maxNumber())` 寫不出來，所以自己做一個 `@BallNumber`（≈ class-validator 的 `registerDecorator` + `@ValidatorConstraint`）：
+```java
+@Target({ElementType.TYPE_USE, ElementType.FIELD, ElementType.PARAMETER})  // TYPE_USE 才能寫在 List<@BallNumber Integer>
+@Retention(RetentionPolicy.RUNTIME)
+@Constraint(validatedBy = BallNumberValidator.class)
+public @interface BallNumber {
+    String message() default "號碼超出範圍";
+    Class<?>[] groups() default {};                    // 這三個是規定一定要有的
+    Class<? extends Payload>[] payload() default {};
+}
+
+@RequiredArgsConstructor   // 不用 @Component：Spring 建立 validator 時會自動注入
+public class BallNumberValidator implements ConstraintValidator<BallNumber, Integer> {
+    private final GameProperties gameProperties;
+    public boolean isValid(Integer value, ConstraintValidatorContext context) {
+        return value == null || (value >= 1 && value <= gameProperties.maxNumber());  // null 交給 @NotNull
+    }
+}
+```
+- Validator 本身是普通 class，單元測試直接 `new BallNumberValidator(new GameProperties(...))`
+- 原本用到常數的 `static` 方法要讀設定時，得改成**實例方法**（static 方法沒有 `this`，讀不到注入的欄位）
 
 ---
 
@@ -507,6 +539,7 @@ assertThatThrownBy(() -> ...).isInstanceOfSatisfying(BusinessException.class, e 
 | `No static resource api/...` 404 | Controller 方法沒寫 / 路徑打錯 | 檢查 `@GetMapping` |
 | 測試全過但 HTTP 不通 | Service 測試不經過 HTTP 和 Security | 實際打 API 驗證；之後補 MockMvc 測試 |
 | 彩池少算 20% | 計算投注額時該用 `Ticket::getCost`，打成了 `Ticket::getPayout`（兩個都是 `long`，編譯器抓不到） | 把數字算死的測試 |
+| 彩池完全不會增加（結算測試差 10、差 7） | 改獎金時不小心刪掉 `app.prize.jackpot-rate-percent`，`long` 欄位拿到預設值 0，不會報錯 | 測試 profile 固定規則；設定類加 `@Validated` + `@Min` 讓它啟動就失敗 |
 | `@Transactional` 沒作用、錢憑空增加 | 同 class 自己呼叫，繞過代理 | 放到另一個 Service |
 | 並發簽到出現 500 | WriteConflict 一直重試失敗 | 重試前先查「已經領過」 |
 | 測試寫進了真實資料庫 | `contextLoads` 測試沒加 test profile，啟動時的補算在真實 DB 執行 | 全部 `@SpringBootTest` 加 `@ActiveProfiles("test")` |

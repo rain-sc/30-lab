@@ -1,5 +1,6 @@
 package com.marksixlab.draw.service;
 
+import com.marksixlab.config.GameProperties;
 import com.marksixlab.draw.dto.NumberStat;
 import com.marksixlab.draw.dto.NumberStatsResponse;
 import com.marksixlab.draw.model.Draw;
@@ -25,7 +26,7 @@ public class NumberStatsService {
 
     public static final int DEFAULT_WINDOW = 100;
     public static final int MAX_WINDOW = 500;
-    private static final int MAX_NUMBER = 49;
+    private final GameProperties gameProperties;
     private static final List<DrawStatus> DRAWN_STATUSES = List.of(DrawStatus.DRAWN,DrawStatus.SETTLED);
     private final DrawRepository drawRepository;
     private final MongoTemplate mongoTemplate;
@@ -66,7 +67,7 @@ public class NumberStatsService {
                 .stream()
                 .collect(Collectors.toMap(BallCount::number, Function.identity()));
 
-        List<NumberStat> numbers = IntStream.rangeClosed(1, MAX_NUMBER)
+        List<NumberStat> numbers = IntStream.rangeClosed(1, gameProperties.maxNumber())
                 .mapToObj(n ->{
                     BallCount ball = byNumber.get(n);
                     if(ball == null){

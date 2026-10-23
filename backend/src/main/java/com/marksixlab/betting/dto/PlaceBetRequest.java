@@ -1,6 +1,7 @@
 package com.marksixlab.betting.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.marksixlab.betting.validation.BallNumber;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 
@@ -16,9 +17,9 @@ public record PlaceBetRequest(
         @NotBlank @Size(max = 64)
         String idempotencyKey,
 
-        @Schema(description = "每一注 6 個號碼（1~49，不重複）", example = "[[3, 11, 18, 27, 34, 45], [1, 2, 3, 4, 5, 6]]")
+        @Schema(description = "每一注 6 個號碼（1 ~ maxNumber，不重複；maxNumber 見 GET /api/game/rules）", example = "[[3, 11, 18, 27, 29, 30], [1, 2, 3, 4, 5, 6]]")
         @NotEmpty
-        List<@NotNull @Size(min = 6, max = 6) List<@NotNull @Min(1) @Max(49) Integer>> lines){
+        List<@NotNull @Size(min = 6, max = 6) List<@NotNull @BallNumber Integer>> lines){
 
     @JsonIgnore
     @AssertTrue

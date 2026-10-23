@@ -16,6 +16,47 @@
 
 ---
 
+## 2026-10-23（後端：號碼改成 1~30、新的獎金表，資料會清空）
+- 原因：49 球的頭獎機率是 1 / 13,983,816，每 5 分鐘一期也幾乎不可能有人中，玩家體驗太差。改成 30 球：頭獎 1 / 593,775、**任何獎約 1 / 13.3**
+- 球數改成後端設定 `app.game.max-number`（目前 30），以後要再調整只改設定、不改程式；**前端一律從 `GET /api/game/rules` 的 `maxNumber` 讀，不要寫死**
+- 【修改】`GET /api/game/rules`：`maxNumber: 30`、`totalCombinations: 593775`、新的獎金和每個獎級的中獎組合數、頭獎保底 `jackpot.floor: 200000`
+
+  | 獎級 | 條件 | 獎金 | 中獎組合數 |
+  |---|---|---|---|
+  | 頭獎 | 6 個 | 彩池（保底 200,000） | 1 |
+  | 二獎 | 5 個 + 特別號碼 | 50,000 | 6 |
+  | 三獎 | 5 個 | 2,000 | 138 |
+  | 四獎 | 4 個 + 特別號碼 | 1,000 | 345 |
+  | 五獎 | 4 個 | 120 | 3,795 |
+  | 六獎 | 3 個 + 特別號碼 | 100 | 5,060 |
+  | 七獎 | 3 個 | 20 | 35,420 |
+
+  彩池注入比例不變（每期投注額的 20%）
+- 【修改】`POST /api/tickets`：號碼範圍改成 1 ~ `maxNumber`。超出範圍一樣是 `40001`，但 `rule` 從 `min` / `max` 改成 **`ballNumber`**，例如 `[{ "field": "lines[0][5]", "rule": "ballNumber" }]`
+- 【修改】`GET /api/draws/number-stats`：`numbers` 固定 `maxNumber` 筆（30 筆）
+- 開獎號碼（REST、WebSocket）都在 1~30 之間
+- 型別沒有變（只改了 Swagger 說明文字），`npm run gen:api` 可以跑一次同步說明
+- **資料會清空**（舊的期數、注單是 49 球開出來的，會有大於 30 的號碼）：刪除整個 `marksixlab` 資料庫和 Redis 的 session，**所有帳號都要重新註冊**；舊的 cookie 會收到 `401`。機器人腳本會自動重新註冊
+- 機器人腳本 `tools/bot-players/bots.mjs` 已改成從 `maxNumber` 讀號碼範圍
+- 已用副本（1 分鐘一期）和 8088 驗證：rules 回傳 30 球和新獎金；下注 `31`、`0` → `40001` / `ballNumber`；開獎號碼都 ≤ 30；冷熱號碼 30 筆；機器人下注、結算、中獎名單正常
+- 【待前端】
+  1. 選號盤、機選、3D 攪珠機的球數、冷熱號碼的格子改用 `rules.maxNumber`（目前寫死 49 的地方：`NumberPad.tsx`、`features/draw/rules.ts`、`hotColdStats.ts`、`stage/engine.ts`、`stage/crystal.ts`、`StagePreview.tsx`、i18n 文案）；30 個號碼可以排成 5 × 6 或 6 × 5
+  2. 遊戲規則 / 說明裡的機率、獎金如果有寫死，改成從 `GET /api/game/rules` 讀
+  3. 下注失敗的 `rule: "ballNumber"` 加翻譯（例如「號碼必須在 1~30 之間」，數字用 `maxNumber`）
+  4. **品牌**：改成 30 球之後「49 Lab」名稱不符，用戶決定**一起改名，新名稱待定**。下面那筆「品牌改成 49 Lab」的【待後端】先暫停，等新名稱確定後前後端一起改
+
+## 2026-10-23（前端：對外的品牌改成 49 Lab）
+- 原因：「六合彩」「Mark Six」是香港賽馬會的商標，公開給別人玩時不能拿來當自己的品牌名稱
+- 【已完成】前端：網頁上的 logo、網頁標題、favicon 改成 **49 Lab**；登入頁、遊戲端頁尾加上免責聲明；註冊加同意勾選（只在前端檢查，**後端不用記錄**）；新增不用登入的 `/about`（關於、免責、私隱、商標聲明）；根目錄 `README.md`、`frontend/README.md`、`frontend/CLAUDE.md` 已改
+- GitHub 專案由用戶改名（預計 `rain-sc/49-lab`，舊網址 GitHub 會自動轉址）；改完後本機執行 `git remote set-url origin https://github.com/rain-sc/49-lab.git`
+- 【待後端】把**看得到的名稱**改成 49 Lab：
+  1. `backend/pom.xml`：`<name>`、`<description>`（`Mark Six Lab backend` → `49 Lab backend`）；`artifactId` 可以一起改成 `49-lab-backend`，不改也沒關係
+  2. `application.properties`：`spring.application.name=49-lab-backend`
+  3. Swagger 標題：目前是預設的「OpenAPI definition」，可以設成「49 Lab API」，改完照樣重新匯出 `docs/api/openapi.json`
+  4. 根目錄 `CLAUDE.md` 的標題、第一段說明（「六合彩模擬遊戲」→「6/49 選號遊戲」）；`backend/CLAUDE.md`、`docs/` 裡把專案稱為 Mark Six Lab 的地方。描述玩法來源的「參考香港六合彩」可以保留
+- **不用改**（程式內部的識別名稱，不對外，改了反而要搬資料或讓所有人重新登入）：資料庫名稱 `marksixlab`、Docker 專案 / 容器名稱（資料在以專案名稱命名的 volume 裡）、cookie `msl_token`
+- 選做：Java 套件 `com.marksixlab` 和 `MarkSixLabBackendApplication` 也可以改名（例如 `com.lab49`；Java 套件不能用數字開頭）。用 IntelliJ 的 Refactor → Rename 一次改好，是練習重構工具的好機會；不改也不影響對外的品牌
+
 ## 2026-10-22（後端：排行榜的最近中獎改成 10 次）
 - 【修改】`GET /api/leaderboard`、`GET /api/leaderboard/balance` 的 `recentWins` **最多 10 筆**（原本 5 筆），其他規則不變（由新到舊、不分期間、沒中過是 `[]`）
 - 型別沒有變，不用重新 `gen:api`

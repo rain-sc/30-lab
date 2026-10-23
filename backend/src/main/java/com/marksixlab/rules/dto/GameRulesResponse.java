@@ -7,7 +7,7 @@ import java.util.List;
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 public record GameRulesResponse(
-        @Schema(description = "號碼範圍 1 ~ maxNumber", requiredMode = REQUIRED, example = "49")
+        @Schema(description = "號碼範圍 1 ~ maxNumber", requiredMode = REQUIRED, example = "30")
         int maxNumber,
 
         @Schema(description = "每注選幾個號碼", requiredMode = REQUIRED, example = "6")
@@ -25,7 +25,7 @@ public record GameRulesResponse(
         @Schema(description = "開獎前幾秒停止下注", requiredMode = REQUIRED, example = "15")
         long bettingCutoffSeconds,
 
-        @Schema(description = "一注所有可能的選法 C(maxNumber, pickCount)", requiredMode = REQUIRED, example = "13983816")
+        @Schema(description = "一注所有可能的選法 C(maxNumber, pickCount)", requiredMode = REQUIRED, example = "593775")
         long totalCombinations,
 
         @Schema(description = "獎級，由頭獎到七獎", requiredMode = REQUIRED)

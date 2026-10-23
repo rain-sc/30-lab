@@ -37,7 +37,7 @@ const PERSONA_LABELS = { casual: '休閒', regular: '常客', whale: '大戶' };
 const STYLE_LABELS = { random: '隨機選號', lucky: '幸運號碼', birthday: '生日號碼' };
 
 const bots = [];
-let rules = { pointsPerBet: 10, maxLinesPerTicket: 50 };
+let rules = { pointsPerBet: 10, maxLinesPerTicket: 50, maxNumber: 49 };
 let currentDrawNo = null;
 let bonusDay = null;
 let stopping = false;
@@ -53,7 +53,7 @@ async function main() {
   process.on('SIGTERM', stop);
 
   rules = (await request('GET', '/api/game/rules')).data;
-  log(`連到 ${BASE_URL}，準備 ${BOT_COUNT} 個機器人（每注 ${rules.pointsPerBet} 積分）`);
+  log(`連到 ${BASE_URL}，準備 ${BOT_COUNT} 個機器人（1~${rules.maxNumber} 選 6、每注 ${rules.pointsPerBet} 積分）`);
 
   for (let i = 1; i <= BOT_COUNT; i++) {
     bots.push(createBot(i));
@@ -176,7 +176,7 @@ function createBot(index) {
     nickname: NICKNAMES[(index - 1) % NICKNAMES.length],
     persona: pickPersona(rng()),
     style: ['random', 'lucky', 'birthday'][Math.floor(rng() * 3)],
-    luckyNumbers: shuffle(range(1, 49), rng).slice(0, 6),
+    luckyNumbers: shuffle(range(1, rules.maxNumber), rng).slice(0, 6),
     cookie: null,
     balance: 0,
   };
@@ -234,14 +234,14 @@ function pickLine(bot) {
     case 'lucky': {
       // 固定的幸運號碼留 3~4 個，其他隨機
       const keep = shuffle(bot.luckyNumbers.slice()).slice(0, randomInt(3, 4));
-      const rest = shuffle(range(1, 49).filter((n) => !keep.includes(n)));
+      const rest = shuffle(range(1, rules.maxNumber).filter((n) => !keep.includes(n)));
       return [...keep, ...rest.slice(0, 6 - keep.length)].sort((a, b) => a - b);
     }
     case 'birthday':
-      // 只選 1~31（生日、紀念日）
-      return shuffle(range(1, 31)).slice(0, 6).sort((a, b) => a - b);
+      // 只選 1~31（生日、紀念日）；球數比 31 少就到最大號碼
+      return shuffle(range(1, Math.min(31, rules.maxNumber))).slice(0, 6).sort((a, b) => a - b);
     default:
-      return shuffle(range(1, 49)).slice(0, 6).sort((a, b) => a - b);
+      return shuffle(range(1, rules.maxNumber)).slice(0, 6).sort((a, b) => a - b);
   }
 }
 

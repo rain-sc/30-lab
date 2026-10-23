@@ -184,7 +184,7 @@ sequenceDiagram
 | 下注 | `POST /api/tickets` | `BettingService` | 冪等鍵查重 → 檢查期數是否開放 → 交易（建注單 + 扣款 + 流水） | 冪等鍵唯一索引；`balance >= cost` 條件扣款；WriteConflict 重試 |
 | 開獎 | 每秒排程 | `DrawTicker` → `DrawService` | 建立 / 截止 / 開獎 | 條件更新（`WHERE status = 舊狀態`） |
 | 結算派彩 | 每秒排程 | `SettlementTicker` → `SettlementService` | 判獎 → 派彩 → 標記已派 → 期數 `SETTLED` + 獎級統計 | 每一步可重跑：條件更新 + `PAYOUT + 注單 id` 唯一索引 |
-| 頭獎彩池 | `GET /api/jackpot` | `SettlementService` | 上期滾存 + 本期投注額 × 20%，至少 1,000,000 | 跟結算用同一個公式 |
+| 頭獎彩池 | `GET /api/jackpot` | `SettlementService` | 上期滾存 + 本期投注額 × 20%，至少保底 200,000（`app.prize.jackpot-floor`） | 跟結算用同一個公式 |
 | 每日簽到 | `POST /api/wallet/daily-bonus` | `DailyBonusService` → `WalletService.credit` | 先查今天領過沒 → 加積分 + 流水 | `DAILY_BONUS + userId:日期` 唯一索引；透過代理呼叫才有交易 |
 | 冷熱號碼 | `GET /api/draws/number-stats` | `NumberStatsService` | 聚合最近 N 期 | 唯讀 |
 | 排行榜 | `GET /api/leaderboard`、`/balance` | `LeaderboardService` | 錢包模組算名次 → 帳戶模組查暱稱 → 投注模組查最近 10 次中獎 | 唯讀；模組各自查自己的資料 |

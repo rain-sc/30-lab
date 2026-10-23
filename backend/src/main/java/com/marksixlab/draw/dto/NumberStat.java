@@ -5,7 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import static io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED;
 
 public record NumberStat(
-        @Schema(description = "號碼 1~49", requiredMode = REQUIRED, example = "7")
+        @Schema(description = "號碼 1 ~ maxNumber（見 GET /api/game/rules）", requiredMode = REQUIRED, example = "7")
         int number,
 
         @Schema(description = "統計範圍內開出幾次正碼", requiredMode = REQUIRED, example = "12")

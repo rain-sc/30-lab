@@ -1,17 +1,17 @@
 package com.marksixlab.draw.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import com.marksixlab.config.GameProperties;
+import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.Instant;
 
-import com.marksixlab.config.GameProperties;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class DrawScheduleTest {
 
     private final DrawSchedule schedule =
-            new DrawSchedule(new GameProperties(Duration.ofMinutes(5), Duration.ofSeconds(15), 10));
+            new DrawSchedule(new GameProperties(Duration.ofMinutes(5), Duration.ofSeconds(15), 10,49));
 
     @Test
     void firstSlotOfTheDay() {
