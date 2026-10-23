@@ -76,7 +76,7 @@ export function LivePanel({ className }: { className?: string }) {
             role="timer"
             aria-label={t("countdownLabel", { minutes, seconds })}
             className={cn(
-              "origin-left font-num text-[84px] leading-[0.9] font-extrabold tracking-[0.02em] tabular-nums transition-colors duration-500 md:text-[168px]",
+              "origin-left font-num text-[84px] leading-[0.9] font-extrabold tracking-[0.02em] whitespace-nowrap tabular-nums transition-colors duration-500 md:text-[168px]",
               // 截止下注後（最後 15 秒）變紅並輕微脈動
               next?.closed && "animate-beat text-live-text motion-reduce:animate-none",
             )}

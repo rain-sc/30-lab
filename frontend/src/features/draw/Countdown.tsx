@@ -18,7 +18,7 @@ export function CountdownDigits({ next, className }: { next: NextDraw | null; cl
       role="timer"
       aria-label={t("countdownLabel", { minutes, seconds })}
       className={cn(
-        "origin-left font-num leading-[0.9] font-extrabold tabular-nums transition-colors duration-500",
+        "origin-left font-num leading-[0.9] font-extrabold whitespace-nowrap tabular-nums transition-colors duration-500",
         next?.closed && "animate-beat text-live-text motion-reduce:animate-none",
         className,
       )}
