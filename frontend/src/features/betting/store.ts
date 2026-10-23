@@ -66,7 +66,7 @@ export const useBetting = create<BettingState>()(
       clearPending: () => set({ pending: [] }),
     }),
     {
-      name: "msl:betting",
+      name: "tl:betting",
       storage: createJSONStorage(() => sessionStorage),
       partialize: ({ picked, pending }) => ({ picked, pending }),
       skipHydration: true,

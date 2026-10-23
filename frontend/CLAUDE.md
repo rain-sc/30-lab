@@ -130,7 +130,7 @@ src/
 - **錯誤訊息由前端翻譯**：`useApiErrorText()(error)` 依 `code` 查 `messages` 的 `ApiErrors`，找不到就用前 3 碼的通用碼（`40900` → `40000` / `50000`）。後端的 `msg` 不直接顯示給使用者。
   新的錯誤碼出現時，`zh-TW.json`、`en.json` 的 `ApiErrors` 同時加。
 - 欄位錯誤（`40001`）：用 `applyFieldViolations` 把 `field` + `rule` 對應到表單的錯誤 key，顯示在欄位下；不屬於欄位的錯誤用 `<FormAlert>` 顯示在表單上方。
-- 登入狀態是後端的 HttpOnly cookie（`msl_token`），前端 JS 不碰 token。`api` 收到 `40100`（未登入 / 過期）或 `40102`（被別處登入踢掉）會**整頁導向** `/login`（原因 `expired` / `replaced` 存在 sessionStorage，不放網址上，登入頁的 `SessionNotice` 讀取顯示）；只查狀態的請求（例如 `GET /me`）傳 `{ redirectOnUnauthorized: false }` 自己處理（這個選項已擴充進 axios 的 config 型別）。
+- 登入狀態是後端的 HttpOnly cookie（`tl_token`），前端 JS 不碰 token。`api` 收到 `40100`（未登入 / 過期）或 `40102`（被別處登入踢掉）會**整頁導向** `/login`（原因 `expired` / `replaced` 存在 sessionStorage，不放網址上，登入頁的 `SessionNotice` 讀取顯示）；只查狀態的請求（例如 `GET /me`）傳 `{ redirectOnUnauthorized: false }` 自己處理（這個選項已擴充進 axios 的 config 型別）。
 - **登出的規則**（分頁與裝置）：
   - 同一個瀏覽器的分頁共用 cookie，後端分不出是哪個分頁，所以由前端處理：**同一個瀏覽器裡最後登入的分頁才能使用帳號，其他分頁變成登出**
     - 通知：登入成功時用 `BroadcastChannel` 廣播（`lib/api/tabSession.ts`），其他分頁導向 `/login`（原因 `other-tab`）
@@ -140,7 +140,7 @@ src/
   - **正在登入 / 註冊的分頁忽略 `SESSION_REPLACED`**：推播比登入回應（新 cookie）早到，不忽略的話自己登入完會被踢回登入頁
   - 處理這些通知的是 `[locale]/layout` 的 `SessionGuard`
 - WebSocket（`@/lib/ws/client`）：全站一條 STOMP 連線，**已登出的分頁不連線**；登入、註冊、登出後 `restartWs()`（`force` 立刻重連，後端才會用新 cookie 識別身分）；斷線自動重連、每次連上自動重新訂閱。訂閱用 `subscribeWs(destination, handler)`，回傳取消訂閱的函式
-- Server Component 呼叫後端時，瀏覽器的 cookie 不會自動帶過去，要用 `cookies()` 取出 `msl_token` 放進 `Cookie` header（目前還沒有這種用法）。
+- Server Component 呼叫後端時，瀏覽器的 cookie 不會自動帶過去，要用 `cookies()` 取出 `tl_token` 放進 `Cookie` header（目前還沒有這種用法）。
 - WebSocket 直連 `NEXT_PUBLIC_WS_URL`（預設 `ws://localhost:8088/ws`）。
 - 時間是 UTC ISO 字串，顯示時轉本地時區；倒數以**後端給的時間點**為準，不要只靠前端計時。
 
@@ -148,7 +148,8 @@ src/
 
 - 對外的品牌是 **30 Lab**（號碼範圍 1–30；`BrandLogo`：金色「30」球 + 「30 LAB」、`icon.svg`、`apple-icon.png`、`Metadata.title`）。
   **畫面上不要用「六合彩」「Mark Six」當名稱**（香港賽馬會的商標），只能在 `/about` 的商標聲明、免責文字裡描述性地提到。
-  GitHub 專案（`rain-sc/30-lab`）、README 也改成 30 Lab；程式內部的識別名稱（Java 套件 `com.marksixlab`、資料庫 `marksixlab`、cookie `msl_token`、儲存 key `msl:*`、Docker 容器）不對外，維持原樣
+  GitHub 專案（`rain-sc/30-lab`）、README 也改成 30 Lab；程式內部的識別名稱也改成 thirtylab（2026-10-23，趁資料清空、還沒上線）：Java 套件 `com.thirtylab`、資料庫 `thirtylab`、cookie `tl_token`、Docker `thirty-lab` / `tl-*`；
+  前端的儲存 key 是 `tl:*`（`tl:betting`、`tl:draw-results`、`tl:signed-out-here`）、分頁廣播頻道 `tl-auth`。舊的 `msl:draw-results` 由 `DrawFeed` 掛載時刪掉（期數號重新編過，舊號碼不能用）
 - 「虛擬積分、不涉及真錢、與香港賽馬會無關」放在每個人一定會看到的地方（設計稿 https://claude.ai/artifact/FsPcpgogpww4UbGjo5f7jq ）：
   - 登入頁表單卡片下方：`LegalNotice`
   - 遊戲端每一頁的頁尾：`SiteFooter`（在 `(game)/layout`；手機大廳頁尾後面多留「待下注」列的高度）
@@ -216,7 +217,9 @@ src/
     可下注：電光安靜、刻度環從正上方順時針亮起（`idle.cutoff` = 離截止的進度）、上一期號碼的刻度金色；
     攪珠：彗星繞圈、電光跟著變亮；開獎：彗星甩到開出號碼的刻度、那裡閃電弧。刻度從正上方順時針 1 → maxNumber。
     其他 React Bits 的 WebGL 元件不能直接放進頁面（會多一個 WebGL），要像這樣把 shader 搬進同一個場景
-  - `DrawStage.tsx`：動態 `import("./engine")`（three + matter 不進初始 JS），載入前顯示 `StagePreview`（水晶球輪廓 + 4 顆隨機號碼球繞圈，純 CSS；手機縮圖、不支援 WebGL 時也用它，後者球停住）；effect 清除時 `dispose()` 釋放 WebGL（Activity 隱藏頁面也會執行），**每次重建都用新的 canvas**（`forceContextLoss` 後同一個 canvas 不能再用）
+  - `DrawStage.tsx`：動態 `import("./engine")`（three + matter 不進初始 JS），載入前顯示 `StageLoading`（結果列 + 水晶球輪廓 + 4 顆隨機號碼球繞圈，純 CSS，位置大小照 `stage/layout.ts` 換算、和 3D 對齊；不支援 WebGL 時也用它，球停住）；手機縮圖只用水晶球那部分 `StagePreview`。**改 3D 的版面數字要改 `layout.ts`**，引擎和載入動畫共用；effect 清除時 `dispose()` 釋放 WebGL（Activity 隱藏頁面也會執行），**每次重建都用新的 canvas**（`forceContextLoss` 後同一個 canvas 不能再用）
+  - 攪珠是**滾筒 + 擋板**（比較頁 https://claude.ai/artifact/PGhFzKqvsCYbJvZjCaP6Th 選的 B）：截止後玻璃（牆）繞球心轉、4 片透明擋板從玻璃外伸進來，開完獎縮回去移除；可下注時沒有擋板。球的彈性 0.7。
+    移動牆、擋板要用 `setPosition` / `setAngle` 的 `updateVelocity`（engine.ts 的 `moveBody` / `turnBody`），碰撞才帶得動球；參數用 Node 跑 matter 模擬調，球數、大小改了要重調
   - 捲出畫面、切到別的分頁時暫停渲染和物理
   - **一頁只掛一個 WebGL**：桌面掛在大廳的舞台卡片；手機平常是靜態縮圖，點一下或截止到開完獎時自動放大成全畫面才掛（`MobileStage`，用 portal 放到 body，外層有 transform 時 fixed 會失效）。用 `useIsDesktop()` 決定掛哪一個，CSS 的 `hidden` 只是藏起來、元件還在
   - reduced-motion：不攪珠、不播開球、手機不自動放大，開獎一到直接擺好

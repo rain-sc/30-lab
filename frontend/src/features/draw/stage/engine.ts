@@ -15,13 +15,17 @@ import Matter from "matter-js";
 import * as THREE from "three";
 import { ballColor, type BallColor } from "@/lib/ball";
 import { createCrystal, type CrystalState } from "./crystal";
+import { GLOBE, R, ROW_Y, SLOT_X, SOCKET_R, TRAY, VIEW } from "./layout";
 import { BALL_ANIM_MS, T, type StagePhase } from "./timeline";
 
 const { Engine, Bodies, Body, Composite, Constraint } = Matter;
+// matter-js 0.20 的 setPosition / setAngle 有第三個參數 updateVelocity（@types/matter-js 還沒有）：
+// 移動牆、擋板時帶 true，碰撞才算得到它們的速度（滾筒才帶得動球）
+const moveBody = Body.setPosition as (body: Matter.Body, position: Matter.Vector, updateVelocity?: boolean) => void;
+const turnBody = Body.setAngle as (body: Matter.Body, angle: number, updateVelocity?: boolean) => void;
 
-// ---------- 常數 ----------
+// ---------- 常數（版面的數字在 layout.ts，和 2D 載入動畫共用） ----------
 const S = 20; // 物理 px / 場景單位
-const R = 0.8; // 球半徑（場景單位）
 const STEP = 1000 / 60; // 固定的物理步長
 
 const HEX: Record<BallColor, [body: string, ink: string]> = {
@@ -30,21 +34,15 @@ const HEX: Record<BallColor, [body: string, ink: string]> = {
   green: ["#1f9d57", "#0a4d29"],
 };
 
-// 玻璃球（物理邊界：球撞的圓）
-const GLOBE = { cy: -1.2, r: 9.4, seg: 48 };
 const halfWidthAt = (y: number) => Math.sqrt(Math.max(0, GLOBE.r * GLOBE.r - (y - GLOBE.cy) ** 2));
 const OUTLINE: [number, number][] = Array.from({ length: GLOBE.seg }, (_, k) => {
   const a = (k / GLOBE.seg) * Math.PI * 2;
   return [GLOBE.r * Math.cos(a), GLOBE.cy + GLOBE.r * Math.sin(a)];
 });
 
-// 結果列：6 個正碼 + 特別號碼的位置
-const ROW_Y = 11.6;
-const SLOT_X = [-8.1, -5.85, -3.6, -1.35, 0.9, 3.15, 6.9];
+// 開出的球飛進結果列的位置（右端）
 const ENTRY_X = 8.9;
 
-// 相機要框住的範圍（含外圈的號碼刻度環）
-const VIEW = { xMin: -11.1, xMax: 11.1, yMin: -12.4, yMax: 13 };
 
 type Mode = "physics" | "draw" | "slot";
 type Pose = { x: number; y: number; q: THREE.Quaternion };
@@ -100,7 +98,7 @@ export function createStage({ canvas, container, getPhase, reducedMotion, maxNum
     camera.lookAt(0, cy, 0);
     camera.updateProjectionMatrix();
     // 電光的線寬、微塵大小用像素算：每個場景單位（z ≈ 0）在畫面上幾個 CSS 像素
-    crystal?.setPixelScale(h / (2 * d * half), renderer.getPixelRatio());
+    crystal?.setPixelScale(h / (2 * d * half), renderer.getPixelRatio(), d);
   };
   let crystal: ReturnType<typeof createCrystal> | null = null;
   const resizeObserver = new ResizeObserver(fitCamera);
@@ -125,8 +123,7 @@ export function createStage({ canvas, container, getPhase, reducedMotion, maxNum
 
   // 結果列：sunken 色的膠囊凹槽、7 個球座（特別號碼的是金色）、特別號碼前面的「+」
   const trayShape = (() => {
-    const w = 20.2;
-    const h = 2.3;
+    const { w, h } = TRAY;
     const r = h / 2;
     const s = new THREE.Shape();
     s.moveTo(-w / 2 + r, -r);
@@ -149,7 +146,7 @@ export function createStage({ canvas, container, getPhase, reducedMotion, maxNum
   SLOT_X.forEach((x, i) => {
     const special = i === 6;
     const socket = new THREE.Mesh(
-      new THREE.RingGeometry(R + 0.06, R + 0.13, 64),
+      new THREE.RingGeometry(R + 0.06, SOCKET_R, 64),
       new THREE.MeshBasicMaterial({ color: special ? 0xf4b63f : 0x2f3a5c, transparent: special, opacity: special ? 0.6 : 1 }),
     );
     socket.position.set(x, ROW_Y, -1.1);
@@ -251,11 +248,12 @@ export function createStage({ canvas, container, getPhase, reducedMotion, maxNum
       restitution: 0.2,
     });
   };
-  OUTLINE.forEach((p, i) => Composite.add(world, wall(p, OUTLINE[(i + 1) % OUTLINE.length])));
+  const walls = OUTLINE.map((p, i) => wall(p, OUTLINE[(i + 1) % OUTLINE.length]));
+  walls.forEach((w) => Composite.add(world, w));
 
   const addBody = (ball: Ball, x: number, y: number, vx = 0, vy = 0) => {
     const body = Bodies.circle(x * S, -y * S, R * S, {
-      restitution: 0.35,
+      restitution: 0.7,
       friction: 0.02,
       frictionStatic: 0.2,
       frictionAir: 0.012,
@@ -293,37 +291,92 @@ export function createStage({ canvas, container, getPhase, reducedMotion, maxNum
   };
   pilePositions(maxNumber).forEach(([x, y], i) => addBody(balls[i], x, y));
 
-  // 吹氣攪珠：底部中央一股往上的氣流（力，不是直接改速度），像真的攪珠機
-  // - 氣流在中間最強、往兩側遞減（高斯），越往上越弱：球從中間噴上去、往兩側散開、沿玻璃壁落回底部，再被吹起來
-  // - 氣流中心慢慢左右擺、每顆球的風力有起伏，循環不會太規律
-  // - 截止時約 0.9 秒內慢慢加強
-  // 參數用 Node 跑 matter 模擬調過：平均速度和舊的「直接給往上的速度」差不多，頂部偶爾碰到，一半左右的時間球在下半部翻滾
-  const AIR = { lift: 4.2, width: GLOBE.r * 0.38, fadeFrom: 0.5, fadeTo: 1, side: 0.8, rampMs: 900 };
-  let air = 0;
-  let airT = 0;
-  const smoothstep = (a: number, b: number, v: number) => {
-    const q = Math.min(1, Math.max(0, (v - a) / (b - a)));
-    return q * q * (3 - 2 * q);
+  // 攪珠：滾筒 + 擋板（攪珠物理比較頁選的 B：https://claude.ai/artifact/PGhFzKqvsCYbJvZjCaP6Th）
+  // - 截止後整個玻璃球（牆）繞球心慢慢轉，4 片透明擋板從玻璃外面伸進來，把球帶上去、到高處掉下來；球的動作全部來自碰撞
+  // - 擋板只在攪珠、開獎時出現：可下注時沒有擋板、滾筒不轉，點球、甩球不受影響
+  //   擋板不能直接出現（會和球堆重疊、把球炸開），而是從玻璃外面慢慢伸進來（extendMs），球被自然地推開；開完獎縮回去再移除
+  // - 牆的摩擦力只在轉動時調高（帶得動球），可下注時維持原本的滑度
+  // - 牆和擋板每一步用 setPosition / setAngle（updateVelocity）移動，碰撞時才有正確的速度
+  // 參數用 Node 跑 matter 模擬調過（30 顆、半徑 1、彈性 0.7）：約四成時間球在 40% 高度以上、平均速度約 2.4
+  const DRUM = { speed: 0.9, rampMs: 900, fin: 2.6, finThick: 0.4, extendMs: 800, retractMs: 600, wallFriction: 0.5, idleFriction: 0.05 };
+  const CENTER = { x: 0, y: -GLOBE.cy * S }; // 球心（matter 座標，y 朝下）
+  const wallBase = walls.map((w) => ({ body: w, dx: w.position.x - CENTER.x, dy: w.position.y - CENTER.y, angle: w.angle }));
+  const fins = [0, 1, 2, 3].map((k) => ({
+    a: (k * Math.PI) / 2,
+    body: Bodies.rectangle(0, 0, DRUM.fin * S, DRUM.finThick * S, { isStatic: true, friction: 0.3, restitution: 0.2 }),
+  }));
+  /** 滾筒轉速 0–1、擋板伸出 0–1（0 = 完全在玻璃外面） */
+  let spin = 0;
+  let extend = 0;
+  let drumAngle = 0;
+  let finsInWorld = false;
+  /** 擋板中心離球心多遠：伸出 0 時整片在玻璃外，1 時從玻璃往內伸 fin 長 */
+  const finRadius = () => GLOBE.r + DRUM.fin / 2 - extend * DRUM.fin;
+  const placeFins = () => {
+    for (const fin of fins) {
+      const a = fin.a + drumAngle;
+      moveBody(fin.body, { x: CENTER.x + Math.cos(a) * finRadius() * S, y: CENTER.y + Math.sin(a) * finRadius() * S }, true);
+      turnBody(fin.body, a, true);
+    }
   };
-  const stirStep = () => {
-    air = Math.min(1, air + STEP / AIR.rampMs);
-    airT += STEP / 1000;
-    const center = Math.sin(airT * 0.9) * 1.6 + Math.sin(airT * 2.3 + 1) * 0.6;
-    balls.forEach(({ body }, i) => {
-      if (!body) return;
-      const x = body.position.x / S;
-      const h = (-body.position.y / S - (GLOBE.cy - GLOBE.r)) / (2 * GLOBE.r); // 0 底部 → 1 頂部
-      const dx = x - center;
-      const jet = Math.exp(-((dx / AIR.width) ** 2)) * (1 - smoothstep(AIR.fadeFrom, AIR.fadeTo, h));
-      const gust = 0.65 + 0.35 * Math.sin(airT * 6.1 + i * 1.7) + 0.2 * Math.sin(airT * 13.7 + i * 4.3);
-      const g = body.mass * engine.gravity.y * engine.gravity.scale; // 這顆球受的重力
-      const up = g * jet * AIR.lift * gust * air;
-      const out = (g * AIR.side * jet * Math.sign(dx || 1) * Math.min(1, Math.abs(dx) / 2) + g * 0.25 * Math.sin(airT * 3.3 + i * 2.1)) * air;
-      Body.applyForce(body, body.position, { x: out, y: -up });
+  const drumStep = (stirring: boolean) => {
+    spin = stirring ? Math.min(1, spin + STEP / DRUM.rampMs) : Math.max(0, spin - STEP / DRUM.rampMs);
+    extend = stirring ? Math.min(1, extend + STEP / DRUM.extendMs) : Math.max(0, extend - STEP / DRUM.retractMs);
+    if (extend > 0 && !finsInWorld) {
+      placeFins();
+      fins.forEach((fin) => Composite.add(world, fin.body));
+      walls.forEach((w) => (w.friction = DRUM.wallFriction));
+      finsInWorld = true;
+    } else if (extend === 0 && spin === 0 && finsInWorld) {
+      fins.forEach((fin) => Composite.remove(world, fin.body));
+      walls.forEach((w) => (w.friction = DRUM.idleFriction));
+      finsInWorld = false;
+    }
+    if (!finsInWorld) return;
+    drumAngle += DRUM.speed * spin * (STEP / 1000);
+    const cos = Math.cos(drumAngle);
+    const sin = Math.sin(drumAngle);
+    for (const w of wallBase) {
+      moveBody(w.body, { x: CENTER.x + w.dx * cos - w.dy * sin, y: CENTER.y + w.dx * sin + w.dy * cos }, true);
+      turnBody(w.body, w.angle + drumAngle, true);
+    }
+    placeFins();
+  };
+  // 擋板的畫面：很淡的玻璃片 + 淡色邊框，透明度跟著伸出的程度（extend）變化
+  const finGeo = new THREE.BoxGeometry(DRUM.fin, DRUM.finThick, 1.8);
+  const finEdgeGeo = new THREE.EdgesGeometry(finGeo);
+  const finViews = fins.map(() => {
+    const glass = new THREE.Mesh(finGeo, new THREE.MeshBasicMaterial({ color: 0xcfe0ff, transparent: true, opacity: 0, depthWrite: false }));
+    const edge = new THREE.LineSegments(finEdgeGeo, new THREE.LineBasicMaterial({ color: 0xdfe8ff, transparent: true, opacity: 0 }));
+    glass.add(edge);
+    glass.visible = false;
+    scene.add(glass);
+    return { glass, edge };
+  });
+  const drawFins = () => {
+    fins.forEach((fin, i) => {
+      const { glass, edge } = finViews[i];
+      glass.visible = finsInWorld;
+      if (!finsInWorld) return;
+      glass.position.set(fin.body.position.x / S, -fin.body.position.y / S, 0);
+      glass.rotation.z = -fin.body.angle;
+      (glass.material as THREE.MeshBasicMaterial).opacity = 0.1 * extend;
+      (edge.material as THREE.LineBasicMaterial).opacity = 0.45 * extend;
     });
   };
-  const stopAir = () => {
-    air = 0;
+
+  /** 保險：被擠出玻璃（滾筒、擋板夾到）的球放回裡面 */
+  const containBalls = () => {
+    const max = (GLOBE.r - R - 0.1) * S;
+    for (const { body } of balls) {
+      if (!body) continue;
+      const dx = body.position.x - CENTER.x;
+      const dy = body.position.y - CENTER.y;
+      const d = Math.hypot(dx, dy);
+      if (d <= (GLOBE.r - R + 0.4) * S) continue;
+      Body.setPosition(body, { x: CENTER.x + (dx / d) * max, y: CENTER.y + (dy / d) * max });
+      Body.setVelocity(body, { x: 0, y: 0 });
+    }
   };
   const clampSpeeds = () => {
     for (const { body } of balls) {
@@ -540,17 +593,18 @@ export function createStage({ canvas, container, getPhase, reducedMotion, maxNum
 
     // 物理：固定步長，一幀最多補 4 步
     const stirring = isStirring();
-    if (!stirring) stopAir(); // 下次截止時氣流重新慢慢加強
     acc += dt;
     let steps = 0;
     while (acc >= STEP && steps < 4) {
-      if (stirring) stirStep();
+      drumStep(stirring);
       Engine.update(engine, STEP);
       clampSpeeds();
+      containBalls();
       acc -= STEP;
       steps++;
     }
     if (steps === 4) acc = 0;
+    drawFins();
 
     for (const ball of balls) {
       const m = ball.mesh;

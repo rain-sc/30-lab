@@ -21,9 +21,9 @@ export const SIGN_OUT_REASONS = ["expired", "replaced", "other-tab"] as const;
 export type SignOutReason = (typeof SIGN_OUT_REASONS)[number];
 
 // 值就是登出的原因；有值 = 這個分頁已登出
-const SIGNED_OUT_KEY = "msl:signed-out-here";
+const SIGNED_OUT_KEY = "tl:signed-out-here";
 // 標記改變時通知同一個分頁裡的畫面（sessionStorage 的 storage 事件只會發給其他分頁）
-const CHANGE_EVENT = "msl:signed-out-change";
+const CHANGE_EVENT = "tl:signed-out-change";
 
 /** 這個分頁登出的原因；沒有登出回傳 null */
 export function getSignOutReason(): SignOutReason | null {
@@ -65,7 +65,7 @@ export function subscribeSignOut(onChange: () => void) {
 /** 分頁之間的訊息 */
 type TabMessage = { type: "signed-in"; from: string };
 
-const CHANNEL = "msl-auth";
+const CHANNEL = "tl-auth";
 
 /** 這個分頁的 id：同一個分頁裡的其他頻道物件也會收到廣播，用來忽略自己發的 */
 const TAB_ID =

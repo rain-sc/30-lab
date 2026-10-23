@@ -110,13 +110,25 @@ export const useDrawFeed = create<FeedState>()(
       setMissing: (drawNos) => set((s) => ({ missing: { ...s.missing, ...Object.fromEntries(drawNos.map((n) => [n, true as const])) } })),
     }),
     {
-      name: "msl:draw-results",
+      name: "tl:draw-results",
       storage: createJSONStorage(() => localStorage),
       partialize: ({ results }) => ({ results }),
       skipHydration: true,
     },
   ),
 );
+
+/**
+ * 清掉改名前的開獎號碼（msl:draw-results）。資料庫在改名時清空過，期數號重新編，
+ * 舊的號碼會被當成同一個期數號的新結果，所以不搬過來，直接刪掉
+ */
+export function removeLegacyResults() {
+  try {
+    localStorage.removeItem("msl:draw-results");
+  } catch {
+    // 不能用 localStorage（私密模式、被封鎖）：本來就沒有舊資料
+  }
+}
 
 /** 校正過的現在時間（毫秒） */
 export const feedNow = () => Date.now() + (useDrawFeed.getState().offset ?? 0);

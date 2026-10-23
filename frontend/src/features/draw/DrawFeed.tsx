@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { onWsConnect, subscribeWs } from "@/lib/ws/client";
-import { fetchCurrentDraw, feedNow, useDrawFeed, type DrawEvent } from "./feed";
+import { fetchCurrentDraw, feedNow, removeLegacyResults, useDrawFeed, type DrawEvent } from "./feed";
 
 const RETRY_MS = 10_000;
 const WATCHDOG_MS = 5_000;
@@ -23,6 +23,7 @@ export function DrawFeed() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    removeLegacyResults();
     void useDrawFeed.persist.rehydrate();
     let cancelled = false;
     let retry: ReturnType<typeof setTimeout> | undefined;

@@ -16,6 +16,15 @@
 
 ---
 
+## 2026-10-23（前端：內部名稱改成 tl）
+- 【已完成】回覆後端「內部名稱改成 thirtylab」那筆的【待前端】：
+  1. 註解裡的 `msl_token` 改成 `tl_token`（`features/auth/api.ts`、`frontend/CLAUDE.md`）
+  2. 前端自己的識別名稱**一起改**：儲存 key `msl:*` → `tl:*`（`tl:betting`、`tl:draw-results`、`tl:signed-out-here`）、分頁廣播頻道 `msl-auth` → `tl-auth`
+     - 原因：開獎號碼存在 localStorage，用期數號當 key；資料庫清空後期數號重新編，舊的號碼會被當成新期數的結果（我的注單、開獎通知對錯號碼）。換 key 之後舊資料不會被讀到；舊的 `msl:draw-results` 在 `DrawFeed` 掛載時刪掉
+     - 其他舊值失效的影響：選號、待下注（sessionStorage，本來就只在一個分頁）會清空；「此分頁已登出」的標記失效，但所有人本來就要重新登入
+  3. `frontend/CLAUDE.md`「內部識別名稱」那段改成新的名稱
+- 已驗證：先放一份舊的 `msl:draw-results`，打開大廳後被刪掉，只剩 `tl:draw-results`（內容是新拿到的期數，沒有搬舊號碼）、`tl:betting`
+
 ## 2026-10-23（後端：內部名稱改成 thirtylab，資料會再清空一次）
 - 原因：資料剛清空、還沒上線，是改內部名稱代價最低的時候；上線有玩家後再改就要搬資料、所有人重新登入
 - 改名對照（Java 套件不能用數字開頭，所以用 `thirtylab`）：
@@ -32,7 +41,7 @@
 - cookie 改名後，瀏覽器裡舊的 `msl_token` 不會再被讀取，**所有人要重新登入**；資料庫換新的，**帳號要重新註冊**（機器人會自動註冊）
 - 上線用的 Atlas 連線字串，資料庫名稱改用 `thirtylab`（`docs/deploy.md`、`.env.example` 已改）
 - 機器人腳本的 cookie 名稱已改成 `tl_token`
-- 【待前端】
+- 【已完成】（前端 2026-10-23，見上方前端那筆）
   1. 前端程式沒有直接讀 cookie 名稱（HttpOnly），只有註解提到 `msl_token`（`features/auth/api.ts`、`frontend/CLAUDE.md`）→ 改成 `tl_token`
   2. 前端自己的識別名稱要不要一起改由前端決定：BroadcastChannel `msl-auth`（`lib/api/tabSession.ts`）、儲存 key `msl:*`；改了的話，舊的 localStorage / sessionStorage 值會失效（例如偏好設定回到預設）
   3. `frontend/CLAUDE.md` 第 151 行「內部識別名稱維持原樣」那段改成新的名稱

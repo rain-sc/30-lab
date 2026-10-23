@@ -7,7 +7,7 @@ export type User = components["schemas"]["UserResponse"];
 type LoginBody = components["schemas"]["LoginRequest"];
 type RegisterBody = components["schemas"]["RegisterRequest"];
 
-// 登入狀態是後端設的 HttpOnly cookie（msl_token），前端 JS 不會碰到 token。
+// 登入狀態是後端設的 HttpOnly cookie（tl_token），前端 JS 不會碰到 token。
 // 同一個瀏覽器裡最後登入的分頁才能使用帳號：登入成功時通知其他分頁，它們會變成登出（見 lib/api/tabSession.ts）。
 // 登入、註冊、登出後 cookie 改變，WebSocket 要重新握手，後端才會用新的身分推播。
 

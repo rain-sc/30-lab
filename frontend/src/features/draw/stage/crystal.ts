@@ -10,6 +10,7 @@
 //
 // 只在瀏覽器執行（engine.ts 動態載入時一起載入）
 import * as THREE from "three";
+import { TICK } from "./layout";
 
 /** 舞台給容器的狀態（每一幀） */
 export type CrystalState =
@@ -215,6 +216,8 @@ const fieldFragment = /* glsl */ `
 precision highp float;
 uniform float uPx; uniform float uRadius; uniform float uLine; uniform float uTime; uniform float uFrame; uniform float uBins;
 uniform float uStrands; uniform float uCrackle; uniform float uFlares; uniform float uGlow; uniform float uHaze; uniform float uFill;
+// 0 = 後層（球的後面）：只畫球窗裡的霧；1 = 前層（球的前面）：電光、光暈、電弧，貼著玻璃的球不會擋住光圈
+uniform float uLayer;
 uniform vec3 uRim; uniform vec3 uRimHot; uniform vec3 uRimMid; uniform vec3 uRimDeep;
 uniform vec3 uSpark; uniform vec3 uSparkGlow; uniform vec3 uHazeColor; uniform vec3 uEdgeColor;
 uniform vec4 uHeat;
@@ -241,12 +244,17 @@ void main() {
   vec3 col = vec3(0.0);
   uint frame = uint(uFrame);
 
-  if (r < R) {
-    vec2 q = p / R;
-    float chord = sqrt(max(1.0 - dot(q, q), 0.0));
-    col += uHazeColor * pool(q) * (0.55 + 0.45 * chord) * uHaze;
-    float e = length(q - vec2(0.0, 0.2)) / 1.2;
-    col += uEdgeColor * 0.5 * pow(smoothstep(0.62, 1.0, e), 1.4) * (0.5 + 0.5 * uHaze);
+  if (uLayer < 0.5) {
+    if (r < R) {
+      vec2 q = p / R;
+      float chord = sqrt(max(1.0 - dot(q, q), 0.0));
+      col += uHazeColor * pool(q) * (0.55 + 0.45 * chord) * uHaze;
+      float e = length(q - vec2(0.0, 0.2)) / 1.2;
+      col += uEdgeColor * 0.5 * pow(smoothstep(0.62, 1.0, e), 1.4) * (0.5 + 0.5 * uHaze);
+    }
+    vec3 haze = soften(max(col, 0.0));
+    gl_FragColor = vec4(haze, max(haze.r, max(haze.g, haze.b)));
+    return;
   }
 
   float dr = r - R;
@@ -459,6 +467,10 @@ const ADDITIVE = {
   blendDstAlpha: THREE.OneMinusSrcAlphaFactor,
 } as const;
 
+/** 霧在球的後面、電光在球的前面（球在 z = 0，半徑 0.8） */
+const BACK_Z = -1.2;
+const FRONT_Z = 0.9;
+
 /** 電弧：在水晶球邊緣某個角度閃一下（React Bits spawnArc） */
 type Arc = { start: number; span: number; curl: number; life: number; duration: number; drift: number; strength: number };
 const MAX_ARCS = 4;
@@ -478,7 +490,7 @@ export function createCrystal(scene: THREE.Scene, { cy, r, reducedMotion, maxNum
 
   const crystalR = r + 0.1; // 電光的位置：比物理邊界（球撞的圓）稍微外面
   const dialR = r + 0.78;
-  const tickR = r + 1.28;
+  const tickR = TICK.r;
   const pal = palette();
 
   // 球窗的底：sunken 深色，接收球的影子；上面疊一層中間微亮、邊緣變暗的漸層
@@ -531,12 +543,21 @@ export function createCrystal(scene: THREE.Scene, { cy, r, reducedMotion, maxNum
     uArcs: { value: Array.from({ length: MAX_ARCS }, () => new THREE.Vector4()) },
     ...Object.fromEntries(Object.entries(buildStrands()).map(([k, v]) => [k, { value: v }])),
   };
-  const field = new THREE.Mesh(
-    new THREE.PlaneGeometry(fieldSize, fieldSize),
-    new THREE.ShaderMaterial({ vertexShader: planeVertex, fragmentShader: fieldFragment, uniforms: F, ...ADDITIVE }),
+  // 同一組 uniforms 畫兩層（展開複製的是 { value } 物件的參照，更新 F 兩層一起變），只有 uLayer 不同：
+  // 後層在球的後面畫霧；前層在球的前面畫電光，光是相加上去的，不會擋住球
+  const fieldGeo = new THREE.PlaneGeometry(fieldSize, fieldSize);
+  const haze = new THREE.Mesh(
+    fieldGeo,
+    new THREE.ShaderMaterial({ vertexShader: planeVertex, fragmentShader: fieldFragment, uniforms: { ...F, uLayer: { value: 0 } }, ...ADDITIVE }),
   );
-  field.position.z = -1.2;
-  group.add(field);
+  haze.position.z = BACK_Z;
+  group.add(haze);
+  const rim = new THREE.Mesh(
+    fieldGeo,
+    new THREE.ShaderMaterial({ vertexShader: planeVertex, fragmentShader: fieldFragment, uniforms: { ...F, uLayer: { value: 1 } }, ...ADDITIVE }),
+  );
+  rim.position.z = FRONT_Z;
+  group.add(rim);
 
   // 微塵
   const dust = buildDust(7000);
@@ -582,7 +603,7 @@ export function createCrystal(scene: THREE.Scene, { cy, r, reducedMotion, maxNum
   group.add(dial);
 
   // 刻度：一格一個號碼，每 major 格長一點
-  const majorGeo = new THREE.PlaneGeometry(0.16, 0.62);
+  const majorGeo = new THREE.PlaneGeometry(0.16, TICK.major);
   const minorGeo = new THREE.PlaneGeometry(0.12, 0.42);
   const ticks = Array.from({ length: maxNumber }, (_, i) => {
     const n = i + 1;
@@ -623,8 +644,12 @@ export function createCrystal(scene: THREE.Scene, { cy, r, reducedMotion, maxNum
   const cBright = new THREE.Color(GOLD_BRIGHT);
 
   return {
-    /** pxPerUnit：每個場景單位在畫面上幾個 CSS 像素（電光的線寬、微塵的大小用像素算） */
-    setPixelScale(pxPerUnit: number, dpr: number) {
+    /**
+     * pxPerUnit：每個場景單位在畫面上幾個 CSS 像素（電光的線寬、微塵的大小用像素算）
+     * cameraDistance：相機到 z = 0 的距離。前層比較靠近相機，透視下會變大，照距離比例縮小，畫面上和後層一樣大
+     */
+    setPixelScale(pxPerUnit: number, dpr: number, cameraDistance: number) {
+      rim.scale.setScalar((cameraDistance - FRONT_Z) / (cameraDistance - BACK_Z));
       const radiusPx = crystalR * pxPerUnit;
       F.uPx.value = pxPerUnit;
       F.uRadius.value = radiusPx;

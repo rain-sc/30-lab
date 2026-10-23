@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { feedNow, useDrawFeed } from "../feed";
 import { useGameRules } from "../rules";
-import { StagePreview } from "../StagePreview";
+import { StageLoading } from "../StagePreview";
 import { stagePhaseAt } from "./timeline";
 import { useStagePhase } from "./useStagePhase";
 
@@ -60,11 +60,8 @@ export function DrawStage({ className, hint = true }: { className?: string; hint
 
   return (
     <div className={cn("relative overflow-hidden", className)}>
-      {!ready && (
-        <div className="absolute inset-0 grid place-items-center p-[12%]">
-          <StagePreview className="w-full" moving={!failed} caption={failed ? t("unsupported") : t("loading")} />
-        </div>
-      )}
+      {/* 載入前：和 canvas 同樣大小的區域，結果列、水晶球擺在 3D 的位置（StageLoading） */}
+      {!ready && <StageLoading className="absolute inset-x-0 top-10 bottom-0" moving={!failed} caption={failed ? t("unsupported") : t("loading")} />}
       {/* canvas 由 effect 建立、放進這裡（React 不管理它的內容）；上方留給狀態標籤，結果列的球不會被蓋到 */}
       <div
         ref={hostRef}
