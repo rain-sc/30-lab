@@ -253,7 +253,7 @@ export function createStage({ canvas, container, getPhase, reducedMotion, maxNum
 
   const addBody = (ball: Ball, x: number, y: number, vx = 0, vy = 0) => {
     const body = Bodies.circle(x * S, -y * S, R * S, {
-      restitution: 0.7,
+      restitution: 0.9,
       friction: 0.02,
       frictionStatic: 0.2,
       frictionAir: 0.012,
@@ -297,8 +297,9 @@ export function createStage({ canvas, container, getPhase, reducedMotion, maxNum
   //   擋板不能直接出現（會和球堆重疊、把球炸開），而是從玻璃外面慢慢伸進來（extendMs），球被自然地推開；開完獎縮回去再移除
   // - 牆的摩擦力只在轉動時調高（帶得動球），可下注時維持原本的滑度
   // - 牆和擋板每一步用 setPosition / setAngle（updateVelocity）移動，碰撞時才有正確的速度
-  // 參數用 Node 跑 matter 模擬調過（30 顆、半徑 1、彈性 0.7）：約四成時間球在 40% 高度以上、平均速度約 2.4
-  const DRUM = { speed: 0.9, rampMs: 900, fin: 2.6, finThick: 0.4, extendMs: 800, retractMs: 600, wallFriction: 0.5, idleFriction: 0.05 };
+  // 參數用 Node 跑 matter 模擬調過（30 顆、半徑 1、彈性 0.8）：約 45% 時間球在 40% 高度以上、平均速度約 3.4，沒有球被擠出玻璃
+  // （原本轉速 0.9、彈性 0.7 時是四成、2.4，用戶覺得不夠熱鬧；一組順一組逆的擋板會夾球，不採用）
+  const DRUM = { speed: 1.7, rampMs: 900, fin: 2.6, finThick: 0.4, extendMs: 800, retractMs: 600, wallFriction: 0.5, idleFriction: 0.05 };
   const CENTER = { x: 0, y: -GLOBE.cy * S }; // 球心（matter 座標，y 朝下）
   const wallBase = walls.map((w) => ({ body: w, dx: w.position.x - CENTER.x, dy: w.position.y - CENTER.y, angle: w.angle }));
   const fins = [0, 1, 2, 3].map((k) => ({

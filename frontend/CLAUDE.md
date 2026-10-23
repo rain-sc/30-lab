@@ -218,7 +218,7 @@ src/
     攪珠：彗星繞圈、電光跟著變亮；開獎：彗星甩到開出號碼的刻度、那裡閃電弧。刻度從正上方順時針 1 → maxNumber。
     其他 React Bits 的 WebGL 元件不能直接放進頁面（會多一個 WebGL），要像這樣把 shader 搬進同一個場景
   - `DrawStage.tsx`：動態 `import("./engine")`（three + matter 不進初始 JS），載入前顯示 `StageLoading`（結果列 + 水晶球輪廓 + 4 顆隨機號碼球繞圈，純 CSS，位置大小照 `stage/layout.ts` 換算、和 3D 對齊；不支援 WebGL 時也用它，球停住）；手機縮圖只用水晶球那部分 `StagePreview`。**改 3D 的版面數字要改 `layout.ts`**，引擎和載入動畫共用；effect 清除時 `dispose()` 釋放 WebGL（Activity 隱藏頁面也會執行），**每次重建都用新的 canvas**（`forceContextLoss` 後同一個 canvas 不能再用）
-  - 攪珠是**滾筒 + 擋板**（比較頁 https://claude.ai/artifact/PGhFzKqvsCYbJvZjCaP6Th 選的 B）：截止後玻璃（牆）繞球心轉、4 片擋板從玻璃外伸進來（只有物理，畫面上不顯示），開完獎縮回去移除；可下注時沒有擋板。球的彈性 0.7。
+  - 攪珠是**滾筒 + 擋板**（比較頁 https://claude.ai/artifact/PGhFzKqvsCYbJvZjCaP6Th 選的 B）：截止後玻璃（牆）繞球心轉、4 片擋板從玻璃外伸進來（只有物理，畫面上不顯示），開完獎縮回去移除；可下注時沒有擋板。滾筒每秒 1.3 弧度、球的彈性 0.8。
     移動牆、擋板要用 `setPosition` / `setAngle` 的 `updateVelocity`（engine.ts 的 `moveBody` / `turnBody`），碰撞才帶得動球；參數用 Node 跑 matter 模擬調，球數、大小改了要重調
   - 捲出畫面、切到別的分頁時暫停渲染和物理
   - **一頁只掛一個 WebGL**：桌面掛在大廳的舞台卡片；手機平常是靜態縮圖，點一下或截止到開完獎時自動放大成全畫面才掛（`MobileStage`，用 portal 放到 body，外層有 transform 時 fixed 會失效）。用 `useIsDesktop()` 決定掛哪一個，CSS 的 `hidden` 只是藏起來、元件還在
