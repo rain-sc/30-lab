@@ -87,6 +87,14 @@ public class BettingService {
                 ticket.setNumbers(req.numbers().stream().sorted().toList());
                 ticket.setLines(LineExpander.multiple(req.numbers()));
             }
+            case BANKER -> {
+                if (LineExpander.bankerLineCount(req.bankers().size(), req.legs().size()) > bettingProperties.maxBankerLines()) {
+                    throw new BusinessException(ErrorCode.TOO_MANY_LINES);
+                }
+                ticket.setBankers(req.bankers().stream().sorted().toList());
+                ticket.setLegs(req.legs().stream().sorted().toList());
+                ticket.setLines(LineExpander.banker(req.bankers(), req.legs()));
+            }
         }
         ticket.setCost(ticket.getLines().size() * gameProperties.pointsPerBet());
         ticket.setStatus(TicketStatus.PENDING);

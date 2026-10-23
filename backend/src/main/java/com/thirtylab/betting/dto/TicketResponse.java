@@ -24,8 +24,14 @@ public record TicketResponse(
         @Schema(description = "每一注的 6 個號碼，由小到大；複式是展開後的所有組合", requiredMode = REQUIRED)
         List<List<Integer>> lines,
 
-        @Schema(description = "複式的原始選號，由小到大；單式是 null", example = "[3, 8, 11, 18, 27, 29, 30]")
+        @Schema(description = "複式的原始選號，由小到大；其他玩法是 null", example = "[3, 8, 11, 18, 27, 29, 30]")
         List<Integer> numbers,
+
+        @Schema(description = "膽拖的膽，由小到大；其他玩法是 null", example = "[8, 18]")
+        List<Integer> bankers,
+
+        @Schema(description = "膽拖的拖，由小到大；其他玩法是 null", example = "[3, 11, 27, 29, 30]")
+        List<Integer> legs,
 
         @Schema(description = "花費的積分", requiredMode = REQUIRED, example = "20")
         long cost,
@@ -46,6 +52,6 @@ public record TicketResponse(
         Instant createdAt
         ) {
     public static TicketResponse from(Ticket ticket){
-        return new TicketResponse(ticket.getId(),ticket.getDrawNo(),ticket.getBetType(),ticket.getLines(),ticket.getNumbers(),ticket.getCost(),ticket.getStatus(),ticket.getResults(),ticket.getPayout(),ticket.getSettledAt(),ticket.getCreatedAt());
+        return new TicketResponse(ticket.getId(),ticket.getDrawNo(),ticket.getBetType(),ticket.getLines(),ticket.getNumbers(),ticket.getBankers(),ticket.getLegs(),ticket.getCost(),ticket.getStatus(),ticket.getResults(),ticket.getPayout(),ticket.getSettledAt(),ticket.getCreatedAt());
     }
 }

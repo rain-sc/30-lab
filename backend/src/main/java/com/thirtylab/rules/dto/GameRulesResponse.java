@@ -22,6 +22,12 @@ public record GameRulesResponse(
         @Schema(description = "複式：最多選幾個號碼（最少是 pickCount + 1；n 個號碼展開成 C(n, pickCount) 注）", requiredMode = REQUIRED, example = "10")
         int maxMultipleNumbers,
 
+        @Schema(description = "膽拖：膽最多幾個（最少 1 個；膽 + 拖至少 pickCount + 1 個）", requiredMode = REQUIRED, example = "5")
+        int maxBankers,
+
+        @Schema(description = "膽拖：展開後最多幾注（k 膽 m 拖展開成 C(m, pickCount − k) 注）", requiredMode = REQUIRED, example = "210")
+        int maxBankerLines,
+
         @Schema(description = "幾秒開獎一期", requiredMode = REQUIRED, example = "300")
         long drawIntervalSeconds,
 

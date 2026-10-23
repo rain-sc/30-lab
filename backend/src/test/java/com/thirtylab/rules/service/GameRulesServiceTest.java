@@ -26,7 +26,7 @@ class GameRulesServiceTest {
     private static GameRulesService serviceWithBalls(int maxNumber) {
         return new GameRulesService(
                 new GameProperties(Duration.ofMinutes(5), Duration.ofSeconds(15), 10, maxNumber),
-                new BettingProperties(50, 10),
+                new BettingProperties(50, 10, 210),
                 new WalletProperties(10_000, 1_000),
                 PRIZES,
                 new PrizeCalculator(PRIZES));
@@ -80,6 +80,8 @@ class GameRulesServiceTest {
         assertThat(rules.pointsPerBet()).isEqualTo(10);
         assertThat(rules.maxLinesPerTicket()).isEqualTo(50);
         assertThat(rules.maxMultipleNumbers()).isEqualTo(10);
+        assertThat(rules.maxBankers()).isEqualTo(5);
+        assertThat(rules.maxBankerLines()).isEqualTo(210);
         assertThat(rules.drawIntervalSeconds()).isEqualTo(300);
         assertThat(rules.bettingCutoffSeconds()).isEqualTo(15);
         assertThat(rules.totalCombinations()).isEqualTo(13_983_816);

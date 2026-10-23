@@ -162,7 +162,7 @@ class BettingServiceIntegrationTest {
 
     @Test
     void missingBetTypeMeansSingle() {
-        PlaceBetRequest req = new PlaceBetRequest(OPEN_DRAW, "k1", null, List.of(LINE), null);
+        PlaceBetRequest req = new PlaceBetRequest(OPEN_DRAW, "k1", null, List.of(LINE), null, null, null);
 
         assertThat(bettingService.place("u9", req, NOW).ticket().betType()).isEqualTo(BetType.SINGLE);
     }
@@ -193,6 +193,44 @@ class BettingServiceIntegrationTest {
 
         assertClosed(() -> bettingService.place("u12",
                 PlaceBetRequest.multiple(OPEN_DRAW, "k1", seven), Instant.parse("2026-10-20T03:04:45Z")));
+        assertThat(ticketRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    void bankerExpandsAroundBankersAndChargesEachLine() {
+        PlaceBetResponse res = bettingService.place("u13",
+                PlaceBetRequest.banker(OPEN_DRAW, "k1", List.of(18, 8), List.of(30, 3, 27, 11, 29, 44, 1)), NOW);
+
+        // 2 膽 7 拖 → C(7,4) = 35 注 × 10 積分
+        assertThat(res.ticket().betType()).isEqualTo(BetType.BANKER);
+        assertThat(res.ticket().bankers()).containsExactly(8, 18);
+        assertThat(res.ticket().legs()).containsExactly(1, 3, 11, 27, 29, 30, 44);
+        assertThat(res.ticket().numbers()).isNull();
+        assertThat(res.ticket().lines()).hasSize(35).doesNotHaveDuplicates()
+                .allSatisfy(line -> assertThat(line).hasSize(6).isSorted().contains(8, 18));
+        assertThat(res.ticket().cost()).isEqualTo(350);
+        assertThat(res.balance()).isEqualTo(10_000 - 350);
+    }
+
+    @Test
+    void bankerAtLineLimitIsAccepted() {
+        // 2 膽 10 拖 = C(10,4) = 210 注，剛好等於上限
+        List<Integer> legs = IntStream.rangeClosed(3, 12).boxed().toList();
+
+        PlaceBetResponse res = bettingService.place("u14", PlaceBetRequest.banker(OPEN_DRAW, "k1", List.of(1, 2), legs), NOW);
+
+        assertThat(res.ticket().lines()).hasSize(210);
+        assertThat(res.balance()).isEqualTo(10_000 - 2_100);
+    }
+
+    @Test
+    void bankerOverLineLimitIsRejected() {
+        // 1 膽 10 拖 = C(10,5) = 252 注，超過 210
+        List<Integer> legs = IntStream.rangeClosed(2, 11).boxed().toList();
+
+        assertThatThrownBy(() -> bettingService.place("u15", PlaceBetRequest.banker(OPEN_DRAW, "k1", List.of(1), legs), NOW))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.TOO_MANY_LINES));
         assertThat(ticketRepository.findAll()).isEmpty();
     }
 

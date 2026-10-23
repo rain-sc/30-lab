@@ -246,6 +246,31 @@ class SettlementServiceIntegrationTest {
                 .containsExactly(1, 6, 0, 0, 0, 0, 4);
     }
 
+    @Test
+    void bankerTicketIsJudgedLineByLine() {
+        // 2 膽（1、2）5 拖（3~7）：選 4 個拖 = 5 注。拖 3~6 那注中頭獎；其餘 4 注都有 7（特別號碼）+ 5 個正碼 = 二獎
+        String ticketId = betBanker("u8", List.of(2, 1), List.of(7, 6, 5, 4, 3));
+        saveDraw(DRAW_NO, DRAW_AT, DrawStatus.DRAWN, null);
+
+        Draw settled = settlementService.settleNext(SETTLE_TIME).orElseThrow();
+
+        Ticket ticket = ticketRepository.findById(ticketId).orElseThrow();
+        assertThat(ticket.getStatus()).isEqualTo(TicketStatus.PAID);
+        assertThat(ticket.getLines()).hasSize(5);
+        assertThat(ticket.getResults()).extracting(LineResult::tier)
+                .containsExactlyInAnyOrder(PrizeTier.FIRST, PrizeTier.SECOND, PrizeTier.SECOND, PrizeTier.SECOND, PrizeTier.SECOND);
+        assertThat(ticket.getPayout()).isEqualTo(1_000_000 + 4 * 500_000);
+        assertThat(walletService.balance("u8").balance()).isEqualTo(10_000 - 50 + 3_000_000);
+        assertThat(settled.getJackpotWinners()).isEqualTo(1);
+        assertThat(settled.getPrizeSummary().tiers()).extracting(TierWinners::lines)
+                .containsExactly(1, 4, 0, 0, 0, 0, 0);
+    }
+
+    private String betBanker(String userId, List<Integer> bankers, List<Integer> legs) {
+        PlaceBetRequest req = PlaceBetRequest.banker(DRAW_NO, UUID.randomUUID().toString(), bankers, legs);
+        return bettingService.place(userId, req, BET_TIME).ticket().id();
+    }
+
     private String betMultiple(String userId, List<Integer> numbers) {
         PlaceBetRequest req = PlaceBetRequest.multiple(DRAW_NO, UUID.randomUUID().toString(), numbers);
         return bettingService.place(userId, req, BET_TIME).ticket().id();
