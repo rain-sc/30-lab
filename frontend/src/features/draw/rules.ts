@@ -24,7 +24,7 @@ export const DEFAULT_RULES: GameRules = {
   bettingCutoffSeconds: 15,
   totalCombinations: 593_775,
   prizes: [],
-  jackpot: { floor: 200_000, ratePercent: 20 },
+  jackpot: { floor: 500_000, ratePercent: 20 },
   signupBonus: 10_000,
   dailyBonus: 1_000,
 };
