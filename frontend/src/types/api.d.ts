@@ -324,15 +324,21 @@ export interface components {
              */
             idempotencyKey: string;
             /**
-             * @description 每一注 6 個號碼（1~49，不重複）
+             * @description 玩法；不填是 SINGLE。SINGLE 填 lines，MULTIPLE 填 numbers，BANKER 填 bankers + legs
+             * @example SINGLE
+             * @enum {string}
+             */
+            betType?: "SINGLE" | "MULTIPLE" | "BANKER";
+            /**
+             * @description 單式：每一注 6 個號碼（1 ~ maxNumber，不重複；maxNumber 見 GET /api/game/rules）
              * @example [
              *       [
              *         3,
              *         11,
              *         18,
              *         27,
-             *         34,
-             *         45
+             *         29,
+             *         30
              *       ],
              *       [
              *         1,
@@ -344,7 +350,39 @@ export interface components {
              *       ]
              *     ]
              */
-            lines: number[][];
+            lines?: number[][];
+            /**
+             * @description 複式：7 ~ maxMultipleNumbers 個不重複的號碼，展開成所有 6 個號碼的組合（maxMultipleNumbers 見 GET /api/game/rules）
+             * @example [
+             *       3,
+             *       8,
+             *       11,
+             *       18,
+             *       27,
+             *       29,
+             *       30
+             *     ]
+             */
+            numbers?: number[];
+            /**
+             * @description 膽拖的膽：1 ~ 5 個，每一注都包含
+             * @example [
+             *       8,
+             *       18
+             *     ]
+             */
+            bankers?: number[];
+            /**
+             * @description 膽拖的拖：至少 7 − 膽數 個，不能跟膽重複；從拖裡選 6 − 膽數 個跟膽組成一注
+             * @example [
+             *       3,
+             *       11,
+             *       27,
+             *       29,
+             *       30
+             *     ]
+             */
+            legs?: number[];
         };
         LineResult: {
             /**
@@ -392,9 +430,41 @@ export interface components {
             /** @example 20261020-0110 */
             drawNo: string;
             /** @enum {string} */
-            betType: "SINGLE";
-            /** @description 每一注的 6 個號碼，由小到大 */
+            betType: "SINGLE" | "MULTIPLE" | "BANKER";
+            /** @description 每一注的 6 個號碼，由小到大；複式是展開後的所有組合 */
             lines: number[][];
+            /**
+             * @description 複式的原始選號，由小到大；其他玩法是 null
+             * @example [
+             *       3,
+             *       8,
+             *       11,
+             *       18,
+             *       27,
+             *       29,
+             *       30
+             *     ]
+             */
+            numbers?: number[];
+            /**
+             * @description 膽拖的膽，由小到大；其他玩法是 null
+             * @example [
+             *       8,
+             *       18
+             *     ]
+             */
+            bankers?: number[];
+            /**
+             * @description 膽拖的拖，由小到大；其他玩法是 null
+             * @example [
+             *       3,
+             *       11,
+             *       27,
+             *       29,
+             *       30
+             *     ]
+             */
+            legs?: number[];
             /**
              * Format: int64
              * @description 花費的積分
@@ -629,7 +699,7 @@ export interface components {
             amount: number;
             /** @description 是不是目前登入的自己 */
             me: boolean;
-            /** @description 最近 5 次中獎（已派彩的注單），由新到舊；不分排行榜的期間，沒中過獎是空陣列 */
+            /** @description 最近 10 次中獎（已派彩的注單），由新到舊；不分排行榜的期間，沒中過獎是空陣列 */
             recentWins: components["schemas"]["RecentWin"][];
         };
         LeaderboardResponse: {
@@ -735,7 +805,7 @@ export interface components {
             /**
              * Format: int32
              * @description 號碼範圍 1 ~ maxNumber
-             * @example 49
+             * @example 30
              */
             maxNumber: number;
             /**
@@ -752,10 +822,28 @@ export interface components {
             pointsPerBet: number;
             /**
              * Format: int32
-             * @description 一張注單最多幾注
+             * @description 單式：一張注單最多幾注
              * @example 50
              */
             maxLinesPerTicket: number;
+            /**
+             * Format: int32
+             * @description 複式：最多選幾個號碼（最少是 pickCount + 1；n 個號碼展開成 C(n, pickCount) 注）
+             * @example 10
+             */
+            maxMultipleNumbers: number;
+            /**
+             * Format: int32
+             * @description 膽拖：膽最多幾個（最少 1 個；膽 + 拖至少 pickCount + 1 個）
+             * @example 5
+             */
+            maxBankers: number;
+            /**
+             * Format: int32
+             * @description 膽拖：展開後最多幾注（k 膽 m 拖展開成 C(m, pickCount − k) 注）
+             * @example 210
+             */
+            maxBankerLines: number;
             /**
              * Format: int64
              * @description 幾秒開獎一期
@@ -771,7 +859,7 @@ export interface components {
             /**
              * Format: int64
              * @description 一注所有可能的選法 C(maxNumber, pickCount)
-             * @example 13983816
+             * @example 593775
              */
             totalCombinations: number;
             /** @description 獎級，由頭獎到七獎 */
@@ -997,7 +1085,7 @@ export interface components {
         NumberStat: {
             /**
              * Format: int32
-             * @description 號碼 1~49
+             * @description 號碼 1 ~ maxNumber（見 GET /api/game/rules）
              * @example 7
              */
             number: number;
@@ -1027,7 +1115,7 @@ export interface components {
              * @example 100
              */
             window: number;
-            /** @description 1~49 每個號碼的統計，依號碼排序，固定 49 筆 */
+            /** @description 1 ~ maxNumber 每個號碼的統計，依號碼排序，固定 maxNumber 筆 */
             numbers: components["schemas"]["NumberStat"][];
         };
         ResultNumberStatsResponse: {

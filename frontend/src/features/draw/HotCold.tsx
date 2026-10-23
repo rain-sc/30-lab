@@ -1,5 +1,6 @@
 "use client";
 
+import { useShallow } from "zustand/react/shallow";
 import { useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
@@ -7,7 +8,6 @@ import { Ball } from "@/components/Ball";
 import { Button } from "@/components/ui/Button";
 import { useBetting } from "@/features/betting/store";
 import { fetchNumberStats, toHotCold } from "./hotColdStats";
-import { useGameRules } from "./rules";
 import type { NextDraw } from "./useNextDraw";
 
 /**
@@ -32,17 +32,16 @@ export function HotCold({ next }: { next: NextDraw | null }) {
   const errorT = useTranslations("Draws");
   const { data, isError, refetch } = useHotCold(next);
   const add = useBetting((s) => s.add);
-  const picked = useBetting((s) => s.picked);
-  const { pickCount } = useGameRules();
+  // 依目前的玩法：單式、複式加到選號；膽拖加到目前的步驟（膽或拖）
+  // 膽拖會組出新陣列：useShallow 比對內容，避免每次都當成改變而重新渲染
+  const picked = useBetting(useShallow((s) => (s.mode === "SINGLE" ? s.picked : s.mode === "MULTIPLE" ? s.multi : [...s.bankers, ...s.legs])));
   const [message, setMessage] = useState("");
 
   const pick = (n: number) => {
-    if (picked.includes(n)) setMessage(t("already", { number: n }));
-    else if (picked.length >= pickCount) setMessage(t("full", { count: pickCount }));
-    else {
-      add(n);
-      setMessage(t("added", { number: n, count: picked.length + 1, total: pickCount }));
-    }
+    const result = add(n);
+    if (result.status === "already") setMessage(t("already", { number: n }));
+    else if (result.status === "full") setMessage(t("full"));
+    else setMessage(t("added", { number: n, to: result.to }));
   };
 
   const group = (title: string, items: { number: number; label: string; aria: string }[], dot: boolean) => (

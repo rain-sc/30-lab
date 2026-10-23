@@ -17,16 +17,19 @@ MongoDB，資料庫名 `thirtylab`。**草稿**：階段 0 逐個集合討論定
 | `wallets` | 積分餘額（每人一個） | `userId`、`balance` | `userId` |
 | `wallet_transactions` | 積分流水 | `userId`、`type`、`amount`、`balanceAfter`、`refId` | `type + refId`（唯一）、`userId + createdAt`（我的流水）、`type + createdAt`（排行榜：某段時間的派彩） |
 | `draws` | 期數 | `drawNo`、`status`、`openAt`、`closeAt`、`drawAt`、`numbers`、`specialNumber`、`drawnAt`；結算後加 `poolAmount`、`jackpotWinners`、`jackpotRollover`、`prizeSummary`（各獎級注數與每注獎金、中獎人數、總派彩）、`settledAt` | `drawNo` |
-| `tickets` | 注單 | `userId`、`drawNo`、`betType`、`lines`、`cost`、`status`、`idempotencyKey`；結算後加 `results`（每注 `matched`、`specialHit`、`tier`、`prize`）、`payout`、`settledAt` | `userId + idempotencyKey` |
+| `tickets` | 注單 | `userId`、`drawNo`、`betType`、`lines`、`numbers`（複式）、`bankers` / `legs`（膽拖）、`cost`、`status`、`idempotencyKey`；結算後加 `results`（每注 `matched`、`specialHit`、`tier`、`prize`）、`payout`、`settledAt` | `userId + idempotencyKey` |
 
 ## 設計重點
 
-- **注單預留複式、膽拖**：`betType`（`SINGLE` / `MULTIPLE` / `BANKER`）+ 玩家原始選號 `selections`，再展開成一注一注的 `lines`。
-  - 目前只有單式：一張注單的 `lines` 就是玩家送出的每一注（每注 6 個號碼，存成由小到大），`cost = 注數 × 10`
-  - `selections` 等做複式、膽拖時再加（單式時跟 `lines` 一樣，先不重複存）
+- **三種玩法**：`betType`（`SINGLE` / `MULTIPLE` / `BANKER`，規則見 [game-rules.md](game-rules.md#玩法)）。一律**展開成一注一注的 `lines`**（每注 6 個號碼，由小到大），`cost = 注數 × 10`，所以判獎、派彩、獎級統計、排行榜不用分玩法處理
+  - 單式：`lines` 就是玩家送出的每一注
+  - 複式：另外存原始選號 `numbers`（由小到大），`lines` 是 C(n, 6) 個組合
+  - 膽拖：另外存 `bankers`、`legs`（各自由小到大），`lines` 是「全部的膽 + 從拖裡選 6 − 膽數 個」的所有組合
+  - 沒用到的欄位是 `null`（單式沒有 `numbers`、`bankers`、`legs`）
+  - 代價：一張複式、膽拖注單最多存 210 注和 210 個結果，所以有注數上限
 - **下注流程**：檢查期數（目前這期、`OPEN`、還沒過 `closeAt`）→ 在同一個事務裡**建立注單 + 扣積分 + 寫流水**（流水 `refId` = 注單 id）
   - `idempotencyKey`：前端每次確認下注產生一個 UUID；同一個 key 再送一次，直接回傳第一次建立的注單，不會重複扣款
-- **注單索引**：`userId + idempotencyKey`（唯一）、`userId + createdAt`（我的注單列表）、`drawNo + status`（結算時找這期待結算的注單）、`userId + status + settledAt`（排行榜的最近 5 次中獎：等於條件在前、排序在後）
+- **注單索引**：`userId + idempotencyKey`（唯一）、`userId + createdAt`（我的注單列表）、`drawNo + status`（結算時找這期待結算的注單）、`userId + status + settledAt`（排行榜的最近 10 次中獎：等於條件在前、排序在後）
 - **扣積分防並發**：`updateOne({ userId, balance: { $gte: cost } }, { $inc: { balance: -cost } })`，餘額檢查和扣減是同一個原子操作。
 - **積分流水**：每一筆餘額變動都寫一筆，`amount` 收入為正、支出為負，`balanceAfter` 是變動後的餘額。
   - `type`：`SIGNUP_BONUS`（註冊贈送，`refId` = userId）、`DAILY_BONUS`（每日簽到，`refId` = `userId:yyyy-MM-dd`，UTC 日期）、`BET`（下注，`refId` = 注單 id）、`PAYOUT`（派彩，`refId` = 注單 id）。之後有退款再加

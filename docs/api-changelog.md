@@ -16,6 +16,42 @@
 
 ---
 
+## 2026-10-23（前端：複式、膽拖）
+- 【已完成】回覆後端「複式」「膽拖」兩筆的【待前端】（設計稿：https://claude.ai/artifact/C9D57kEs3nEv8q4f8tjrXW）：
+  - 選號盤上方切換「單式 / 複式 / 膽拖」：
+    - 複式選 7 ~ `maxMultipleNumbers` 個；膽拖分兩步，先選膽（1 ~ `maxBankers` 個）再選拖，膽有金色光圈和「膽」標籤
+    - 即時顯示「從 8 個號碼選 6 個 = 28 注」「2 膽 + 從 5 個拖選 4 個 = 5 注」和花費；不夠 7 個、沒有膽、超過 `maxBankerLines` 注時不能送出並說明原因
+    - 複式、膽拖一組 = 一張注單，**不經過待下注**，選好直接確認；切換玩法時待下注裡的單式保留
+    - 「機選」改名「隨機選號」：單式 6 個、複式 7 個、膽拖 1 膽 6 拖；冷熱號碼點一下依玩法加到選號 / 膽 / 拖
+  - 我的注單：玩法標籤（「複式 · 8 個號碼」「膽拖 · 2 膽 5 拖」）；複式、膽拖先顯示原始選號（膽、拖分開，中的號碼金框）和各獎級中了幾注、獎金；展開的每一注收合起來；大廳「本期已下注」複式、膽拖一張一列
+  - 翻譯：`40003`；`selectionMatchesBetType`、`legsEnough` 的 `assertTrue`；膽拖的 `40002` 顯示「膽拖最多 210 注」（單式還是「每張注單最多 50 注」）；這些錯誤也會重新抓遊戲規則
+- 已用真的後端驗證：單式 1 注、複式 7 個（7 注 / 70）、2 膽 5 拖（5 注 / 50）都下注成功，送出的 body 和我的注單一致；1 膽 10 拖（252 注）按鈕停用；手機 360px 下注列「膽拖 · 1 膽 6 拖｜6 注 · 60 積分」、沒有橫向捲動
+
+## 2026-10-23（後端：新玩法「膽拖」）
+- 規則參考馬會的注數表：https://special.hkjc.com/e-win/zh-HK/betting-info/marksix/chance-table
+- 【修改】`POST /api/tickets` 的 `betType` 多了 `BANKER`，搭配兩個新欄位 `bankers`（膽）、`legs`（拖）：
+  ```json
+  { "drawNo": "...", "idempotencyKey": "...", "betType": "BANKER", "bankers": [8, 18], "legs": [3, 11, 27, 29, 30] }
+  ```
+  - 膽 1 ~ `maxBankers`（5）個；膽 + 拖**至少 7 個**；膽和拖不能重複
+  - 每一注 = 全部的膽 + 從拖裡選 (6 − 膽數) 個：k 膽 m 拖 = **C(m, 6 − k) 注**，花費 = 注數 × 10。例如 1 膽 6 拖 = 6 注、1 膽 7 拖 = 21 注、2 膽 5 拖 = 5 注、5 膽 2 拖 = 2 注（跟馬會的表一樣）
+  - 展開後最多 `maxBankerLines`（210）注：1 膽最多 9 拖（126 注）、2 膽最多 10 拖（210 注）、3 膽最多 11 拖（165 注）、4 膽最多 21 拖（210 注）、5 膽可以拖其餘全部號碼
+  - 跟複式一樣展開成一注一注存進 `lines`，判獎、派彩、統計都以每一注計算
+  - 錯誤：
+    - 超過 `maxBankerLines` 注 → `40002`（注數超過上限，**沿用單式的錯誤碼**）
+    - 膽是 0 個或超過 5 個 → `field: "bankers"`、`rule: "size"`
+    - 膽 + 拖不到 7 個 → `field: "legsEnough"`、`rule: "assertTrue"`（新的 field）
+    - 膽和拖有重複 → `numbersDistinct` / `assertTrue`；超出範圍 → `bankers[i]` / `legs[i]` + `ballNumber`
+    - 只填了膽、或還填了 `lines` / `numbers` → `selectionMatchesBetType` / `assertTrue`
+- 【修改】`TicketResponse` 多了 `bankers`、`legs`（由小到大；其他玩法是 `null`）
+- 【修改】`GET /api/game/rules` 多了 `maxBankers`（5）、`maxBankerLines`（210，後端設定 `app.betting.max-banker-lines`）
+- 需要重新 `npm run gen:api`
+- 已驗證：1099 個測試通過；1 分鐘一期實測 2 膽 7 拖（35 注 / 350）、5 膽 25 拖（25 注）、同一個 key 重送只扣一次、各種錯誤、結算後每注都有結果；複式、單式、機器人照常
+- 【已完成】（前端 2026-10-23，見上方前端那筆）
+  1. 下注區的玩法切換加「膽拖」：先選膽（1 ~ `maxBankers` 個）、再選拖；即時顯示 C(拖, 6 − 膽) 注 / 花費，超過 `maxBankerLines` 時不能送出
+  2. 我的注單：`betType === 'BANKER'` 時分開顯示膽和拖
+  3. 加翻譯：`rule: "assertTrue"` + `field: "legsEnough"`（膽 + 拖至少 7 個）
+
 ## 2026-10-23（後端：新玩法「複式」）
 - 【修改】`POST /api/tickets` 多兩個欄位：`betType`（`SINGLE` / `MULTIPLE`，**不填就是 `SINGLE`**，舊的寫法照常可用）、`numbers`
   - 單式：跟以前一樣填 `lines`
@@ -32,7 +68,7 @@
 - 【修改】`GET /api/game/rules` 多了 `maxMultipleNumbers`（目前 10，後端設定 `app.betting.max-multiple-numbers`）
 - 需要重新 `npm run gen:api`
 - 已驗證：1084 個測試通過；1 分鐘一期實測 8 個 / 10 個號碼下注、同一個 key 重送只扣一次、各種錯誤、結算後 210 注都有結果、跟獎級統計一致；機器人（不帶 `betType`）照常下注
-- 【待前端】
+- 【已完成】（前端 2026-10-23，見上方前端那筆）
   1. 下注區加「單式 / 複式」切換；複式選號盤可選 7 ~ `maxMultipleNumbers` 個，即時顯示「C(n,6) 注 / 花費」
   2. 我的注單：`betType === 'MULTIPLE'` 時顯示 `numbers`（原始選號）和注數，展開的 `lines` / `results` 可以收合；中獎時標出中了哪幾注
   3. 加翻譯：`40003`、`rule: "assertTrue"` + `field: "selectionMatchesBetType"`

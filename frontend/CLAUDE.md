@@ -176,7 +176,12 @@ src/
 - 登入的使用者放在 `useSession`（`features/auth/session.ts`），頁首、注單依 `username` 讀取。
 - Zustand 的 `persist` store 一律 `skipHydration: true`，由 `GameSessionGate` 掛載後 `rehydrate()`：伺服器端沒有 storage，直接讀會 hydration 不一致。
   選號、待下注存 **sessionStorage**（每個分頁各自一份，和登入規則一致）。
-- **下注**（`betting/usePlaceBets`，`POST /api/tickets`）：待下注的每一注一次送出 = 一張注單
+- **玩法**（設計稿 https://claude.ai/artifact/C9D57kEs3nEv8q4f8tjrXW）：選號盤上方切換單式 / 複式 / 膽拖（`betting/store` 的 `mode`，各玩法的選號分開記、都存 sessionStorage）
+  - 單式：選 pickCount 個 → 加入待下注 → 確認下注（待下注的每一注一次送出 = 一張注單）
+  - 複式（7 ~ `maxMultipleNumbers` 個）、膽拖（先選 1 ~ `maxBankers` 個膽，再選拖；最多 `maxBankerLines` 注）：一組選號 = 一張注單，**不經過待下注**，旁邊的明細 / 手機下注列直接確認；切換玩法時待下注的單式保留
+  - 注數、能不能送出由 `store` 的 `summarize()` 算（C(n, 6)、C(拖, 6 − 膽)），不要在組件裡各算各的；冷熱號碼的 `add()` 依玩法加到選號 / 膽 / 拖
+  - 我的注單：標題旁的玩法標籤；複式、膽拖先顯示原始選號和中獎摘要，展開的每一注收合（`<details>`，只列數字，最多 210 注不畫號碼球）；大廳「本期已下注」複式、膽拖一張一列
+- **下注**（`betting/usePlaceBets`，`POST /api/tickets`）：依玩法送 `lines` / `numbers` / `bankers` + `legs`，一次送出 = 一張注單
   - `idempotencyKey`：每次確認下注產生新的；失敗原因不確定（網路、逾時、5xx）而且待下注沒變時沿用（後端不會重複扣款），同時重新抓積分和注單
   - 成功：用回應的 `balance` 直接更新錢包快取（`setQueryData`），invalidate `["tickets"]`、`["wallet-transactions"]`
   - `40903` 已截止 → `reloadCurrentDraw()`；`40902` 積分不足 → 重新抓錢包；每張最多 50 注（`MAX_LINES`，待下注滿了不能再加）

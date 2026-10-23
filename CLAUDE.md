@@ -16,7 +16,7 @@
 
 | 項目 | 決定 |
 |---|---|
-| 玩法 | 先做**單式**（1~30 選 6 個，球數是後端設定 `app.game.max-number`，前端從 `GET /api/game/rules` 讀）；複式、膽拖在階段 4 |
+| 玩法 | **單式、複式、膽拖**（1~30 選 6 個，球數是後端設定 `app.game.max-number`，前端從 `GET /api/game/rules` 讀）；複式、膽拖展開成一注一注存，規則見 [docs/game-rules.md](docs/game-rules.md#玩法) |
 | 下注 | 虛擬積分，每注 10 積分，不能儲值或兌換 |
 | 開獎 | 系統定時自動開獎，**每 5 分鐘一期** |
 | 截止下注 | **開獎前 15 秒** |
@@ -86,13 +86,14 @@ node tools/bot-players/bots.mjs                       # （可選）80 個機器
 | [docs/api-changelog.md](docs/api-changelog.md) | 前後端交接記錄 |
 | [docs/deploy.md](docs/deploy.md) | 免費上線：Vercel、Render、Atlas、Upstash。帳號開好後照這份填 |
 | [docs/api/](docs/api/) | OpenAPI 契約 |
-| [docs/learning/backend-study-notes.md](docs/learning/backend-study-notes.md) | 後端學習筆記（NestJS / PostgreSQL 對照 Spring Boot / MongoDB） |
+| [docs/learning/backend/](docs/learning/backend/README.md) | 後端新手教程（15 章，用專案的程式碼逐行講解，NestJS / PostgreSQL 對照） |
+| [docs/learning/backend-study-notes.md](docs/learning/backend-study-notes.md) | 後端速查表（學完之後查用的濃縮版） |
 | [docs/learning/project-workflow.md](docs/learning/project-workflow.md) | 架構圖、流程圖、API / 事件 / 錯誤碼總表、開發工作流程 |
 | [backend/CLAUDE.md](backend/CLAUDE.md) | 後端約定 |
 | [frontend/CLAUDE.md](frontend/CLAUDE.md) | 前端約定 |
 
 ## 目前進度
 
-**階段 1：遊戲主流程**。後端的帳戶、開獎、錢包、下注、結算（判獎、派彩、頭獎彩池）模組已完成，從註冊、下注到開獎派彩整條流程已打通；另外有冷熱號碼、每日簽到、排行榜（今日 / 本週中獎、富豪榜，含最近 10 次中獎）、每期獎級統計與中獎名單、遊戲規則（獎級、中獎組合數）的 API；前後端交接見 [docs/api-changelog.md](docs/api-changelog.md)。
+**階段 1：遊戲主流程**。後端的帳戶、開獎、錢包、下注、結算（判獎、派彩、頭獎彩池）模組已完成，從註冊、下注到開獎派彩整條流程已打通；玩法有單式、複式、膽拖；另外有冷熱號碼、每日簽到、排行榜（今日 / 本週中獎、富豪榜，含最近 10 次中獎）、每期獎級統計與中獎名單、遊戲規則（獎級、中獎組合數）的 API；前後端交接見 [docs/api-changelog.md](docs/api-changelog.md)。
 開獎攪珠動畫方案已確定，見 [docs/draw-animation.md](docs/draw-animation.md)（含後端需要配合的事項）。
 前端：遊戲端主流程已全部接上後端（登入 / 註冊、期數與開獎推播、3D 開獎舞台、開獎紀錄、下注、我的注單、積分與積分紀錄、結算派彩、頭獎彩池），已經沒有示例資料；細節見 [frontend/CLAUDE.md](frontend/CLAUDE.md)。
