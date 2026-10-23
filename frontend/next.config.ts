@@ -5,6 +5,7 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin();
 
 // 後端位址（Spring Boot，預設 8088，見 backend/src/main/resources/application.properties）
+// 上線時 Vercel 的 BACKEND_URL 要在建置前設好：這裡在 build 時讀進設定，只改環境變數而不重新部署不會生效
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8088";
 
 const nextConfig: NextConfig = {

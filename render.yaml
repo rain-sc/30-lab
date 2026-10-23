@@ -1,0 +1,33 @@
+# Render Blueprint。帳號開好、repo 接上之後，用 New > Blueprint 指到這個檔。
+# sync: false 的項目不會寫進 Git，要在 Dashboard 填上 Atlas、Upstash、Vercel 的值。
+
+services:
+  - type: web
+    name: 30-lab-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    region: singapore
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: cloud
+      - key: JAVA_TOOL_OPTIONS
+        value: -XX:MaxRAMPercentage=60.0 -XX:+ExitOnOutOfMemoryError
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: REDIS_PORT
+        value: "6379"
+      - key: REDIS_USERNAME
+        value: default
+      - key: JWT_SECRET
+        generateValue: true
+      - key: MONGODB_URI
+        sync: false
+      - key: REDIS_HOST
+        sync: false
+      - key: REDIS_PASSWORD
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false

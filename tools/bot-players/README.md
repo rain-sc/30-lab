@@ -12,7 +12,10 @@ node tools/bot-players/bots.mjs                                   # 預設 80 �
 
 $env:BOT_COUNT=20; node tools/bot-players/bots.mjs                # 少量試跑
 $env:BASE_URL="http://localhost:8099"; node tools/bot-players/bots.mjs   # 連別的後端
+$env:BASE_URL="https://你的服務.onrender.com"; $env:BOT_COUNT="15"; $env:QUIET="1"; node tools/bot-players/bots.mjs
 ```
+
+上線後腳本仍留在自己的電腦，`BASE_URL` 指 Render 的後端（不要指 Vercel）。它每 2 秒打一次公開的期數 API，電腦開著就順便讓 Render 免費方案不會休眠。展示用 15 個就夠，詳見 [docs/deploy.md](../../docs/deploy.md)。
 
 `Ctrl + C` 停止：還沒送出的下注會全部取消，已經送出的照常開獎、派彩。
 

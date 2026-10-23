@@ -84,6 +84,7 @@ node tools/bot-players/bots.mjs                       # （可選）80 個機器
 | [docs/state-machines.md](docs/state-machines.md) | 期數、注單的狀態流轉 |
 | [docs/draw-animation.md](docs/draw-animation.md) | 開獎動畫方案、後端需要配合的事項；原型在 `docs/prototypes/` |
 | [docs/api-changelog.md](docs/api-changelog.md) | 前後端交接記錄 |
+| [docs/deploy.md](docs/deploy.md) | 免費上線：Vercel、Render、Atlas、Upstash。帳號開好後照這份填 |
 | [docs/api/](docs/api/) | OpenAPI 契約 |
 | [docs/learning/backend-study-notes.md](docs/learning/backend-study-notes.md) | 後端學習筆記（NestJS / PostgreSQL 對照 Spring Boot / MongoDB） |
 | [docs/learning/project-workflow.md](docs/learning/project-workflow.md) | 架構圖、流程圖、API / 事件 / 錯誤碼總表、開發工作流程 |
