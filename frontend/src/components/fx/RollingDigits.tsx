@@ -22,16 +22,17 @@ export function RollingDigits({ value, renderSeparator }: RollingDigitsProps) {
     <>
       {[...value].map((char, i) =>
         /\d|-/.test(char) ? (
-          // 固定寬高的裁切格：舊數字絕對定位疊在同一格。
-          // inline-block 沒有高度時，iOS 不會裁切 transform；popLayout 還會把退場數字留在旁邊，看起來多一位。
-          <span
-            key={i}
-            className="relative inline-block h-[1em] w-[1ch] overflow-hidden align-bottom leading-none [transform:translateZ(0)]"
-          >
+          // 裁切格的寬高由看不見的同一個字撐開；滾動的數字絕對定位疊在上面。
+          // 不用 w-[1ch]：iOS Safari 量到的 ch 比粗體數字窄，數字會互相重疊。
+          // popLayout 會把退場數字留在旁邊，看起來多一位，所以不用。
+          <span key={i} className="relative inline-block overflow-hidden align-top [transform:translateZ(0)]">
+            <span aria-hidden="true" className="invisible">
+              {char}
+            </span>
             <AnimatePresence initial={false}>
               <motion.span
                 key={char}
-                className="absolute inset-0 flex items-center justify-center"
+                className="absolute inset-0 text-center"
                 initial={{ y: "-100%" }}
                 animate={{ y: "0%" }}
                 exit={{ y: "100%" }}
