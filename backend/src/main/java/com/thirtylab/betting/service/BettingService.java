@@ -69,20 +69,31 @@ public class BettingService {
             return withBalance(existing.get(), userId);
         }
 
-        if (req.lines().size() > bettingProperties.maxLines()) {
-            throw new BusinessException(ErrorCode.TOO_MANY_LINES);
-        }
-        drawService.requireOpenForBetting(req.drawNo(), now);
-        walletService.getOrOpen(userId);
-
         Ticket ticket = new Ticket();
         ticket.setUserId(userId);
         ticket.setDrawNo(req.drawNo());
-        ticket.setBetType(BetType.SINGLE);
-        ticket.setLines(req.lines().stream().map(line -> line.stream().sorted().toList()).toList());
-        ticket.setCost(req.lines().size() * gameProperties.pointsPerBet());
+        ticket.setBetType(req.type());
+        switch (req.type()) {
+            case SINGLE -> {
+                if (req.lines().size() > bettingProperties.maxLines()) {
+                    throw new BusinessException(ErrorCode.TOO_MANY_LINES);
+                }
+                ticket.setLines(req.lines().stream().map(line -> line.stream().sorted().toList()).toList());
+            }
+            case MULTIPLE -> {
+                if (req.numbers().size() > bettingProperties.maxMultipleNumbers()) {
+                    throw new BusinessException(ErrorCode.TOO_MANY_NUMBERS);
+                }
+                ticket.setNumbers(req.numbers().stream().sorted().toList());
+                ticket.setLines(LineExpander.multiple(req.numbers()));
+            }
+        }
+        ticket.setCost(ticket.getLines().size() * gameProperties.pointsPerBet());
         ticket.setStatus(TicketStatus.PENDING);
         ticket.setIdempotencyKey(req.idempotencyKey());
+
+        drawService.requireOpenForBetting(req.drawNo(), now);
+        walletService.getOrOpen(userId);
 
         Long balance = transactionTemplate.execute(status -> {
             Ticket saved = ticketRepository.insert(ticket);

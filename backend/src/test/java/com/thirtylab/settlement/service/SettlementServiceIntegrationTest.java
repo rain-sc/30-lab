@@ -216,9 +216,44 @@ class SettlementServiceIntegrationTest {
         assertThat(settlementService.backfillPrizeSummaries()).isZero();
     }
 
+    @Test
+    void multipleTicketIsJudgedLineByLine() {
+        // 7 個號碼包含全部 6 個正碼和特別號碼：展開 7 注 = 1 注頭獎 + 6 注二獎（5 個 + 特別號碼）
+        String winner = betMultiple("u6", List.of(7, 6, 5, 4, 3, 2, 1));
+        // 7 個號碼只中 3 個正碼：去掉 1、2、3 其中一個的 3 注只剩 2 個（沒中），去掉 8~11 其中一個的 4 注中 3 個（七獎）
+        String partial = betMultiple("u7", List.of(1, 2, 3, 8, 9, 10, 11));
+        saveDraw(DRAW_NO, DRAW_AT, DrawStatus.DRAWN, null);
+
+        Draw settled = settlementService.settleNext(SETTLE_TIME).orElseThrow();
+
+        assertThat(settled.getJackpotWinners()).isEqualTo(1);
+        Ticket full = ticketRepository.findById(winner).orElseThrow();
+        assertThat(full.getStatus()).isEqualTo(TicketStatus.PAID);
+        assertThat(full.getResults()).extracting(LineResult::tier)
+                .containsExactlyInAnyOrder(PrizeTier.FIRST, PrizeTier.SECOND, PrizeTier.SECOND, PrizeTier.SECOND,
+                        PrizeTier.SECOND, PrizeTier.SECOND, PrizeTier.SECOND);
+        assertThat(full.getPayout()).isEqualTo(1_000_000 + 6 * 500_000);
+        assertThat(walletService.balance("u6").balance()).isEqualTo(10_000 - 70 + 4_000_000);
+
+        Ticket some = ticketRepository.findById(partial).orElseThrow();
+        assertThat(some.getResults()).extracting(LineResult::tier).filteredOn(java.util.Objects::nonNull)
+                .containsExactly(PrizeTier.SEVENTH, PrizeTier.SEVENTH, PrizeTier.SEVENTH, PrizeTier.SEVENTH);
+        assertThat(some.getPayout()).isEqualTo(4 * 40);
+
+        assertThat(settled.getPrizeSummary().winnerCount()).isEqualTo(2);
+        assertThat(settled.getPrizeSummary().tiers())
+                .extracting(TierWinners::lines)
+                .containsExactly(1, 6, 0, 0, 0, 0, 4);
+    }
+
+    private String betMultiple(String userId, List<Integer> numbers) {
+        PlaceBetRequest req = PlaceBetRequest.multiple(DRAW_NO, UUID.randomUUID().toString(), numbers);
+        return bettingService.place(userId, req, BET_TIME).ticket().id();
+    }
+
     @SafeVarargs
     private String bet(String userId, List<Integer>... lines) {
-        PlaceBetRequest req = new PlaceBetRequest(DRAW_NO, UUID.randomUUID().toString(), List.of(lines));
+        PlaceBetRequest req = PlaceBetRequest.single(DRAW_NO, UUID.randomUUID().toString(), List.of(lines));
         return bettingService.place(userId, req, BET_TIME).ticket().id();
     }
 

@@ -16,8 +16,11 @@ public record GameRulesResponse(
         @Schema(description = "每注幾積分", requiredMode = REQUIRED, example = "10")
         long pointsPerBet,
 
-        @Schema(description = "一張注單最多幾注", requiredMode = REQUIRED, example = "50")
+        @Schema(description = "單式：一張注單最多幾注", requiredMode = REQUIRED, example = "50")
         int maxLinesPerTicket,
+
+        @Schema(description = "複式：最多選幾個號碼（最少是 pickCount + 1；n 個號碼展開成 C(n, pickCount) 注）", requiredMode = REQUIRED, example = "10")
+        int maxMultipleNumbers,
 
         @Schema(description = "幾秒開獎一期", requiredMode = REQUIRED, example = "300")
         long drawIntervalSeconds,

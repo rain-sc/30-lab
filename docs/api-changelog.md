@@ -16,6 +16,28 @@
 
 ---
 
+## 2026-10-23（後端：新玩法「複式」）
+- 【修改】`POST /api/tickets` 多兩個欄位：`betType`（`SINGLE` / `MULTIPLE`，**不填就是 `SINGLE`**，舊的寫法照常可用）、`numbers`
+  - 單式：跟以前一樣填 `lines`
+  - 複式：`{ "drawNo", "idempotencyKey", "betType": "MULTIPLE", "numbers": [3, 8, 11, 18, 27, 29, 30] }`
+    - 選 7 ~ `maxMultipleNumbers`（目前 10）個不重複的號碼，一張注單一組
+    - 後端展開成所有 6 個號碼的組合，**每個組合是一注**：n 個號碼 = C(n, 6) 注，花費 = 注數 × 10（7 個 = 7 注 / 70、8 個 = 28 注 / 280、9 個 = 84 注 / 840、10 個 = 210 注 / 2,100）
+    - 判獎、派彩、獎級統計、排行榜都跟單式一樣，以展開後的每一注計算
+  - 錯誤：
+    - 每種玩法只能填自己的欄位（單式填了 `numbers`、複式填了 `lines`、兩個都沒填）→ `40001`，`field: "selectionMatchesBetType"`、`rule: "assertTrue"`
+    - 複式少於 7 個 → `40001`，`field: "numbers"`、`rule: "size"`；號碼重複 → `numbersDistinct` / `assertTrue`；超出範圍 → `numbers[i]` / `ballNumber`
+    - 複式超過 `maxMultipleNumbers` 個 → **新錯誤碼 `40003`**（複式號碼超過上限）
+    - `betType` 不是已知的值、或 body 不是合法 JSON → `40000`（**原本是 `50000`，順便修正**）
+- 【修改】`TicketResponse`（下注回應、`GET /api/tickets`）多了 `numbers`：複式的原始選號（由小到大），單式是 `null`。`lines` 是展開後的所有組合，`results` 跟 `lines` 一一對應
+- 【修改】`GET /api/game/rules` 多了 `maxMultipleNumbers`（目前 10，後端設定 `app.betting.max-multiple-numbers`）
+- 需要重新 `npm run gen:api`
+- 已驗證：1084 個測試通過；1 分鐘一期實測 8 個 / 10 個號碼下注、同一個 key 重送只扣一次、各種錯誤、結算後 210 注都有結果、跟獎級統計一致；機器人（不帶 `betType`）照常下注
+- 【待前端】
+  1. 下注區加「單式 / 複式」切換；複式選號盤可選 7 ~ `maxMultipleNumbers` 個，即時顯示「C(n,6) 注 / 花費」
+  2. 我的注單：`betType === 'MULTIPLE'` 時顯示 `numbers`（原始選號）和注數，展開的 `lines` / `results` 可以收合；中獎時標出中了哪幾注
+  3. 加翻譯：`40003`、`rule: "assertTrue"` + `field: "selectionMatchesBetType"`
+- 下一步：膽拖（`BANKER`），做好再另外通知
+
 ## 2026-10-23（前端：內部名稱改成 tl）
 - 【已完成】回覆後端「內部名稱改成 thirtylab」那筆的【待前端】：
   1. 註解裡的 `msl_token` 改成 `tl_token`（`features/auth/api.ts`、`frontend/CLAUDE.md`）

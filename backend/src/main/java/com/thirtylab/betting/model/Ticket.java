@@ -31,7 +31,11 @@ public class Ticket {
 
     private BetType betType;
 
+    // 每一注的 6 個號碼；複式也是展開後一注一注存，判獎、派彩跟單式完全一樣
     private List<List<Integer>> lines;
+
+    // 複式的原始選號（由小到大）；單式是 null
+    private List<Integer> numbers;
 
     private long cost;
 

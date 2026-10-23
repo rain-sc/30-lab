@@ -27,6 +27,7 @@ public enum ErrorCode {
 
     // 下注
     TOO_MANY_LINES(40002, "注數超過上限"),
+    TOO_MANY_NUMBERS(40003, "複式號碼超過上限"),
     BETTING_CLOSED(40903, "這一期已截止下注");
 
 

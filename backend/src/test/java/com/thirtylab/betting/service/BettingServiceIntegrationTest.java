@@ -13,6 +13,7 @@ import java.util.stream.IntStream;
 
 import com.thirtylab.betting.dto.PlaceBetRequest;
 import com.thirtylab.betting.dto.PlaceBetResponse;
+import com.thirtylab.betting.model.BetType;
 import com.thirtylab.betting.model.Ticket;
 import com.thirtylab.betting.repository.TicketRepository;
 import com.thirtylab.common.BusinessException;
@@ -104,7 +105,7 @@ class BettingServiceIntegrationTest {
 
     @Test
     void wrongDrawIsRejected() {
-        assertClosed(() -> bettingService.place("u4", new PlaceBetRequest("20261020-0036", "k1", List.of(LINE)), NOW));
+        assertClosed(() -> bettingService.place("u4", PlaceBetRequest.single("20261020-0036", "k1", List.of(LINE)), NOW));
         assertClosed(() -> bettingService.place("u4", request("k2", LINE), Instant.parse("2026-10-20T03:04:45Z")));
         assertThat(ticketRepository.findAll()).isEmpty();
     }
@@ -126,14 +127,78 @@ class BettingServiceIntegrationTest {
     void tooManyLinesIsRejected() {
         List<List<Integer>> lines = Collections.nCopies(51, LINE);
 
-        assertThatThrownBy(() -> bettingService.place("u6", new PlaceBetRequest(OPEN_DRAW, "k1", lines), NOW))
+        assertThatThrownBy(() -> bettingService.place("u6", PlaceBetRequest.single(OPEN_DRAW, "k1", lines), NOW))
                 .isInstanceOfSatisfying(BusinessException.class,
                         e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.TOO_MANY_LINES));
     }
 
+    @Test
+    void multipleExpandsIntoAllCombinationsAndChargesEachLine() {
+        PlaceBetResponse res = bettingService.place("u7",
+                PlaceBetRequest.multiple(OPEN_DRAW, "k1", List.of(30, 1, 18, 7, 25, 12, 3, 44)), NOW);
+
+        // 8 個號碼 → C(8,6) = 28 注 × 10 積分
+        assertThat(res.ticket().betType()).isEqualTo(BetType.MULTIPLE);
+        assertThat(res.ticket().numbers()).containsExactly(1, 3, 7, 12, 18, 25, 30, 44);
+        assertThat(res.ticket().lines()).hasSize(28).doesNotHaveDuplicates()
+                .allSatisfy(line -> assertThat(line).hasSize(6).isSorted()
+                        .isSubsetOf(1, 3, 7, 12, 18, 25, 30, 44));
+        assertThat(res.ticket().lines().getFirst()).containsExactly(1, 3, 7, 12, 18, 25);
+        assertThat(res.ticket().cost()).isEqualTo(280);
+        assertThat(res.balance()).isEqualTo(10_000 - 280);
+        assertThat(transactionRepository.findByUserId("u7"))
+                .filteredOn(tx -> tx.getType() == WalletTransactionType.BET)
+                .singleElement()
+                .satisfies(tx -> assertThat(tx.getAmount()).isEqualTo(-280));
+    }
+
+    @Test
+    void singleTicketHasNoNumbers() {
+        PlaceBetResponse res = bettingService.place("u8", request("k1", LINE), NOW);
+
+        assertThat(res.ticket().betType()).isEqualTo(BetType.SINGLE);
+        assertThat(res.ticket().numbers()).isNull();
+    }
+
+    @Test
+    void missingBetTypeMeansSingle() {
+        PlaceBetRequest req = new PlaceBetRequest(OPEN_DRAW, "k1", null, List.of(LINE), null);
+
+        assertThat(bettingService.place("u9", req, NOW).ticket().betType()).isEqualTo(BetType.SINGLE);
+    }
+
+    @Test
+    void tooManyMultipleNumbersIsRejected() {
+        List<Integer> eleven = IntStream.rangeClosed(1, 11).boxed().toList();
+
+        assertThatThrownBy(() -> bettingService.place("u10", PlaceBetRequest.multiple(OPEN_DRAW, "k1", eleven), NOW))
+                .isInstanceOfSatisfying(BusinessException.class,
+                        e -> assertThat(e.getErrorCode()).isEqualTo(ErrorCode.TOO_MANY_NUMBERS));
+        assertThat(ticketRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    void maxMultipleNumbersIsAccepted() {
+        List<Integer> ten = IntStream.rangeClosed(1, 10).boxed().toList();
+
+        PlaceBetResponse res = bettingService.place("u11", PlaceBetRequest.multiple(OPEN_DRAW, "k1", ten), NOW);
+
+        assertThat(res.ticket().lines()).hasSize(210);
+        assertThat(res.balance()).isEqualTo(10_000 - 2_100);
+    }
+
+    @Test
+    void multipleOnClosedDrawIsRejected() {
+        List<Integer> seven = IntStream.rangeClosed(1, 7).boxed().toList();
+
+        assertClosed(() -> bettingService.place("u12",
+                PlaceBetRequest.multiple(OPEN_DRAW, "k1", seven), Instant.parse("2026-10-20T03:04:45Z")));
+        assertThat(ticketRepository.findAll()).isEmpty();
+    }
+
     @SafeVarargs
     private static PlaceBetRequest request(String key, List<Integer>... lines) {
-        return new PlaceBetRequest(OPEN_DRAW, key, List.of(lines));
+        return PlaceBetRequest.single(OPEN_DRAW, key, List.of(lines));
     }
 
     private static void assertClosed(Runnable call) {

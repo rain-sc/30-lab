@@ -3,6 +3,7 @@ package com.thirtylab.common;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -40,6 +41,15 @@ public class GlobalExceptionHandler {
         ErrorCode ec = ErrorCode.VALIDATION_FAILED;
         return ResponseEntity.status(ec.getStatus())
                 .body(Result.fail(ec.getCode(),ec.getMessage(),violations));
+    }
+
+    // body 不是合法的 JSON、型別對不上（例如 betType 不是已知的玩法）
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Result<Void>> handleUnreadable(HttpMessageNotReadableException ex) {
+        log.warn("請求內容無法解析: {}", ex.getMessage());
+        ErrorCode ec = ErrorCode.BAD_REQUEST;
+        return ResponseEntity.status(ec.getStatus())
+                .body(Result.fail(ec.getCode(), ec.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)

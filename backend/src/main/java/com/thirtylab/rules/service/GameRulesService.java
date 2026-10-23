@@ -38,6 +38,7 @@ public class GameRulesService {
                 PICK_COUNT,
                 gameProperties.pointsPerBet(),
                 bettingProperties.maxLines(),
+                bettingProperties.maxMultipleNumbers(),
                 gameProperties.drawInterval().toSeconds(),
                 gameProperties.bettingCutoff().toSeconds(),
                 Combinations.choose(maxNumber, PICK_COUNT),
