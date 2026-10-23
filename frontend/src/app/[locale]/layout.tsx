@@ -17,7 +17,7 @@ const notoSansTC = Noto_Sans_TC({
   preload: false,
 });
 
-// 數字與品牌字：倒數、積分、號碼球、49 LAB（窄體，數字等寬）
+// 數字與品牌字：倒數、積分、號碼球、30 LAB（窄體，數字等寬）
 const barlow = Barlow_Condensed({
   variable: "--font-barlow",
   subsets: ["latin"],

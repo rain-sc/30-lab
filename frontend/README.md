@@ -1,6 +1,6 @@
-# 49 Lab — 前端
+# 30 Lab — 前端
 
-49 Lab 的網頁：用虛擬積分玩的 6/49 選號遊戲。Next.js 16（App Router）· React 19 · TypeScript · Tailwind CSS 4。
+30 Lab 的網頁：用虛擬積分玩的選號開獎遊戲（從 1–30 選 6 個號碼）。Next.js 16（App Router）· React 19 · TypeScript · Tailwind CSS 4。
 
 專案整體說明見 [../README.md](../README.md)，前端的開發約定見 [CLAUDE.md](CLAUDE.md)。
 

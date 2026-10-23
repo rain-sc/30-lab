@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- 49 Lab：金色的「49」號碼球（和頁面左上角的 BrandLogo 一致） -->
+  <!-- 30 Lab：金色的「30」號碼球（和頁面左上角的 BrandLogo 一致） -->
   <defs>
     <radialGradient id="ball" cx="35%" cy="30%" r="75%">
       <stop offset="0" stop-color="#FFE3A3"/>
@@ -9,7 +9,7 @@
   </defs>
   <!-- 球；深金色外框讓淺色分頁列上也看得清楚 -->
   <circle cx="32" cy="32" r="30" fill="url(#ball)" stroke="#8A5E12" stroke-width="2"/>
-  <!-- 「49」：SVG favicon 載入不了網頁字體，用系統的粗體窄字，橫向壓窄一點像 Barlow Condensed -->
+  <!-- 「30」：SVG favicon 載入不了網頁字體，用系統的粗體窄字，橫向壓窄一點像 Barlow Condensed -->
   <text x="32" y="44" text-anchor="middle" transform="translate(32 0) scale(0.86 1) translate(-32 0)"
-        font-family="'Arial Narrow', 'Arial Black', Arial, sans-serif" font-weight="900" font-size="32" letter-spacing="-1" fill="#2A1C03">49</text>
+        font-family="'Arial Narrow', 'Arial Black', Arial, sans-serif" font-weight="900" font-size="32" letter-spacing="-1" fill="#2A1C03">30</text>
 </svg>

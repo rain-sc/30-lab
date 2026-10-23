@@ -146,9 +146,9 @@ src/
 
 ## 品牌與免責聲明（公開給別人玩）
 
-- 對外的品牌是 **49 Lab**（`BrandLogo`：金色「49」球 + 「49 LAB」、`icon.svg`、`apple-icon.png`、`Metadata.title`）。
+- 對外的品牌是 **30 Lab**（號碼範圍 1–30；`BrandLogo`：金色「30」球 + 「30 LAB」、`icon.svg`、`apple-icon.png`、`Metadata.title`）。
   **畫面上不要用「六合彩」「Mark Six」當名稱**（香港賽馬會的商標），只能在 `/about` 的商標聲明、免責文字裡描述性地提到。
-  GitHub 專案、README 也改成 49 Lab；程式內部的識別名稱（Java 套件 `com.marksixlab`、資料庫 `marksixlab`、cookie `msl_token`、儲存 key `msl:*`、Docker 容器）不對外，維持原樣
+  GitHub 專案（`rain-sc/30-lab`）、README 也改成 30 Lab；程式內部的識別名稱（Java 套件 `com.marksixlab`、資料庫 `marksixlab`、cookie `msl_token`、儲存 key `msl:*`、Docker 容器）不對外，維持原樣
 - 「虛擬積分、不涉及真錢、與香港賽馬會無關」放在每個人一定會看到的地方（設計稿 https://claude.ai/artifact/FsPcpgogpww4UbGjo5f7jq ）：
   - 登入頁表單卡片下方：`LegalNotice`
   - 遊戲端每一頁的頁尾：`SiteFooter`（在 `(game)/layout`；手機大廳頁尾後面多留「待下注」列的高度）
