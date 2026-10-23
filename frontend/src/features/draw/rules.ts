@@ -13,15 +13,15 @@ export type PrizeRule = components["schemas"]["PrizeRule"];
 
 /** 後端回應前的預設值（和 docs/game-rules.md、後端預設設定一致） */
 export const DEFAULT_RULES: GameRules = {
-  maxNumber: 49,
+  maxNumber: 30,
   pickCount: 6,
   pointsPerBet: 10,
   maxLinesPerTicket: 50,
   drawIntervalSeconds: 300,
   bettingCutoffSeconds: 15,
-  totalCombinations: 13_983_816,
+  totalCombinations: 593_775,
   prizes: [],
-  jackpot: { floor: 1_000_000, ratePercent: 20 },
+  jackpot: { floor: 200_000, ratePercent: 20 },
   signupBonus: 10_000,
   dailyBonus: 1_000,
 };

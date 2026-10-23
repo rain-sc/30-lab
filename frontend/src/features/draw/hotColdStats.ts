@@ -17,7 +17,7 @@ export function fetchNumberStats(window = STATS_WINDOW) {
 }
 
 /**
- * 後端的 49 個號碼統計 → 熱門 / 冷門的前 top 名
+ * 後端的 maxNumber 個號碼統計 → 熱門 / 冷門的前 top 名
  * - 熱門：開出次數（正碼 + 特別號碼）最多
  * - 冷門：最久沒開出（missed，正碼或特別號碼都算開出）
  */

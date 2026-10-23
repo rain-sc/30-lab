@@ -1,7 +1,7 @@
 {
   "Metadata": {
     "title": "49 Lab",
-    "description": "用虛擬積分玩的 6/49 選號遊戲（個人學習作品，不涉及真錢）"
+    "description": "用虛擬積分玩的選號開獎遊戲（個人學習作品，不涉及真錢）"
   },
   "LocaleSwitcher": {
     "label": "語言"
@@ -132,7 +132,7 @@
   },
   "Betting": {
     "title": "選 {count} 個號碼",
-    "padLabel": "號碼 1 到 49",
+    "padLabel": "號碼 1 到 {max}",
     "pickedCount": "已選 <b>{count}</b> / {total}",
     "hotLegend": "近 100 期熱門",
     "hotNumber": "{number}（熱門）",
@@ -154,7 +154,8 @@
     "placedMore": "還有 {count} 注 →",
     "tooMany": "每張注單最多 {max} 注，請分開送出",
     "slipFull": "待下注最多 {max} 注，請先確認下注",
-    "rulesLink": "玩法說明（獎級、機率）"
+    "rulesLink": "玩法說明（獎級、機率）",
+    "ballNumber": "號碼必須在 1–{max} 之間，請重新選號"
   },
   "HotCold": {
     "hot": "最常開出",
@@ -281,7 +282,7 @@
   },
   "Rules": {
     "title": "玩法說明",
-    "intro": "用虛擬積分玩的 6/49 選號遊戲，積分不能儲值、也不能兌換。",
+    "intro": "用虛擬積分玩的選號開獎遊戲，積分不能儲值、也不能兌換。",
     "error": "無法載入遊戲規則：{reason}",
     "retry": "重試",
     "howTitle": "怎麼玩",
@@ -340,7 +341,7 @@
     "hero2": "只使用<b>虛擬積分</b>：不能購買、儲值、兌換現金或獎品，也不能轉給別人。",
     "hero3": "開獎號碼由本站隨機產生，<b>與香港賽馬會、香港六合彩沒有任何關係</b>。",
     "playTitle": "玩法",
-    "play": "參考常見的 6/49 選號規則：從 1–49 選 6 個號碼，定時開獎。詳細規則見<rules>玩法說明</rules>。",
+    "play": "參考常見的樂透選號規則：選 6 個號碼，定時開獎，號碼範圍和獎金見<rules>玩法說明</rules>。",
     "ageTitle": "年齡",
     "age": "本站適合 18 歲以上的使用者。",
     "riskTitle": "真實賭博有風險",

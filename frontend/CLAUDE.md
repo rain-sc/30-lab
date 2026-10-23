@@ -92,7 +92,7 @@ src/
 | `LivePanel` 的 `AnimatePresence` | — | 開獎球依序掉落、換期時滾走換新 |
 | `animate-fade-up` + `animation-delay` | React Bits Animated Content | 頁面區塊依序進場（純 CSS） |
 | `fx/BokehBalls` | React Bits Particles（圓點換成號碼球、CSS blur 做景深） | 登入頁背景：模糊漂浮的號碼球 + 滑鼠視差（**這頁唯一的背景氛圍效果**） |
-| `draw/stage/crystal.ts` | React Bits Crystalized Ball（ogl shader 搬進舞台的 three.js 場景）+ Comet Dial（SVG 改成 shader） | 攪珠台的容器：金色電光的水晶球、49 格號碼刻度環上的彗星（大廳唯一的氛圍效果） |
+| `draw/stage/crystal.ts` | React Bits Crystalized Ball（ogl shader 搬進舞台的 three.js 場景）+ Comet Dial（SVG 改成 shader） | 攪珠台的容器：金色電光的水晶球、號碼刻度環（一格一個號碼）上的彗星（大廳唯一的氛圍效果） |
 
 - 能用 CSS 的用 CSS（進場、光澤、火花、脈動）；需要狀態、彈簧、進出場的用 Motion。
 - `@keyframes` 不要寫和預設值相同的 `from`（例如 `rotate: 0turn`）：CSS 壓縮會刪掉，動畫就從元素自己的值開始。要從 0 開始的旋轉用 `transform`（起點是 `none`）
@@ -147,7 +147,8 @@ src/
 ## 品牌與免責聲明（公開給別人玩）
 
 - 對外的品牌是 **49 Lab**（`BrandLogo`：金色「49」球 + 「49 LAB」、`icon.svg`、`apple-icon.png`、`Metadata.title`）。
-  **畫面上不要用「六合彩」「Mark Six」當名稱**（香港賽馬會的商標），只能在 `/about` 的商標聲明、免責文字裡描述性地提到。repo、程式裡的名稱不用改
+  **畫面上不要用「六合彩」「Mark Six」當名稱**（香港賽馬會的商標），只能在 `/about` 的商標聲明、免責文字裡描述性地提到。
+  GitHub 專案、README 也改成 49 Lab；程式內部的識別名稱（Java 套件 `com.marksixlab`、資料庫 `marksixlab`、cookie `msl_token`、儲存 key `msl:*`、Docker 容器）不對外，維持原樣
 - 「虛擬積分、不涉及真錢、與香港賽馬會無關」放在每個人一定會看到的地方（設計稿 https://claude.ai/artifact/FsPcpgogpww4UbGjo5f7jq ）：
   - 登入頁表單卡片下方：`LegalNotice`
   - 遊戲端每一頁的頁尾：`SiteFooter`（在 `(game)/layout`；手機大廳頁尾後面多留「待下注」列的高度）
@@ -180,7 +181,7 @@ src/
   - `40903` 已截止 → `reloadCurrentDraw()`；`40902` 積分不足 → 重新抓錢包；每張最多 50 注（`MAX_LINES`，待下注滿了不能再加）
 - **積分**：`GET /api/wallet`（`wallet/api.ts` 的 `useWallet`）；載入失敗時頁首變成重試按鈕
   - **畫面上的積分用 `useBalance`**：= 錢包餘額 − 還沒播完開獎動畫那幾期的 `payout`（派彩在開獎後約 1 秒就完成，比動畫早 20 幾秒，不能先漲）
-- **遊戲規則**（`features/draw/rules.ts`，`GET /api/game/rules`）：每注積分、每期間隔、截止秒數、每張上限、每注幾個號碼、號碼範圍、獎金、彩池規則、贈送積分。**不要再寫死這些數字**：React 用 `useGameRules()`，非 React（選號 store）用 `currentRules()`；回應前是 `DEFAULT_RULES`，「玩法說明」頁用 `useGameRulesQuery()` 等真的資料
+- **遊戲規則**（`features/draw/rules.ts`，`GET /api/game/rules`）：號碼範圍 `maxNumber`（目前 1–30，後端設定 `app.game.max-number`）也從這裡讀：選號盤（≤ 36 排 6 欄、更多 7 欄）、機選、3D 舞台的球數和刻度、載入動畫、下注失敗 `ballNumber` 的提示都用它；每注積分、每期間隔、截止秒數、每張上限、每注幾個號碼、號碼範圍、獎金、彩池規則、贈送積分。**不要再寫死這些數字**：React 用 `useGameRules()`，非 React（選號 store）用 `currentRules()`；回應前是 `DEFAULT_RULES`，「玩法說明」頁用 `useGameRulesQuery()` 等真的資料
 - **排行榜**（`features/leaderboard`，設計稿 F）：今日 / 本週中獎榜 `GET /api/leaderboard?period=DAY|WEEK`、富豪榜 `GET /api/leaderboard/balance`（餘額，沒有期間、不會重置；兩種回應在 `fetchBoard` 統一格式）；下注、簽到成功後 invalidate `["leaderboard"]`；queryKey 帶期間、帳號、`revealedDrawAt`，**動畫播完才抓**（`latestRevealed` 為 false 時不抓）；倒數到 `to` 時重抓；暱稱會重複，不能當 key；每一列點開看 `recentWins`（最近的中獎，最多 10 次、不分期間；標題的次數依陣列長度，不寫死；一次只展開一列）
 - **每日簽到**（`wallet/dailyBonus.ts`、`DailyBonusButton`，頁首積分旁邊）：每個 UTC 日一次；成功用回應的 `balance` 更新錢包快取；`40904` 當成「已簽到」（不顯示錯誤，重新抓狀態和積分）；到 `nextResetAt` 自動重抓，跨日後按鈕恢復。手機頁首只在沒簽到時顯示禮物圖示（放文字會把頁面撐寬），已簽到的狀態在使用者選單裡
 - **我的注單 / 積分紀錄**（`/bets`，分頁籤切換）：`GET /api/tickets`、`GET /api/wallet/transactions`，都分頁
@@ -213,7 +214,7 @@ src/
     three r186 的差異：光照強度乘 π、`SRGBColorSpace`、`PCFSoftShadowMap` 已移除
   - `crystal.ts`：容器的外觀（設計稿 https://claude.ai/artifact/SmoCs9XGLjyjWFY3UC5Q3p ），物理邊界還是 `engine.ts` 的圓。
     可下注：電光安靜、刻度環從正上方順時針亮起（`idle.cutoff` = 離截止的進度）、上一期號碼的刻度金色；
-    攪珠：彗星繞圈、電光跟著變亮；開獎：彗星甩到開出號碼的刻度、那裡閃電弧。刻度從正上方順時針 1 → 49。
+    攪珠：彗星繞圈、電光跟著變亮；開獎：彗星甩到開出號碼的刻度、那裡閃電弧。刻度從正上方順時針 1 → maxNumber。
     其他 React Bits 的 WebGL 元件不能直接放進頁面（會多一個 WebGL），要像這樣把 shader 搬進同一個場景
   - `DrawStage.tsx`：動態 `import("./engine")`（three + matter 不進初始 JS），載入前顯示 `StagePreview`（水晶球輪廓 + 4 顆隨機號碼球繞圈，純 CSS；手機縮圖、不支援 WebGL 時也用它，後者球停住）；effect 清除時 `dispose()` 釋放 WebGL（Activity 隱藏頁面也會執行），**每次重建都用新的 canvas**（`forceContextLoss` 後同一個 canvas 不能再用）
   - 捲出畫面、切到別的分頁時暫停渲染和物理

@@ -1,36 +1,23 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 49 Lab — 前端
 
-## Getting Started
+49 Lab 的網頁：用虛擬積分玩的 6/49 選號遊戲。Next.js 16（App Router）· React 19 · TypeScript · Tailwind CSS 4。
 
-First, run the development server:
+專案整體說明見 [../README.md](../README.md)，前端的開發約定見 [CLAUDE.md](CLAUDE.md)。
+
+## 啟動
+
+需要後端（http://localhost:8088）和 MongoDB、Redis 已經啟動，見根目錄的 README。
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev       # http://localhost:3100
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 常用命令
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run dev       # 開發伺服器（埠 3100；/api/* 轉發到後端）
+npm run build     # 正式建置
+npm run lint      # ESLint
+npm run gen:api   # 從 ../docs/api/openapi.json 重新產生 API 型別（src/types/api.d.ts）
+```

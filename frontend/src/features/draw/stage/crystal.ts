@@ -1,4 +1,4 @@
-// 攪珠台的容器：金色電光的水晶球 + 49 格號碼刻度環上的彗星（設計稿：https://claude.ai/artifact/SmoCs9XGLjyjWFY3UC5Q3p）
+// 攪珠台的容器：金色電光的水晶球 + 號碼刻度環（一格一個號碼）上的彗星（設計稿：https://claude.ai/artifact/SmoCs9XGLjyjWFY3UC5Q3p）
 //
 // 改寫自 React Bits（https://reactbits.dev，MIT + Commons Clause）：
 // - Crystalized Ball（https://reactbits.dev/animations/crystalized-ball）：水晶球邊緣的電光、霧、微塵、電弧
@@ -25,6 +25,8 @@ export type CrystalOptions = {
   cy: number;
   r: number;
   reducedMotion: boolean;
+  /** 號碼範圍 1–maxNumber：刻度環的格數 */
+  maxNumber: number;
 };
 
 // ---------- 顏色（globals.css 的 token） ----------
@@ -32,8 +34,6 @@ const GOLD = 0xf4b63f;
 const GOLD_BRIGHT = 0xffd27a;
 const LINE_STRONG = 0x2f3a5c;
 
-/** 號碼 n 在刻度環上的位置：正上方順時針 1 → 49（0–1） */
-const turnOf = (n: number) => (n - 1) / 49;
 /** 位置（0–1，正上方順時針）→ 數學角度（y 朝上） */
 const angleOfTurn = (f: number) => Math.PI / 2 - f * Math.PI * 2;
 
@@ -467,7 +467,11 @@ const MAX_ARCS = 4;
  * 建立容器，加進場景。z 都在球（z = 0）後面：球窗的底 → 霧和電光 → 微塵 → 彗星環、刻度。
  * 每一幀呼叫 update；畫面大小改變時呼叫 setPixelScale。
  */
-export function createCrystal(scene: THREE.Scene, { cy, r, reducedMotion }: CrystalOptions) {
+export function createCrystal(scene: THREE.Scene, { cy, r, reducedMotion, maxNumber }: CrystalOptions) {
+  /** 號碼 n 在刻度環上的位置：正上方順時針 1 → maxNumber（0–1） */
+  const turnOf = (n: number) => (n - 1) / maxNumber;
+  /** 每幾格一條長刻度：能被 5 整除用 5（30 → 1、6、11…），否則用 7（49 → 1、8、15…） */
+  const major = maxNumber % 5 === 0 ? 5 : 7;
   const group = new THREE.Group();
   group.position.y = cy;
   scene.add(group);
@@ -577,14 +581,14 @@ export function createCrystal(scene: THREE.Scene, { cy, r, reducedMotion }: Crys
   dial.position.z = -1.1;
   group.add(dial);
 
-  // 49 格刻度：每 7 格（1、8、15…）長一點
+  // 刻度：一格一個號碼，每 major 格長一點
   const majorGeo = new THREE.PlaneGeometry(0.16, 0.62);
   const minorGeo = new THREE.PlaneGeometry(0.12, 0.42);
-  const ticks = Array.from({ length: 49 }, (_, i) => {
+  const ticks = Array.from({ length: maxNumber }, (_, i) => {
     const n = i + 1;
     const a = angleOfTurn(turnOf(n));
     const material = new THREE.MeshBasicMaterial({ color: LINE_STRONG });
-    const mesh = new THREE.Mesh(i % 7 === 0 ? majorGeo : minorGeo, material);
+    const mesh = new THREE.Mesh(i % major === 0 ? majorGeo : minorGeo, material);
     mesh.position.set(tickR * Math.cos(a), tickR * Math.sin(a), -1.1);
     mesh.rotation.z = a - Math.PI / 2;
     group.add(mesh);

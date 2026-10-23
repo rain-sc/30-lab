@@ -3,8 +3,9 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { Ball } from "@/components/Ball";
 import { cn } from "@/lib/utils";
+import { useGameRules } from "./rules";
 
-// 開獎舞台的 2D 替身：水晶球的輪廓（金色光邊 + 49 格刻度，對應 stage/crystal.ts），裡面 4 顆號碼球沿著光邊繞圈（設計稿 B：https://claude.ai/artifact/8QsQ7GWpHopGfrZCrsxvtM）
+// 開獎舞台的 2D 替身：水晶球的輪廓（金色光邊 + 號碼刻度（一格一個號碼），對應 stage/crystal.ts），裡面 4 顆號碼球沿著光邊繞圈（設計稿 B：https://claude.ai/artifact/8QsQ7GWpHopGfrZCrsxvtM）
 // 用在：3D 舞台載入完成前、手機大廳卡片上的縮圖、不支援 WebGL 時（moving = false，球停住）
 // 純 CSS 動畫：伺服器渲染就會動，不用等 JS；reduced-motion 時停住
 
@@ -13,9 +14,9 @@ const INITIAL = [8, 23, 31, 45];
 /** 4 顆球依序落後 0.38 秒，一前一後繞圈 */
 const LAG_MS = 380;
 
-const randomNumbers = () => {
+const randomNumbers = (maxNumber: number) => {
   const picked = new Set<number>();
-  while (picked.size < INITIAL.length) picked.add(1 + Math.floor(Math.random() * 49));
+  while (picked.size < INITIAL.length) picked.add(1 + Math.floor(Math.random() * maxNumber));
   return [...picked];
 };
 
@@ -30,16 +31,19 @@ export function StagePreview({
   /** 中間的文字（例如「攪珠台準備中…」）；手機縮圖太小不放 */
   caption?: string;
 }) {
+  const { maxNumber } = useGameRules();
   const [numbers, setNumbers] = useState(INITIAL);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- 掛載後才換成隨機號碼：伺服器和第一次渲染要一樣
-    setNumbers(randomNumbers());
-  }, []);
+    setNumbers(randomNumbers(maxNumber));
+  }, [maxNumber]);
 
   return (
     <div role={caption ? "status" : undefined} aria-hidden={caption ? undefined : true} className={cn("@container relative aspect-square", className)}>
-      {/* 49 格刻度：圓錐漸層畫出放射線，再用圓形遮罩只留外圈 */}
-      <div className="absolute inset-0 rounded-full bg-[repeating-conic-gradient(from_-0.6deg,var(--color-line-strong)_0_1.2deg,transparent_1.2deg_7.3469deg)] mask-[radial-gradient(closest-side,transparent_95%,#000_95.5%)]" />
+      {/* 刻度（一格一個號碼）：圓錐漸層畫出放射線，再用圓形遮罩只留外圈；--tick = 360° ÷ 號碼數 */}
+      <div
+        style={{ "--tick": `${360 / maxNumber}deg` } as CSSProperties}
+        className="absolute inset-0 rounded-full bg-[repeating-conic-gradient(from_-0.6deg,var(--color-line-strong)_0_1.2deg,transparent_1.2deg_var(--tick))] mask-[radial-gradient(closest-side,transparent_95%,#000_95.5%)]" />
       <div
         className={cn(
           "absolute inset-[6.75%] rounded-full border border-gold/70",

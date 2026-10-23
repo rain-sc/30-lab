@@ -1,7 +1,7 @@
 {
   "Metadata": {
     "title": "49 Lab",
-    "description": "A 6/49 number game played with virtual points (a personal learning project, no real money)"
+    "description": "A number draw game played with virtual points (a personal learning project, no real money)"
   },
   "LocaleSwitcher": {
     "label": "Language"
@@ -132,7 +132,7 @@
   },
   "Betting": {
     "title": "Pick {count} numbers",
-    "padLabel": "Numbers 1 to 49",
+    "padLabel": "Numbers 1 to {max}",
     "pickedCount": "<b>{count}</b> / {total} picked",
     "hotLegend": "Hot (last 100)",
     "hotNumber": "{number} (hot)",
@@ -154,7 +154,8 @@
     "placedMore": "{count} more {count, plural, one {ticket} other {tickets}} →",
     "tooMany": "Up to {max} tickets per slip. Please split them",
     "slipFull": "The slip holds up to {max} tickets. Place them first",
-    "rulesLink": "How to play (prizes & odds)"
+    "rulesLink": "How to play (prizes & odds)",
+    "ballNumber": "Numbers must be between 1 and {max}. Please pick again."
   },
   "HotCold": {
     "hot": "Most drawn",
@@ -281,7 +282,7 @@
   },
   "Rules": {
     "title": "How to play",
-    "intro": "A 6/49 number game played with virtual points. Points can’t be bought or cashed out.",
+    "intro": "A number draw game played with virtual points. Points can’t be bought or cashed out.",
     "error": "Couldn’t load the game rules: {reason}",
     "retry": "Retry",
     "howTitle": "How to play",
@@ -340,7 +341,7 @@
     "hero2": "It uses <b>virtual points</b> only: they can’t be bought, topped up, cashed out or exchanged for prizes, and can’t be transferred.",
     "hero3": "Numbers are drawn at random by this site, which <b>has no connection with the Hong Kong Jockey Club or Hong Kong’s Mark Six</b>.",
     "playTitle": "How it works",
-    "play": "Based on common 6/49 rules: pick 6 numbers from 1–49, with draws on a fixed schedule. See <rules>How to play</rules> for details.",
+    "play": "Based on common lottery rules: pick 6 numbers, with draws on a fixed schedule. See <rules>How to play</rules> for the number range and prizes.",
     "ageTitle": "Age",
     "age": "This site is intended for users aged 18 or over.",
     "riskTitle": "Real gambling has risks",

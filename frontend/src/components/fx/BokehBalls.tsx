@@ -27,19 +27,19 @@ type Bokeh = {
 const BALLS: Bokeh[] = [
   // 近：大、很模糊，放在角落
   { n: 7, x: -2, y: 10, size: 220, depth: 1, dur: 26, delay: 3, dx: 24, dy: 30 },
-  { n: 36, x: 92, y: 86, size: 240, depth: 1, dur: 28, delay: 9, dx: -30, dy: -22 },
+  { n: 16, x: 92, y: 86, size: 240, depth: 1, dur: 28, delay: 9, dx: -30, dy: -22 },
   { n: 21, x: 80, y: -6, size: 160, depth: 0.85, dur: 22, delay: 5, dx: -20, dy: 26 },
   { n: 13, x: 8, y: 92, size: 170, depth: 0.85, dur: 24, delay: 12, dx: 26, dy: -20 },
   // 中：中等大小、稍微模糊
-  { n: 42, x: 46, y: 12, size: 74, depth: 0.5, dur: 19, delay: 2, dx: 18, dy: 16 },
+  { n: 22, x: 46, y: 12, size: 74, depth: 0.5, dur: 19, delay: 2, dx: 18, dy: 16 },
   { n: 5, x: 60, y: 74, size: 66, depth: 0.5, dur: 17, delay: 7, dx: -14, dy: -18 },
   { n: 30, x: 32, y: 94, size: 58, depth: 0.45, dur: 18, delay: 4, dx: 16, dy: -12 },
   { n: 26, x: 98, y: 42, size: 62, depth: 0.45, dur: 20, delay: 10, dx: -16, dy: 14 },
   // 遠：小、清楚到看得見號碼
   { n: 18, x: 24, y: 20, size: 34, depth: 0.1, dur: 15, delay: 1, dx: 10, dy: 12 },
-  { n: 44, x: 57, y: 44, size: 30, depth: 0.1, dur: 16, delay: 6, dx: -8, dy: 14 },
+  { n: 24, x: 57, y: 44, size: 30, depth: 0.1, dur: 16, delay: 6, dx: -8, dy: 14 },
   { n: 9, x: 72, y: 94, size: 36, depth: 0.15, dur: 14, delay: 8, dx: 12, dy: -10 },
-  { n: 33, x: 3, y: 58, size: 40, depth: 0.2, dur: 17, delay: 11, dx: 12, dy: -14 },
+  { n: 3, x: 3, y: 58, size: 40, depth: 0.2, dur: 17, delay: 11, dx: 12, dy: -14 },
 ];
 
 const COLOR_VAR: Record<BallColor, string> = {

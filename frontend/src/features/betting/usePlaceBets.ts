@@ -5,7 +5,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useSession } from "@/features/auth/session";
 import { reloadCurrentDraw } from "@/features/draw/feed";
-import { useGameRules } from "@/features/draw/rules";
+import { currentRules, useGameRules } from "@/features/draw/rules";
 import { useNextDraw } from "@/features/draw/useNextDraw";
 import { useBalance, type Wallet } from "@/features/wallet/api";
 import { ApiError, NETWORK_ERROR } from "@/lib/api/client";
@@ -71,6 +71,12 @@ export function usePlaceBets() {
       if (error instanceof ApiError && error.code === BETTING_CLOSED) void reloadCurrentDraw();
       if (error instanceof ApiError && error.code === INSUFFICIENT_POINTS) {
         void queryClient.invalidateQueries({ queryKey: ["wallet"] });
+      }
+      // 號碼超出 1–maxNumber（例如後端改了球數、這個分頁還是舊的規則）：說明範圍，並重新抓規則
+      if (error instanceof ApiError && error.fieldViolations?.some((v) => v.rule === "ballNumber")) {
+        void queryClient.invalidateQueries({ queryKey: ["game-rules"] });
+        setFeedback({ tone: "error", text: t("ballNumber", { max: currentRules().maxNumber }) });
+        return;
       }
       setFeedback({ tone: "error", text: errorText(error) });
     },

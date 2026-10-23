@@ -1,6 +1,6 @@
 // 開獎舞台：three.js 渲染 + matter.js 2D 物理（從 docs/prototypes/draw-stage.html 搬過來）
 // - 容器（水晶球 + 號碼刻度環）在 crystal.ts
-// - 49 顆號碼球堆在玻璃球底部；可下注時可以點（彈跳）、按住（放大看號碼）、拖動甩球
+// - maxNumber 顆號碼球（GET /api/game/rules）堆在玻璃球底部；可下注時可以點（彈跳）、按住（放大看號碼）、拖動甩球
 // - 截止後吹氣攪珠；開獎時開出的那顆球從球堆彈出、飛到上方結果列、沿軌道滾到位置
 // - 階段（含開獎號碼）每一幀向外部要（getPhase，見 timeline.ts 的 stagePhaseAt），重新整理、切回分頁都會接著播
 //
@@ -69,11 +69,13 @@ export type StageOptions = {
   /** 目前的舞台階段（每一幀呼叫）；開獎的號碼在階段資料裡 */
   getPhase: () => StagePhase;
   reducedMotion: boolean;
+  /** 號碼範圍 1–maxNumber（球的數量、刻度環的格數） */
+  maxNumber: number;
   /** 第一次畫完時通知（用來移除佔位圖） */
   onReady?: () => void;
 };
 
-export function createStage({ canvas, container, getPhase, reducedMotion, onReady }: StageOptions) {
+export function createStage({ canvas, container, getPhase, reducedMotion, maxNumber, onReady }: StageOptions) {
   // ---------- three.js ----------
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
@@ -119,7 +121,7 @@ export function createStage({ canvas, container, getPhase, reducedMotion, onRead
   scene.add(warm);
 
   // 容器：金色電光的水晶球 + 號碼刻度環（crystal.ts）
-  crystal = createCrystal(scene, { cy: GLOBE.cy, r: GLOBE.r, reducedMotion });
+  crystal = createCrystal(scene, { cy: GLOBE.cy, r: GLOBE.r, reducedMotion, maxNumber });
 
   // 結果列：sunken 色的膠囊凹槽、7 個球座（特別號碼的是金色）、特別號碼前面的「+」
   const trayShape = (() => {
@@ -204,7 +206,7 @@ export function createStage({ canvas, container, getPhase, reducedMotion, onRead
   const ballGeo = new THREE.SphereGeometry(R, 40, 28);
   const ID = new THREE.Quaternion();
   const Z = new THREE.Vector3(0, 0, 1);
-  const balls: Ball[] = Array.from({ length: 49 }, (_, i) => {
+  const balls: Ball[] = Array.from({ length: maxNumber }, (_, i) => {
     const n = i + 1;
     const mesh = new THREE.Mesh(
       ballGeo,
@@ -271,7 +273,7 @@ export function createStage({ canvas, container, getPhase, reducedMotion, onRead
     ball.body = null;
   };
 
-  // 一開始把 49 顆球一排一排擺在底部，順序打亂
+  // 一開始把所有球一排一排擺在底部，順序打亂
   const pilePositions = (count: number) => {
     const out: [number, number][] = [];
     const d = 2 * R + 0.12;
@@ -289,7 +291,7 @@ export function createStage({ canvas, container, getPhase, reducedMotion, onRead
     }
     return out;
   };
-  pilePositions(49).forEach(([x, y], i) => addBody(balls[i], x, y));
+  pilePositions(maxNumber).forEach(([x, y], i) => addBody(balls[i], x, y));
 
   // 吹氣攪珠：底部中央一股往上的氣流（力，不是直接改速度），像真的攪珠機
   // - 氣流在中間最強、往兩側遞減（高斯），越往上越弱：球從中間噴上去、往兩側散開、沿玻璃壁落回底部，再被吹起來

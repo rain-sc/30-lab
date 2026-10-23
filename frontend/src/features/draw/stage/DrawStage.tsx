@@ -5,6 +5,7 @@ import { useReducedMotion } from "motion/react";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { feedNow, useDrawFeed } from "../feed";
+import { useGameRules } from "../rules";
 import { StagePreview } from "../StagePreview";
 import { stagePhaseAt } from "./timeline";
 import { useStagePhase } from "./useStagePhase";
@@ -23,6 +24,8 @@ export function DrawStage({ className, hint = true }: { className?: string; hint
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
   const reduced = useReducedMotion() ?? false;
+  // 規則載入後球數變了（預設值 → 後端的設定）要重建舞台
+  const { maxNumber } = useGameRules();
   const t = useTranslations("Stage");
 
   useEffect(() => {
@@ -42,6 +45,7 @@ export function DrawStage({ className, hint = true }: { className?: string; hint
           container: hostRef.current,
           getPhase: () => phaseNow(reduced),
           reducedMotion: reduced,
+          maxNumber,
           onReady: () => setReady(true),
         });
       })
@@ -52,7 +56,7 @@ export function DrawStage({ className, hint = true }: { className?: string; hint
       canvas.remove();
       setReady(false);
     };
-  }, [reduced]);
+  }, [reduced, maxNumber]);
 
   return (
     <div className={cn("relative overflow-hidden", className)}>

@@ -20,7 +20,7 @@ const FILL: Record<ReturnType<typeof ballColor>, string> = {
 
 
 /**
- * 選號盤：1–49 選 6 個。沒選的是波色外框，選了填滿波色並加金色外圈；選滿後其他號碼變淡。
+ * 選號盤：1–maxNumber 選 pickCount 個（數字都從 GET /api/game/rules 讀）。號碼 ≤ 36 排 6 欄（30 = 6 × 5），更多排 7 欄（49 = 7 × 7）。沒選的是波色外框，選了填滿波色並加金色外圈；選滿後其他號碼變淡。
  * hot：熱門號碼右上角加金色小點（冷熱號碼的前幾名）
  */
 export function NumberPad({ hot = [] }: { hot?: number[] }) {
@@ -67,7 +67,7 @@ export function NumberPad({ hot = [] }: { hot?: number[] }) {
         </div>
       </div>
 
-      <div role="group" aria-label={t("padLabel")} className="grid grid-cols-7 gap-1.5 md:gap-2">
+      <div role="group" aria-label={t("padLabel", { max: maxNumber })} className={cn("grid gap-1.5 md:gap-2", maxNumber <= 36 ? "grid-cols-6" : "grid-cols-7")}>
         {Array.from({ length: maxNumber }, (_, i) => i + 1).map((n) => {
           const on = picked.includes(n);
           const isHot = hot.includes(n);
