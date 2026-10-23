@@ -4,12 +4,12 @@
 # 埠號刻意避開本機已安裝的 MongoDB(27017) / Redis(6379)：
 #   MongoDB → 27018，Redis → 6380
 
-name: mark-six-lab
+name: thirty-lab
 
 services:
   mongodb:
     image: mongo:8.0
-    container_name: msl-mongodb
+    container_name: tl-mongodb
     # --replSet：以副本集模式啟動，才支援多文件事務（積分、注單、流水要在同一個事務裡寫）
     # --port 27018：容器內外用同一個埠，副本集成員位址 localhost:27018 在兩邊都有效
     command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27018"]
@@ -29,7 +29,7 @@ services:
 
   redis:
     image: redis:7.4-alpine
-    container_name: msl-redis
+    container_name: tl-redis
     ports:
       - "6380:6379"
     volumes:

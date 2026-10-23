@@ -8,7 +8,7 @@
 		<version>4.1.1</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.marksixlab</groupId>
+	<groupId>com.thirtylab</groupId>
 	<artifactId>30-lab-backend</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>30 Lab backend</name>

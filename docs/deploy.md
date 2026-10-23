@@ -23,12 +23,12 @@
 1. 建立免費集群 M0。區域選 **AWS Singapore（ap-southeast-1）**，離 Render 的 Singapore 近。
 2. Database Access 建一個資料庫使用者。密碼若有 `@`、`:`、`/` 這類字元，放進連線字串前要先 URL encode。
 3. Network Access 暫時允許 `0.0.0.0/0`。Render 免費方案的出口 IP 不固定，鎖單一 IP 會連不上。
-4. 連線字串選 Drivers，資料庫名稱用 `marksixlab`。**不要**加本機用的 `directConnection=true`。M0 本身是副本集，下注那種多文件交易可以用。
+4. 連線字串選 Drivers，資料庫名稱用 `thirtylab`。**不要**加本機用的 `directConnection=true`。M0 本身是副本集，下注那種多文件交易可以用。
 
 範例：
 
 ```text
-mongodb+srv://USER:PASSWORD@cluster0.xxxxx.mongodb.net/marksixlab?retryWrites=true&w=majority
+mongodb+srv://USER:PASSWORD@cluster0.xxxxx.mongodb.net/thirtylab?retryWrites=true&w=majority
 ```
 
 ### 2. Upstash Redis

@@ -1,6 +1,6 @@
 # 後端學習筆記：從 NestJS + PostgreSQL 到 Spring Boot + MongoDB
 
-寫給「熟悉前端、寫過 NestJS + PostgreSQL」的自己。每一節都用這個專案（30 Lab）實際寫過的程式碼當例子，檔案路徑都是 `backend/src/main/java/com/marksixlab/` 底下。
+寫給「熟悉前端、寫過 NestJS + PostgreSQL」的自己。每一節都用這個專案（30 Lab）實際寫過的程式碼當例子，檔案路徑都是 `backend/src/main/java/com/thirtylab/` 底下。
 
 配合 [project-workflow.md](project-workflow.md)（架構圖、流程圖、API 總表）一起看。
 
@@ -30,7 +30,7 @@
 
 | 概念 | NestJS | Spring Boot | 本專案例子 |
 |---|---|---|---|
-| 程式進入點 | `main.ts` + `NestFactory.create()` | `@SpringBootApplication` 的 `main()` | `MarkSixLabBackendApplication` |
+| 程式進入點 | `main.ts` + `NestFactory.create()` | `@SpringBootApplication` 的 `main()` | `ThirtyLabBackendApplication` |
 | 模組 | `@Module({ providers, controllers })` | **沒有模組宣告**，用 package 分；`@ComponentScan` 自動掃描整個 package | `account/`、`wallet/`… |
 | 可被注入的類別 | `@Injectable()` | `@Component` / `@Service` / `@Repository` / `@Configuration` | `@Service class WalletService` |
 | 依賴注入 | constructor 參數 | constructor 參數（配 Lombok `@RequiredArgsConstructor` + `private final` 欄位） | 每個 Service |
@@ -193,7 +193,7 @@ public record PrizeProperties(long jackpotFloor, long jackpotRatePercent, ...) {
 - `jackpot-floor` 自動對應 `jackpotFloor`（kebab → camel）
 - 主程式加 `@ConfigurationPropertiesScan` 就會自動綁定
 - **好處**：設定有型別、可以直接注入；單元測試時可以直接 `new PrizeProperties(...)`
-- **Profile**：`application-test.properties` 只在 `@ActiveProfiles("test")` 時生效，覆蓋同名設定（測試用 `marksixlab_test` 資料庫、關掉排程）
+- **Profile**：`application-test.properties` 只在 `@ActiveProfiles("test")` 時生效，覆蓋同名設定（測試用 `thirtylab_test` 資料庫、關掉排程）
 - **測試要固定遊戲規則**：球數、獎金在 `application-test.properties` 寫死一份（49 球、舊獎金），測試裡算死的數字才不會因為調整遊戲平衡而壞掉（≈ Jest 用 `.env.test`，不吃正式的 `.env`）
 - ⚠️ 設定檔**少一行不會報錯**：`long` / `int` 欄位拿到 0、物件拿到 `null`，程式照跑、數字默默算錯（≈ `configService.get()` 拿到 `undefined`）
 - **啟動時就檢查設定**：類別加 `@Validated`，欄位加 `@Min` / `@Max`，設定不合理時**後端直接啟動失敗**（fail fast，≈ `ConfigModule` 的 Joi / zod schema）
@@ -273,7 +273,7 @@ public class BallNumberValidator implements ConstraintValidator<BallNumber, Inte
 ## 6. Spring Security + JWT Cookie + 單一 Session
 
 ### 一個請求進來時
-1. `JwtCookieFilter`（自訂 filter）讀 cookie `msl_token` → 驗證 JWT 簽名
+1. `JwtCookieFilter`（自訂 filter）讀 cookie `tl_token` → 驗證 JWT 簽名
 2. 用 JWT 的 `subject`（userId）去 Redis 讀 `session:{userId}`，跟 JWT 的 `id`（sessionId）比對
 3. 一致 → 把 userId 放進 `SecurityContext`；不一致 → 記下「被踢掉了」（之後回 `40102`）
 4. `SecurityConfig` 的規則決定這個路徑要不要登入（`permitAll` 清單）
@@ -298,7 +298,7 @@ public class BallNumberValidator implements ConstraintValidator<BallNumber, Inte
 
 | PostgreSQL | MongoDB | 本專案 |
 |---|---|---|
-| database | database | `marksixlab` |
+| database | database | `thirtylab` |
 | table | collection | `draws`、`tickets`… |
 | row | document（BSON ≈ JSON） | |
 | column | field（每份文件可以不一樣） | 舊期數沒有 `prizeSummary` |
@@ -348,6 +348,11 @@ List<Draw> findByStatusAndPrizeSummaryIsNull(DrawStatus status);
 
 ### Auditing
 `@CreatedDate` / `@LastModifiedDate` 自動填時間。⚠️ 測試想指定 `createdAt` 時，要繞過 Repository，直接 `mongoTemplate.insert(new Document(...), "wallet_transactions")`。
+
+### `_class` 欄位
+Spring Data 存每份文件時會多寫一個 `_class: "com.thirtylab.draw.model.Draw"`（完整的類別名稱），讀回來時用它決定要建立哪個類別（有繼承、多型時才真的需要）。
+- 代價：**資料庫裡記著 Java 套件名稱**。上線後再改套件或搬類別，舊文件的 `_class` 就對不上，要寫遷移腳本更新，所以套件改名趁還沒上線做（2026-10-23 從 `com.marksixlab` 改成 `com.thirtylab` 時，資料庫是一起換新的）
+- 不需要多型的話可以設定 `MappingMongoConverter` 不寫 `_class`，本專案沒有關掉
 
 ---
 
@@ -504,7 +509,7 @@ draw ──（不依賴其他業務模組）
 | 種類 | 寫法 | 速度 | 例子 |
 |---|---|---|---|
 | 單元測試 | 直接 `new Service(假的依賴)` | 毫秒 | `PrizeCalculatorTest`、`GameRulesServiceTest` |
-| 整合測試 | `@SpringBootTest @ActiveProfiles("test")`，連真的 Mongo（`marksixlab_test`） | 秒 | `SettlementServiceIntegrationTest` |
+| 整合測試 | `@SpringBootTest @ActiveProfiles("test")`，連真的 Mongo（`thirtylab_test`） | 秒 | `SettlementServiceIntegrationTest` |
 | HTTP 層測試 | `MockMvc`（**還沒寫**） | | 會抓到「Controller 漏寫」「公開路徑漏加」 |
 
 ### 常用寫法

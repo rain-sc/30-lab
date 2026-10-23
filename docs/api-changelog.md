@@ -16,6 +16,27 @@
 
 ---
 
+## 2026-10-23（後端：內部名稱改成 thirtylab，資料會再清空一次）
+- 原因：資料剛清空、還沒上線，是改內部名稱代價最低的時候；上線有玩家後再改就要搬資料、所有人重新登入
+- 改名對照（Java 套件不能用數字開頭，所以用 `thirtylab`）：
+
+  | 項目 | 原本 | 改成 |
+  |---|---|---|
+  | Java 套件、`groupId` | `com.marksixlab` | `com.thirtylab` |
+  | 主程式 | `MarkSixLabBackendApplication` | `ThirtyLabBackendApplication` |
+  | 資料庫 | `marksixlab`、`marksixlab_test` | `thirtylab`、`thirtylab_test` |
+  | 登入 cookie | `msl_token` | **`tl_token`** |
+  | Docker | 專案 `mark-six-lab`、容器 `msl-mongodb` / `msl-redis` | 專案 `thirty-lab`、容器 `tl-mongodb` / `tl-redis` |
+
+- **API、型別都沒有變**，不用 `gen:api`
+- cookie 改名後，瀏覽器裡舊的 `msl_token` 不會再被讀取，**所有人要重新登入**；資料庫換新的，**帳號要重新註冊**（機器人會自動註冊）
+- 上線用的 Atlas 連線字串，資料庫名稱改用 `thirtylab`（`docs/deploy.md`、`.env.example` 已改）
+- 機器人腳本的 cookie 名稱已改成 `tl_token`
+- 【待前端】
+  1. 前端程式沒有直接讀 cookie 名稱（HttpOnly），只有註解提到 `msl_token`（`features/auth/api.ts`、`frontend/CLAUDE.md`）→ 改成 `tl_token`
+  2. 前端自己的識別名稱要不要一起改由前端決定：BroadcastChannel `msl-auth`（`lib/api/tabSession.ts`）、儲存 key `msl:*`；改了的話，舊的 localStorage / sessionStorage 值會失效（例如偏好設定回到預設）
+  3. `frontend/CLAUDE.md` 第 151 行「內部識別名稱維持原樣」那段改成新的名稱
+
 ## 2026-10-23（後端：品牌改名 30 Lab、獎金設定加驗證）
 - 【已完成】回覆下面「品牌改名 30 Lab」那筆的【待後端】：
   1. `backend/pom.xml`：`artifactId` 改成 `30-lab-backend`，`<name>`、`<description>` 改成 `30 Lab backend`（IntelliJ 要按一次 Maven 的 Reload）

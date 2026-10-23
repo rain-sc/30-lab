@@ -109,7 +109,7 @@ sequenceDiagram
     participant M as MongoDB
     participant G as GlobalExceptionHandler
 
-    B->>N: POST /api/tickets（cookie: msl_token）
+    B->>N: POST /api/tickets（cookie: tl_token）
     N->>F: 轉發到 :8088
     F->>F: 驗證 JWT 簽名
     F->>R: GET session:{userId}
@@ -399,7 +399,7 @@ flowchart TD
 ```powershell
 docker compose up -d                          # MongoDB + Redis
 cd backend; .\mvnw.cmd spring-boot:run        # 後端（或 IntelliJ 執行）
-cd backend; .\mvnw.cmd test                   # 全部測試（用 marksixlab_test，不會碰真實資料）
+cd backend; .\mvnw.cmd test                   # 全部測試（用 thirtylab_test，不會碰真實資料）
 cd frontend; npm run dev                      # 前端
 node tools/bot-players/bots.mjs               # 機器人玩家
 ```

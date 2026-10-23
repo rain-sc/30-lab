@@ -20,7 +20,7 @@
 ## 包結構（按業務模組分包）
 
 ```
-com.marksixlab
+com.thirtylab
 ├── common/        Result、ErrorCode、BusinessException、全局異常處理、PageResult
 ├── config/        Mongo、Redis、WebSocket、Security、Swagger 等配置
 ├── account/       帳戶：註冊、登入、JWT
@@ -48,7 +48,7 @@ com.marksixlab
 ## 常用命令
 
 ```powershell
-.\mvnw.cmd spring-boot:run              # 啟動（或 IntelliJ 執行 MarkSixLabBackendApplication）
+.\mvnw.cmd spring-boot:run              # 啟動（或 IntelliJ 執行 ThirtyLabBackendApplication）
 .\mvnw.cmd clean compile                # 完整編譯（懷疑 IDE 報錯不準時用）
 .\mvnw.cmd test                         # 跑測試
 ```

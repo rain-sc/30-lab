@@ -8,7 +8,7 @@ const BASE_URL = process.env.BASE_URL ?? 'http://localhost:8088';
 const BOT_COUNT = clamp(Number(process.env.BOT_COUNT ?? 80), 1, 100);
 const PASSWORD = process.env.BOT_PASSWORD ?? 'bot-password-2026';
 const PREFIX = 'bot_';
-const COOKIE_NAME = 'msl_token';
+const COOKIE_NAME = 'tl_token';
 const POLL_MS = 2_000;
 // QUIET=1：只顯示每期的開始和總結，不顯示每一筆下注
 const QUIET = process.env.QUIET === '1';

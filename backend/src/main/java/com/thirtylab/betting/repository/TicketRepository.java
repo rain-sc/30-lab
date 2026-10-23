@@ -1,0 +1,21 @@
+package com.thirtylab.betting.repository;
+
+import com.thirtylab.betting.model.Ticket;
+import com.thirtylab.betting.model.TicketStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.mongodb.repository.MongoRepository;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface TicketRepository extends MongoRepository<Ticket, String> {
+
+    Optional<Ticket> findByUserIdAndIdempotencyKey(String userId, String idempotencyKey);
+
+    Page<Ticket> findByUserId(String userId, Pageable pageable);
+
+    List<Ticket> findByDrawNo(String drawNo);
+
+    List<Ticket> findByDrawNoAndStatus(String drawNo, TicketStatus status);
+}
