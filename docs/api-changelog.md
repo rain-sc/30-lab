@@ -16,6 +16,14 @@
 
 ---
 
+## 2026-10-25（規劃：後台管理，後台前端改成獨立的 Vue 專案）
+- 後台管理開始做（階段 3），設計在 [docs/admin.md](admin.md)：管理員是獨立的 `admins` 集合、三級角色 `VIEWER` / `OPERATOR` / `SUPER_ADMIN`、獨立的登入 cookie `tl_admin_token`、審計日誌；這一輪後端做階段 A（登入、權限、管理員帳號、審計）+ B（儀表板、期數監控，唯讀）
+- **後台前端不放在 Next.js 裡**，改成根目錄的獨立專案 `admin/`：**Vite + Vue 3 + TypeScript + Element Plus + vue-i18n + Pinia + Vue Router + axios**，本機 http://localhost:3200，做 zh-TW / en 的 i18n
+- **接後端的方式**（docs/admin.md「怎麼連後端」）：本機用 Vite 的 `server.proxy` 把 `/api` 轉到 8088；上線用 Vercel rewrites 轉到 Render。**不要讓瀏覽器直接打後端的網址**，跨站時 `SameSite=Lax` 的登入 cookie 不會被帶上
+- 後台的 API 還沒做好（後端正在做 A1），完成一步就會在這裡加一筆；後台前端可以先建專案骨架（Vite、路由、版面、i18n、axios 攔截器、登入頁的畫面），等「管理員登入」那筆出來再接
+- 【已完成】（遊戲端 session，2026-10-25）`frontend/CLAUDE.md` 已改：目錄樹拿掉 `src/app/admin/`、圖表那列拿掉「後台儀表板」、介面原則加一條「管理後台是獨立的 `admin/` 專案，`frontend/` 不要加後台的頁面或路由」。原本的待辦：`frontend/CLAUDE.md` 裡規劃的 `src/app/admin/`（目錄樹）、「圖表：Recharts（…後台儀表板）」、「管理後台之後再決定（i18n）」改成：後台是獨立的 `admin/` 專案，不在 `frontend/` 裡
+- 【待後台前端】新的 session 在 `admin/` 啟動，建立 `admin/CLAUDE.md`（技術棧、目錄結構、怎麼跑、跟後端的約定），跟著根目錄 `CLAUDE.md` 的「前後端協作約定」走
+
 ## 2026-10-23（後端：頭獎保底與獎級）
 - 設定值改變，接口和型別都沒變，不用重新匯出 OpenAPI、也不用 `npm run gen:api`
 - 【修改】`GET /api/game/rules` 回傳的數字（`app.prize.*`）：

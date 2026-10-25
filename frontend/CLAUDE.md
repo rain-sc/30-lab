@@ -21,7 +21,7 @@
 | 即時連線 | @stomp/stompjs 7（`src/lib/ws/client.ts`；「別台裝置登入」通知、期數 / 開獎推播 `/topic/draws`） | |
 | 動畫 | Motion 14（UI 動畫唯一的動畫庫；`MotionProvider` 設定 `reducedMotion="user"`）；開獎舞台 three.js + matter.js（`features/draw/stage/`） | |
 | 國際化 | next-intl 4（繁體中文 `zh-TW` 預設、英文 `en`） | |
-| 圖表 | — | Recharts（冷熱號碼、後台儀表板） |
+| 圖表 | — | Recharts（冷熱號碼） |
 | 測試 | — | Vitest + Playwright |
 
 ## 目錄約定（暫定）
@@ -34,7 +34,6 @@ src/
 │   │   ├── (auth)/        登入、註冊
 │   │   ├── not-found.tsx  語系內的 404（有翻譯）
 │   │   └── [...rest]/     接住不存在的路徑 → not-found
-│   ├── admin/             管理後台（階段 3，是否走 i18n 之後再定）
 │   └── global-not-found.tsx  完全對不上路由時的 404（中英並列）
 ├── components/        共用組件（Ball 號碼球、BrandLogo、LocaleSwitcher）
 │   ├── ui/            基礎元件：Button、Input、PasswordInput、Field
@@ -162,7 +161,8 @@ src/
 - 響應式、手機優先。
 - 開獎結果在開獎時間就確定，動畫只是展示；切換分頁、重新整理後要能直接顯示結果。
 - 尊重 `prefers-reduced-motion`：用戶關閉動畫時直接顯示號碼。
-- 遊戲端所有文字都走 i18n（繁中、英文），不寫死在組件裡；管理後台之後再決定。
+- 遊戲端所有文字都走 i18n（繁中、英文），不寫死在組件裡。
+- **管理後台不在這個專案裡**：是根目錄的獨立專案 `admin/`（Vite + Vue 3，見 [../docs/admin.md](../docs/admin.md)、`admin/CLAUDE.md`），`frontend/` 不要加後台的頁面或路由。
 - 同一頁只放一個 WebGL 場景（開獎頁已有 3D 舞台，不再加 WebGL 背景效果）。
 - 所有資料都來自後端，前端沒有示例資料。之後如果又需要暫時的示例資料，畫面上必須標示「示例數據」。
 

@@ -3,7 +3,7 @@
 用**虛擬積分**遊玩、1–30 選 6 個號碼的選號網頁遊戲（玩法參考香港六合彩）。個人學習與面試作品，不涉及真錢。
 前端 Next.js（`frontend/`）+ 後端 Java + Spring Boot（`backend/`），單一 Git 倉庫（monorepo）。
 
-> 這份文件是前端、後端兩個對話的**共同約定**。在 `backend/` 或 `frontend/` 啟動 Claude Code 時，會同時讀到這份和子目錄的 `CLAUDE.md`。
+> 這份文件是前端、後端、後台前端各個對話的**共同約定**。在 `backend/`、`frontend/` 或 `admin/` 啟動 Claude Code 時，會同時讀到這份和子目錄的 `CLAUDE.md`。
 
 ## 對話規則（必須遵守）
 
@@ -24,6 +24,7 @@
 | 形式 | 響應式網頁（手機優先） |
 | 後端 | Java 21 + Spring Boot 4.1 + **MongoDB**（副本集）+ Redis |
 | 前端 | Next.js 16（App Router）+ React 19 + TypeScript + Tailwind 4 |
+| 後台前端 | **獨立專案** `admin/`：Vite + Vue 3 + TypeScript + Element Plus + vue-i18n + Pinia + axios；設計見 [docs/admin.md](docs/admin.md) |
 | 架構 | 後端是**模組化單體**（按業務模組分包），不拆微服務 |
 | 登入 | JWT 放 **HttpOnly cookie**（`SameSite=Lax`）；註冊成功後直接登入 |
 | 同時登入 | 同一帳號只能一個 session，**後登入的踢掉前一個**（舊的下次請求收到 `401`）；session id 存 Redis |
@@ -60,6 +61,7 @@
 | 服務 | 位址 | 備註 |
 |---|---|---|
 | 前端 | http://localhost:3100 | `/api/*` 由 next.config.ts 轉發到後端 |
+| 後台前端 | http://localhost:3200 | `/api/*` 由 Vite 的 `server.proxy` 轉發到後端 |
 | 後端 | http://localhost:8088 | 避開 8080（用戶的練習項目）和 8090（本機其他程式） |
 | Swagger | http://localhost:8088/swagger-ui.html | |
 | 健康檢查 | http://localhost:8088/actuator/health | |
@@ -85,6 +87,7 @@ node tools/bot-players/bots.mjs                       # （可選）80 個機器
 | [docs/draw-animation.md](docs/draw-animation.md) | 開獎動畫方案、後端需要配合的事項；原型在 `docs/prototypes/` |
 | [docs/api-changelog.md](docs/api-changelog.md) | 前後端交接記錄 |
 | [docs/deploy.md](docs/deploy.md) | 免費上線：Vercel、Render、Atlas、Upstash。帳號開好後照這份填 |
+| [docs/admin.md](docs/admin.md) | 後台管理的設計：管理員帳號、角色權限、審計、各階段的 API |
 | [docs/api/](docs/api/) | OpenAPI 契約 |
 | [docs/learning/backend/](docs/learning/backend/README.md) | 後端新手教程（15 章，用專案的程式碼逐行講解，NestJS / PostgreSQL 對照） |
 | [docs/learning/basics/](docs/learning/basics/README.md) | Java / Spring Boot 新手基礎（不限這個專案：JVM、集合、並發、JPA、測試、上線、面試問答） |
