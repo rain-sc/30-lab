@@ -79,7 +79,7 @@ src/
 
 | 組件 / 做法 | 參考來源 | 用在 |
 |---|---|---|
-| `fx/RollingDigits` | React Bits Counter（原版違反 hook 規則、秒數十位會倒滾，自己重寫） | 開獎倒數每秒滾動 |
+| `fx/RollingDigits` | React Bits Counter（原版違反 hook 規則、秒數十位會倒滾，自己重寫；後來改成純 CSS 的數字帶） | 開獎倒數每秒滾動。**不要用 AnimatePresence 做會頻繁變化的數字**：頁面被 Activity 藏起來、分頁在背景時退場動畫會卡住，舊數字疊在新數字上 |
 | `fx/CountUp` | React Bits Count Up（改用 next-intl 數字格式） | 頭獎彩池進場累加、中獎金額累加 |
 | `fx/RollingNumber` | — | 積分從舊值滾到新值（下注扣款、派彩）；直接改 DOM 文字，不重新渲染 |
 | `wallet/BalanceDelta` | — | 積分旁浮出「+40」「−20」往上飄 |
