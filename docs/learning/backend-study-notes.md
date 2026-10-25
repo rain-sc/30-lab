@@ -1,8 +1,10 @@
-# 後端學習筆記：從 NestJS + PostgreSQL 到 Spring Boot + MongoDB
+# 後端速查表：NestJS + PostgreSQL → Spring Boot + MongoDB
 
-寫給「熟悉前端、寫過 NestJS + PostgreSQL」的自己。每一節都用這個專案（30 Lab）實際寫過的程式碼當例子，檔案路徑都是 `backend/src/main/java/com/thirtylab/` 底下。
+> **第一次學請先看 [新手教程 `backend/`](backend/README.md)**：分 15 章，每章用專案裡真的程式碼逐行講解、附小練習。
+> Java / Spring 的一般基礎（不限這個專案）在 [新手基礎篇 `basics/`](basics/README.md)。
+> 這份是**學完之後查用的濃縮版**，一個主題只有幾行，適合「忘了某個寫法」時快速翻。
 
-配合 [project-workflow.md](project-workflow.md)（架構圖、流程圖、API 總表）一起看。
+檔案路徑都是 `backend/src/main/java/com/thirtylab/` 底下。配合 [project-workflow.md](project-workflow.md)（架構圖、流程圖、API 總表）一起看。
 
 ## 目錄
 
@@ -181,7 +183,7 @@ return switch (matched) {
 ## 4. 設定：application.properties、@ConfigurationProperties、Profile
 
 ```properties
-app.prize.jackpot-floor=200000
+app.prize.jackpot-floor=500000
 app.game.draw-interval=5m          # 自動轉成 Duration
 app.auth.jwt-secret=${JWT_SECRET:dev-only-...}   # 環境變數優先，冒號後面是預設值
 ```
