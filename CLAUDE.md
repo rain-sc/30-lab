@@ -87,6 +87,7 @@ node tools/bot-players/bots.mjs                       # （可選）80 個機器
 | [docs/deploy.md](docs/deploy.md) | 免費上線：Vercel、Render、Atlas、Upstash。帳號開好後照這份填 |
 | [docs/api/](docs/api/) | OpenAPI 契約 |
 | [docs/learning/backend/](docs/learning/backend/README.md) | 後端新手教程（15 章，用專案的程式碼逐行講解，NestJS / PostgreSQL 對照） |
+| [docs/learning/basics/](docs/learning/basics/README.md) | Java / Spring Boot 新手基礎（不限這個專案：JVM、集合、並發、JPA、測試、上線、面試問答） |
 | [docs/learning/backend-study-notes.md](docs/learning/backend-study-notes.md) | 後端速查表（學完之後查用的濃縮版） |
 | [docs/learning/project-workflow.md](docs/learning/project-workflow.md) | 架構圖、流程圖、API / 事件 / 錯誤碼總表、開發工作流程 |
 | [backend/CLAUDE.md](backend/CLAUDE.md) | 後端約定 |

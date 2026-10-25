@@ -296,27 +296,46 @@ export function createStage({ canvas, container, getPhase, reducedMotion, maxNum
   // - 擋板只在攪珠、開獎時存在，而且**畫面上不顯示**（只有物理）：看起來像球自己在滾筒裡翻滾；可下注時沒有擋板、滾筒不轉，點球、甩球不受影響
   //   擋板不能直接出現（會和球堆重疊、把球炸開），而是從玻璃外面慢慢伸進來（extendMs），球被自然地推開；開完獎縮回去再移除
   // - 牆的摩擦力只在轉動時調高（帶得動球），可下注時維持原本的滑度
+  // - 每片擋板轉到最上方（那裡沒有球）時，各自隨機換一個長度（finMin–finMax），約 0.4 秒慢慢伸縮過去：
+  //   每一圈、每一片都不一樣長，球被帶到的高度、落下的位置才不會每次一樣。形狀固定是最長的長度，
+  //   「長度」是伸進玻璃多少（多的部分藏在玻璃外面，球碰不到），不用重建剛體，效能沒有差別
   // - 牆和擋板每一步用 setPosition / setAngle（updateVelocity）移動，碰撞時才有正確的速度
   // 參數用 Node 跑 matter 模擬調過（30 顆、半徑 1、彈性 0.8）：約 45% 時間球在 40% 高度以上、平均速度約 3.4，沒有球被擠出玻璃
   // （原本轉速 0.9、彈性 0.7 時是四成、2.4，用戶覺得不夠熱鬧；一組順一組逆的擋板會夾球，不採用）
-  const DRUM = { speed: 1.7, rampMs: 900, fin: 2.6, finThick: 0.4, extendMs: 800, retractMs: 600, wallFriction: 0.5, idleFriction: 0.05 };
+  const DRUM = { speed: 1.7, rampMs: 900, finMin: 1.4, finMax: 3.2, finTau: 400, finThick: 0.4, extendMs: 800, retractMs: 600, wallFriction: 0.5, idleFriction: 0.05 };
   const CENTER = { x: 0, y: -GLOBE.cy * S }; // 球心（matter 座標，y 朝下）
   const wallBase = walls.map((w) => ({ body: w, dx: w.position.x - CENTER.x, dy: w.position.y - CENTER.y, angle: w.angle }));
-  const fins = [0, 1, 2, 3].map((k) => ({
-    a: (k * Math.PI) / 2,
-    body: Bodies.rectangle(0, 0, DRUM.fin * S, DRUM.finThick * S, { isStatic: true, friction: 0.3, restitution: 0.2 }),
-  }));
+  const randomFinLength = () => DRUM.finMin + Math.random() * (DRUM.finMax - DRUM.finMin);
+  const fins = [0, 1, 2, 3].map((k) => {
+    const len = randomFinLength();
+    return {
+      a: (k * Math.PI) / 2,
+      body: Bodies.rectangle(0, 0, DRUM.finMax * S, DRUM.finThick * S, { isStatic: true, friction: 0.3, restitution: 0.2 }),
+      /** 目前伸進玻璃的長度、要伸縮到的長度、轉過最上方的次數（變了就換長度） */
+      len,
+      target: len,
+      turn: NaN,
+    };
+  });
   /** 滾筒轉速 0–1、擋板伸出 0–1（0 = 完全在玻璃外面） */
   let spin = 0;
   let extend = 0;
   let drumAngle = 0;
   let finsInWorld = false;
-  /** 擋板中心離球心多遠：伸出 0 時整片在玻璃外，1 時從玻璃往內伸 fin 長 */
-  const finRadius = () => GLOBE.r + DRUM.fin / 2 - extend * DRUM.fin;
+  /** 擋板中心離球心多遠：伸出 0 時整片在玻璃外，1 時從玻璃往內伸 len 長（形狀是 finMax 長，其餘藏在玻璃外） */
+  const finRadius = (len: number) => GLOBE.r + DRUM.finMax / 2 - extend * len;
   const placeFins = () => {
     for (const fin of fins) {
       const a = fin.a + drumAngle;
-      moveBody(fin.body, { x: CENTER.x + Math.cos(a) * finRadius() * S, y: CENTER.y + Math.sin(a) * finRadius() * S }, true);
+      // 最上方是 matter 座標的 -π/2（y 朝下）：每轉過一次換一個長度
+      const turn = Math.floor((a + Math.PI / 2) / (Math.PI * 2));
+      if (turn !== fin.turn) {
+        fin.turn = turn;
+        fin.target = randomFinLength();
+      }
+      fin.len += (fin.target - fin.len) * (1 - Math.exp(-STEP / DRUM.finTau));
+      const r = finRadius(fin.len);
+      moveBody(fin.body, { x: CENTER.x + Math.cos(a) * r * S, y: CENTER.y + Math.sin(a) * r * S }, true);
       turnBody(fin.body, a, true);
     }
   };
