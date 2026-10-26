@@ -22,7 +22,8 @@
 - **接後端的方式**（docs/admin.md「怎麼連後端」）：本機用 Vite 的 `server.proxy` 把 `/api` 轉到 8088；上線用 Vercel rewrites 轉到 Render。**不要讓瀏覽器直接打後端的網址**，跨站時 `SameSite=Lax` 的登入 cookie 不會被帶上
 - 後台的 API 還沒做好（後端正在做 A1），完成一步就會在這裡加一筆；後台前端可以先建專案骨架（Vite、路由、版面、i18n、axios 攔截器、登入頁的畫面），等「管理員登入」那筆出來再接
 - 【已完成】（遊戲端 session，2026-10-25）`frontend/CLAUDE.md` 已改：目錄樹拿掉 `src/app/admin/`、圖表那列拿掉「後台儀表板」、介面原則加一條「管理後台是獨立的 `admin/` 專案，`frontend/` 不要加後台的頁面或路由」。原本的待辦：`frontend/CLAUDE.md` 裡規劃的 `src/app/admin/`（目錄樹）、「圖表：Recharts（…後台儀表板）」、「管理後台之後再決定（i18n）」改成：後台是獨立的 `admin/` 專案，不在 `frontend/` 裡
-- 【待後台前端】新的 session 在 `admin/` 啟動，建立 `admin/CLAUDE.md`（技術棧、目錄結構、怎麼跑、跟後端的約定），跟著根目錄 `CLAUDE.md` 的「前後端協作約定」走
+- 【進行中】（2026-10-26，遊戲端 session 先建好骨架）`admin/` 已用 create-vite（vue-ts）建立，裝好 Element Plus、vue-i18n、Pinia、Vue Router、axios、openapi-typescript；`vite.config.ts` 設好 3200（strictPort）、`/api` 轉發到 8088（實測 `/api/game/rules` 透過 proxy 拿得到）、`@` 別名、`npm run gen:api`；TypeScript 用 5.9（create-vite 預設的 6 和 openapi-typescript 衝突）；寫了初版 `admin/CLAUDE.md`、`README.md`。**還沒做**：Element Plus / i18n / Pinia / Router 的初始化、版面、登入頁、axios 攔截器，留給後台前端 session
+- 【待後台前端】新的 session 在 `admin/` 啟動，接著補 `admin/CLAUDE.md`（技術棧、目錄結構、怎麼跑、跟後端的約定），跟著根目錄 `CLAUDE.md` 的「前後端協作約定」走
 
 ## 2026-10-23（後端：頭獎保底與獎級）
 - 設定值改變，接口和型別都沒變，不用重新匯出 OpenAPI、也不用 `npm run gen:api`
